@@ -4,7 +4,7 @@
 
 ## Ringkasan
 
-Terminal trading ala gmgn untuk **trader yang trading bareng teman**. Pembeda utama dari gmgn (yang sudah support Monad):
+Terminal trading sosial untuk **trader yang trading bareng teman**. Pembeda utama:
 - **KaddClub**: patungan dana grup onchain di Kuru — primitive baru "investment club" yang tanpa oracle, member selalu bisa keluar.
 - Login passkey (Mera), tanpa seed phrase.
 - UI sosial: grup, feed teman, leaderboard, label risiko token yang mudah dipahami.
@@ -17,6 +17,11 @@ Terminal trading ala gmgn untuk **trader yang trading bareng teman**. Pembeda ut
 | Data token asli (Monad mainnet): GeckoTerminal untuk list/chart/trades/info, DexScreener untuk search & harga | Selesai (trade di terminal masih saldo demo) |
 | Landing page (GSAP + Lenis, terminal interaktif di hero, light/dark) | Selesai |
 | Alamat kontrak di env (`.env.local` app, `.env` contracts) | Selesai |
+| Risk analysis (rule-based): skor 0–100 + alasan + saran, peringatan sebelum beli token berisiko | Selesai |
+| Security: status sesi passkey + daftar approval token dengan tombol revoke | Selesai |
+| Onboarding checklist (5 langkah, otomatis centang) + price alert (toast + notifikasi browser) | Selesai |
+| Network stats `/stats` (state kontrak); trades/volume/wallet butuh `ENVIO_API_TOKEN` (HyperSync) | Selesai, event metrics menunggu token |
+| Strategies onchain (Limit / TP / SL / DCA, keeper di app) — `KaddStrategies` `0xC126…cEA` (verified) | Selesai |
 | Login passkey Mera (PRF → BIP-39/32 → signing session) | Real, belum diuji manual dengan passkey |
 | KaddClub + Factory (Foundry) | 27 unit test + 4 fork test vs Kuru asli lulus |
 | Factory di Monad testnet | v2 `0xcF7e…b647` (verified, dipakai app). v1 `0x54b1…ad27` usang |
