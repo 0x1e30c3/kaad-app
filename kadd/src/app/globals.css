@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #f5f6f8;
+  --panel: #ffffff;
+  --raised: #f0f2f4;
+  --hover: #eaedf0;
+  --line: #e2e5e9;
+  --line-strong: #d3d8de;
+  --fg: #0e1013;
+  --muted: #5a626d;
+  --faint: #8b929c;
+  --up: #0c9a57;
+  --down: #d62f47;
+  --warn: #b26b00;
+  --brand: #4a6a00;
+  --brand-fill: #c6ee2e;
+  --chart-grid: #eef0f3;
+}
+
+[data-theme="dark"] {
+  --bg: #0a0b0d;
+  --panel: #101215;
+  --raised: #16191d;
+  --hover: #1b1f24;
+  --line: #21252b;
+  --line-strong: #2c3138;
+  --fg: #eceef1;
+  --muted: #9aa1ab;
+  --faint: #6a717b;
+  --up: #2ccf7f;
+  --down: #f2475d;
+  --warn: #f0a93a;
+  --brand: #c6ee2e;
+  --brand-fill: #c6ee2e;
+  --chart-grid: #15181c;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-hover: var(--hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-warn: var(--warn);
+  --color-brand: var(--brand);
+  --color-brand-fill: var(--brand-fill);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
+}
+
+html {
+  color-scheme: light;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 13px;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Text fields show focus through their own border instead. */
+input:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -8px;
+  }
+}
+
+/* Landing widgets */
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes slidein {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* Landing: one surface per theme — pure white in light, near-black in dark. Cards sit one step off the page. */
+.landing {
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --raised: #f4f4f5;
+  --hover: #ebebed;
+  --line: #e7e7e9;
+  --fg: #0a0a0a;
+  --muted: #5f6066;
+  --faint: #a1a1a8;
+}
+[data-theme="dark"] .landing {
+  --bg: #0b0b0c;
+  --panel: #131315;
+  --raised: #18181b;
+  --hover: #222226;
+  --line: #26262a;
+  --fg: #f2f2f3;
+  --muted: #9b9ba3;
+  --faint: #5c5c63;
+}
