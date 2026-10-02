@@ -21,7 +21,8 @@ Terminal trading ala gmgn untuk **trader yang trading bareng teman**. Pembeda ut
 | KaddClub + Factory (Foundry) | 27 unit test + 4 fork test vs Kuru asli lulus |
 | Factory di Monad testnet | v2 `0xcF7e…b647` (verified, dipakai app). v1 `0x54b1…ad27` usang |
 | Halaman Club (buat, setor, tarik, klaim, trade captain) | Terhubung ke kontrak; diuji di fork lokal |
-| Trading Kuru asli | **Terhambat**: order book testnet kosong, USDC testnet hanya bisa di-mint admin Kuru |
+| Trading Kuru asli | **Terhambat**: order book testnet kosong, USDC hanya di-mint admin, token harus di-whitelist governance |
+| Swap & Club asli di testnet (KaddVenue: tUSDC faucet + pool mirror per token mainnet) | Kontrak + 12 test + uji E2E di fork lulus; app tersambung. **Belum di-deploy ke testnet** (butuh keystore user) |
 
 ## Berikutnya
 
@@ -35,7 +36,7 @@ Keputusan: **data token = Monad mainnet (read-only, GeckoTerminal)**; trading & 
 | 4 | Uji passkey | Buat akun, reload → buka, perangkat lain, di domain Vercel. | Ya: HP/laptop |
 | 5 | Grup bersama | Backend (DB lewat Vercel Marketplace) supaya grup, kode undangan & feed teman benar-benar dibagi. | Ya: pilih/approve DB |
 | 6 | Connect wallet cadangan | Wallet injected (MetaMask/Rabby) di samping passkey. | Tidak |
-| 7 | Trading asli | Setelah Kuru kirim USDC/liquidity testnet: TradePanel → Kuru, Clubs end-to-end. | Ya: kontak Kuru |
+| 7 | Trading asli di Kuru | Swap testnet sudah jalan lewat KaddVenue; pindah ke Kuru kalau Kuru buka testnet/mainnet. | Ya: kontak Kuru |
 | 8 | Copy-trade | Tahap 1: izin TRADE terbatas di subaccount Kuru. | Tidak |
 | 9 | Submission | Video demo ≤3 mnt, pitch ≤2 mnt, uji ke 10–20 teman. | Ya |
 
