@@ -14,6 +14,7 @@ See the contract header in `src/KaddClub.sol` for the design and trust assumptio
 | Monad testnet (10143) | KaddCore (venue) | `0x3F8674797756cEbA5A217830b6F74A00Bf89DA70` (verified) |
 | Monad testnet (10143) | tUSDC (faucet) | `0x9173048f7c1D6ebfC72a1932C8d15E3EADE180CB` (verified) |
 | Monad testnet (10143) | **KaddClubFactory on venue** (used by the app) | `0x4E24bA0762624EAa63E02f3834105efa423A624c` (verified) |
+| Monad testnet (10143) | **KaddStrategies** (limit / TP / SL / DCA) | [`0xC12684b7063e3C749f0227539601a7b370073cEA`](https://testnet.monadexplorer.com/address/0xC12684b7063e3C749f0227539601a7b370073cEA) (verified) |
 
 Wired to Kuru AccountCore `0xdbaaDe7B42c95399bb1E9614D51B5B9e2cf78038` and USDC `0xA402B424f392EAA05DBc8779e4502A1F6A96fEF1`.
 
