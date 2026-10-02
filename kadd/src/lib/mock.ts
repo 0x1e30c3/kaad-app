@@ -134,9 +134,9 @@ export const TRADERS: Trader[] = TRADER_NAMES.map((name, i) => {
 export type Group = { id: string; name: string; desc: string; code: string; members: string[] };
 
 export const GROUPS: Group[] = [
-  { id: "kampus-ui", name: "Anak Kampus UI", desc: "Belajar trading bareng, max 50 USDC per trade", code: "KADD-UI24", members: TRADERS.slice(0, 6).map((t) => t.address) },
-  { id: "kantor-sudirman", name: "Kantor Sudirman", desc: "Trading jam istirahat makan siang", code: "KADD-SDRM", members: TRADERS.slice(5, 11).map((t) => t.address) },
-  { id: "degen-bandung", name: "Degen Bandung", desc: "Memecoin Monad tiap hari", code: "KADD-BDG1", members: TRADERS.slice(9, 16).map((t) => t.address) },
+  { id: "kampus-ui", name: "UI Campus Crew", desc: "Learning to trade together, max 50 USDC per trade", code: "KADD-UI24", members: TRADERS.slice(0, 6).map((t) => t.address) },
+  { id: "kantor-sudirman", name: "Sudirman Lunch Desk", desc: "Trades during the lunch break", code: "KADD-SDRM", members: TRADERS.slice(5, 11).map((t) => t.address) },
+  { id: "degen-bandung", name: "Bandung Degens", desc: "Monad memecoins, every day", code: "KADD-BDG1", members: TRADERS.slice(9, 16).map((t) => t.address) },
 ];
 
 export const getTrader = (address: string) => TRADERS.find((t) => t.address === address);
