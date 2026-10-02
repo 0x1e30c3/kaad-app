@@ -9,7 +9,7 @@ import { useGSAP } from "@gsap/react";
 import Cta from "./Cta";
 import Chart from "../Chart";
 import { Logo } from "../ui";
-import { CLUB_FACTORY } from "@/lib/kuru";
+import { CLUB_FACTORY } from "@/lib/addresses";
 import { GROUPS, TOKENS, candles, groupFeed, num, pct, usd, type Risk } from "@/lib/mock";
 
 gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP);
@@ -75,7 +75,7 @@ export default function Hero() {
             </Link>
           </div>
           <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-1 text-[13px] text-muted">
-            {["Passkey sign-in", "Kuru order book", "Withdraw any time"].map((x) => (
+            {["Passkey sign-in", "Live Monad data", "Withdraw any time"].map((x) => (
               <li key={x} className="flex items-center gap-1.5"><Check className="size-3.5 text-up" />{x}</li>
             ))}
           </ul>

@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatUnits, parseUnits, type Address } from "viem";
 import { ArrowLeft, CircleAlert, Crown, ExternalLink, Hourglass, Landmark, Loader2, Lock, Unlock } from "lucide-react";
-import { ClubNotFound, claim, depositUsdc, getClub, quoteSwap, redeem, trade, txError, type ClubDetail as Club } from "@/lib/club";
-import { USDC_DECIMALS, type Market } from "@/lib/kuru";
+import { ClubNotFound, claim, depositUsdc, getClub, redeem, trade, txError, type ClubDetail as Club } from "@/lib/club";
+import { USDC_DECIMALS, claimFaucet, quote as quoteSwap, type Market } from "@/lib/venue";
 import { requireAccount, toast, useStore } from "@/lib/store";
 import { useAsync } from "@/lib/useAsync";
 import { chain } from "@/lib/wallet";
@@ -49,8 +49,8 @@ function Deposit({ club, run, busy }: { club: Club; run: ReturnType<typeof useTx
   return (
     <section className={`${card} p-4 flex flex-col gap-3`}>
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Deposit USDC</h3>
-        <span className="text-[12px] text-muted tabular-nums">Balance {fmt(club.walletUsdc, USDC_DECIMALS, 2)} USDC</span>
+        <h3 className="font-semibold">Deposit tUSDC</h3>
+        <span className="text-[12px] text-muted tabular-nums">Balance {fmt(club.walletUsdc, USDC_DECIMALS, 2)} tUSDC</span>
       </div>
       {!club.flat && (
         <p className="flex gap-2 p-2.5 rounded-md bg-warn/10 text-warn text-[12px]">
@@ -59,20 +59,27 @@ function Deposit({ club, run, busy }: { club: Club; run: ReturnType<typeof useTx
       )}
       <div className="flex gap-2">
         <label className={`flex-1 flex items-center h-10 px-3 rounded-md bg-raised border ${tooMuch ? "border-down/60" : "border-transparent focus-within:border-line-strong"}`}>
-          <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" placeholder="0.00" aria-label="USDC amount" className="flex-1 min-w-0 bg-transparent outline-none tabular-nums font-semibold" />
+          <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" placeholder="0.00" aria-label="tUSDC amount" className="flex-1 min-w-0 bg-transparent outline-none tabular-nums font-semibold" />
           <button type="button" onClick={() => setAmount(formatUnits(club.walletUsdc, USDC_DECIMALS))} className="text-[11px] text-muted hover:text-fg">MAX</button>
         </label>
         <button
           disabled={!club.flat || !value || tooMuch || !!busy}
-          onClick={() => run("deposit", () => depositUsdc(club.address, value), `Deposited ${amount} USDC`).then((ok) => ok && setAmount(""))}
+          onClick={() => run("deposit", () => depositUsdc(club.address, value), `Deposited ${amount} tUSDC`).then((ok) => ok && setAmount(""))}
           className="h-10 px-4 rounded-md bg-fg text-bg font-semibold inline-flex items-center gap-2 disabled:opacity-40"
         >
           {busy === "deposit" && <Loader2 className="size-4 animate-spin" />} Deposit
         </button>
       </div>
-      {tooMuch && <p className="text-[12px] text-down">More than your USDC balance.</p>}
-      {club.walletUsdc === 0n && (
-        <p className="text-[11px] text-faint">Kuru testnet USDC can only be minted by the Kuru team. Contact them for test tokens.</p>
+      {tooMuch && <p className="text-[12px] text-down">More than your tUSDC balance.</p>}
+      {club.walletUsdc < 100_000_000n && (
+        <button
+          type="button"
+          disabled={!!busy}
+          onClick={() => run("faucet", claimFaucet, "Claimed 1,000 test USDC")}
+          className="self-start inline-flex items-center gap-1.5 text-[12px] font-medium text-muted hover:text-fg disabled:opacity-40"
+        >
+          {busy === "faucet" && <Loader2 className="size-3.5 animate-spin" />} Get 1,000 free test USDC (once an hour)
+        </button>
       )}
     </section>
   );
@@ -144,7 +151,7 @@ function CaptainPanel({ club, run, busy }: { club: Club; run: ReturnType<typeof 
       <div className="flex items-center gap-2">
         <Crown className="size-4 text-warn" />
         <h3 className="font-semibold">Captain panel</h3>
-        <span className="ml-auto text-[11px] text-muted tabular-nums">Buy limit {fmt(cap, USDC_DECIMALS, 2)} USDC</span>
+        <span className="ml-auto text-[11px] text-muted tabular-nums">Buy limit {fmt(cap, USDC_DECIMALS, 2)} tUSDC</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {club.positions.map((p) => (
@@ -162,13 +169,13 @@ function CaptainPanel({ club, run, busy }: { club: Club; run: ReturnType<typeof 
       </div>
       <label className="flex items-center gap-2 h-10 px-3 rounded-md bg-raised border border-transparent focus-within:border-line-strong">
         <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" placeholder="0.00" aria-label="Amount" className="flex-1 min-w-0 bg-transparent outline-none tabular-nums font-semibold" />
-        <span className="text-muted text-[12px]">{isBuy ? "USDC" : market.symbol}</span>
+        <span className="text-muted text-[12px]">{isBuy ? "tUSDC" : market.symbol}</span>
         {!isBuy && <button type="button" onClick={() => setAmount(formatUnits(position, market.decimals))} className="text-[11px] text-muted hover:text-fg">MAX</button>}
       </label>
       <div className="flex justify-between text-[12px]">
         <span className="text-muted">Est. received</span>
         <span className="tabular-nums">
-          {!amountIn ? "–" : shownQuote === null ? <Loader2 className="inline size-3.5 animate-spin text-muted" /> : shownQuote === 0n ? <span className="text-down">No liquidity</span> : `${fmt(shownQuote, isBuy ? market.decimals : USDC_DECIMALS)} ${isBuy ? market.symbol : "USDC"}`}
+          {!amountIn ? "–" : shownQuote === null ? <Loader2 className="inline size-3.5 animate-spin text-muted" /> : shownQuote === 0n ? <span className="text-down">Amount too small</span> : `${fmt(shownQuote, isBuy ? market.decimals : USDC_DECIMALS)} ${isBuy ? market.symbol : "tUSDC"}`}
         </span>
       </div>
       <button
@@ -177,7 +184,7 @@ function CaptainPanel({ club, run, busy }: { club: Club; run: ReturnType<typeof 
         className={`h-10 rounded-md font-semibold text-white inline-flex items-center justify-center gap-2 disabled:opacity-40 ${isBuy ? "bg-up" : "bg-down"}`}
       >
         {busy === "trade" && <Loader2 className="size-4 animate-spin" />}
-        Execute on Kuru · 1% slippage
+        Execute onchain · 1% slippage
       </button>
     </section>
   );
@@ -227,7 +234,7 @@ export default function ClubDetail({ address }: { address: Address }) {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className={`${card} p-4`}>
-          <div className="text-[12px] text-muted">USDC in club</div>
+          <div className="text-[12px] text-muted">tUSDC in club</div>
           <div className="mt-1 text-[22px] font-semibold tabular-nums">{fmt(club.usdc, USDC_DECIMALS, 2)}</div>
           {!club.flat && <div className="text-[11px] text-muted">+ open positions (see table)</div>}
         </div>
@@ -249,33 +256,31 @@ export default function ClubDetail({ address }: { address: Address }) {
               <tr className="border-b border-line">
                 <th className="text-left font-medium px-4 py-2">Market</th>
                 <th className="text-right font-medium px-3">Amount</th>
-                <th className="text-right font-medium px-3">Bid / Ask Kuru</th>
+                <th className="text-right font-medium px-3">Pool price</th>
               </tr>
             </thead>
             <tbody>
               {club.positions.map((p) => (
                 <tr key={p.market.address} className="border-b border-line last:border-0">
-                  <td className="px-4 py-2.5 font-semibold">{p.market.symbol}<span className="text-muted font-normal">/USDC</span></td>
+                  <td className="px-4 py-2.5 font-semibold">{p.market.symbol}<span className="text-muted font-normal">/tUSDC</span></td>
                   <td className="px-3 text-right">{fmt(p.balance, p.market.decimals)}</td>
                   <td className="px-3 text-right">
-                    {p.bid === null && p.ask === null ? <span className="text-faint">Empty book</span> : `${p.bid ?? "–"} / ${p.ask ?? "–"}`}
+                    ${p.market.price.toLocaleString("en-US", { maximumSignificantDigits: 4 })}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {club.positions.every((p) => p.bid === null && p.ask === null) && (
-            <p className="flex gap-2 m-3 p-2.5 rounded-md bg-raised text-muted text-[12px]">
-              <CircleAlert className="size-3.5 mt-px shrink-0" /> The Kuru testnet order book is empty, so trades can’t execute yet. Deposits and withdrawals still work.
-            </p>
-          )}
+          <p className="flex gap-2 m-3 p-2.5 rounded-md bg-raised text-muted text-[12px]">
+            <CircleAlert className="size-3.5 mt-px shrink-0" /> Testnet: the club trades Kadd testnet pools that mirror mainnet tokens, with free test USDC. Nothing here has real value.
+          </p>
         </section>
 
         <div className="flex flex-col gap-4">
           {club.owed.length > 0 && (
             <section className={`${card} p-4 flex flex-col gap-3 border-warn/40`}>
               <h3 className="flex items-center gap-2 font-semibold"><Hourglass className="size-4 text-warn" /> Pending withdrawals</h3>
-              <p className="text-[12px] text-muted">Part of your withdrawal couldn’t be sent at the time (e.g. a Kuru withdrawal limit). It’s still yours and can be claimed anytime.</p>
+              <p className="text-[12px] text-muted">Part of your withdrawal couldn’t be sent at the time (e.g. a temporary withdrawal limit). It’s still yours and can be claimed anytime.</p>
               {club.owed.map((o) => (
                 <div key={o.token} className="flex items-center justify-between">
                   <span className="tabular-nums font-medium">{fmt(o.amount, o.decimals)} {o.symbol}</span>

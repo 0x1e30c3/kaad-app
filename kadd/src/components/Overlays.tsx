@@ -90,7 +90,7 @@ function LoginModal() {
             {returning ? "Use a new account" : "I already have a Kadd passkey"}
           </button>
         </div>
-        <p className="text-[11px] text-faint text-center">Your account lives on Monad testnet. Terminal trades use a demo balance; Clubs trade onchain on Kuru testnet.</p>
+        <p className="text-[11px] text-faint text-center">Your account lives on Monad testnet. Swaps and Clubs are real testnet transactions with free test USDC.</p>
       </div>
     </dialog>
   );

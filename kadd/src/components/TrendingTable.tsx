@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Star, Zap } from "lucide-react";
+import { ArrowDown, ArrowUp, Star } from "lucide-react";
 import { num, usd } from "@/lib/mock";
 import { FRAMES, FRAME_LABEL, ageOf, type Frame, type MarketToken } from "@/lib/market";
-import { isWatched, toggleWatch, trade, useStore } from "@/lib/store";
+import { isWatched, toggleWatch, useStore } from "@/lib/store";
 import { Pct, RiskBadge, TokenIcon } from "./ui";
 import CopyAddress from "./CopyAddress";
+import QuickBuy from "./QuickBuy";
 
 type Key = "mc" | "change" | "liq" | "vol" | "tx" | "age";
 const COLS: [Key, string, string][] = [
@@ -118,9 +119,7 @@ export default function TrendingTable({ tokens }: { tokens: MarketToken[] }) {
                   <td className="px-3 text-right hidden lg:table-cell text-muted" suppressHydrationWarning>{ageOf(t.createdAt)}</td>
                   <td className="px-3 hidden sm:table-cell"><RiskBadge risk={t.risk} /></td>
                   <td className="pr-3 text-right">
-                    <button onClick={() => trade(t, "buy", 10)} title="Quick buy 10 USDC (demo)" className="relative z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-fg text-bg text-[12px] font-semibold hover:opacity-90">
-                      <Zap className="size-3 fill-current" /> 10
-                    </button>
+                    <QuickBuy t={t} usd={10} className="relative z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-fg text-bg text-[12px] font-semibold hover:opacity-90" />
                   </td>
                 </tr>
               );

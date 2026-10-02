@@ -3,8 +3,9 @@ import Link from "next/link";
 import { ArrowLeft, Copy, Crown, LogOut, UserPlus } from "lucide-react";
 import { FEED_TOKENS, ago, getTrader, groupFeed, type Trader } from "@/lib/mock";
 import { useQuotes } from "@/lib/useQuotes";
-import { allGroups, joinGroup, leaveGroup, toast, trade, useStore } from "@/lib/store";
+import { allGroups, joinGroup, leaveGroup, toast, useStore } from "@/lib/store";
 import { TokenIcon, TraderAvatar } from "./ui";
+import QuickBuy from "./QuickBuy";
 
 export default function GroupDetail({ id }: { id: string }) {
   const s = useStore();
@@ -79,14 +80,12 @@ export default function GroupDetail({ id }: { id: string }) {
                     <div className="text-[11px] text-faint tabular-nums">{ago(x.agoMin)}</div>
                   </div>
                   {x.side === "buy" && (
-                    <button
-                      onClick={() => trade({ ...x.token, price: quotes[x.token.address]?.price ?? 0 }, "buy", x.usd)}
-                      disabled={!quotes[x.token.address]}
-                      className="h-7 px-2.5 rounded-md border border-line-strong text-[12px] font-semibold hover:bg-hover disabled:opacity-40"
-                      title={`Buy ${x.usd} USDC too (demo)`}
-                    >
-                      Follow buy
-                    </button>
+                    <QuickBuy
+                      t={{ ...x.token, price: quotes[x.token.address]?.price ?? 0 }}
+                      usd={x.usd}
+                      label="Follow buy"
+                      className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md border border-line-strong text-[12px] font-semibold hover:bg-hover"
+                    />
                   )}
                 </li>
               ))}

@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Activity, Droplet, SlidersHorizontal, Zap } from "lucide-react";
 import { usd, type Risk } from "@/lib/mock";
 import { ageOf, dexName, type MarketToken } from "@/lib/market";
-import { trade } from "@/lib/store";
 import { RiskBadge, TokenIcon } from "./ui";
 import CopyAddress from "./CopyAddress";
+import QuickBuy from "./QuickBuy";
 
 type Col = { key: string; title: string; hint: string; tokens: MarketToken[] };
 
@@ -41,14 +41,7 @@ function Card({ t, amount }: { t: MarketToken; amount: string }) {
           <div><span className="text-faint text-[11px]">MC </span><span className="font-semibold">{usd(t.mc)}</span></div>
           <div><span className="text-faint text-[11px]">Vol 1h </span>{usd(t.vol.h1)}</div>
         </div>
-        <button
-          onClick={() => trade(t, "buy", parseFloat(amount))}
-          className="relative z-10 inline-flex items-center gap-1 h-6 px-2 rounded-md bg-raised border border-line text-[11px] font-semibold hover:border-fg/40 hover:bg-hover"
-          title={`Quick buy ${amount} USDC (demo)`}
-        >
-          <Zap className="size-3 fill-current" />
-          {amount}
-        </button>
+        <QuickBuy t={t} usd={parseFloat(amount) || 0} label={amount} className="relative z-10 inline-flex items-center gap-1 h-6 px-2 rounded-md bg-raised border border-line text-[11px] font-semibold hover:border-fg/40 hover:bg-hover" />
       </div>
     </div>
   );
@@ -69,13 +62,13 @@ function Column({ col, hidden }: { col: Col; hidden: boolean }) {
       <header className="h-11 shrink-0 flex items-center gap-2 px-3 border-b border-line">
         <h2 className="font-semibold text-[13px]">{col.title}</h2>
         <span className="text-[11px] text-faint tabular-nums">{tokens.length}</span>
-        <label className="ml-auto flex items-center gap-1 h-7 pl-2 pr-1 rounded-md bg-raised text-muted focus-within:ring-1 focus-within:ring-line-strong" title="Quick buy amount (demo USDC)">
+        <label className="ml-auto flex items-center gap-1 h-7 pl-2 pr-1 rounded-md bg-raised text-muted focus-within:ring-1 focus-within:ring-line-strong" title="Quick buy amount (tUSDC, Monad testnet)">
           <Zap className="size-3" />
           <input
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
             inputMode="decimal"
-            aria-label="Quick buy amount (demo USDC)"
+            aria-label="Quick buy amount in tUSDC"
             className="w-10 bg-transparent outline-none text-fg font-medium tabular-nums"
           />
         </label>
@@ -136,7 +129,7 @@ export default function Trenches({ cols }: { cols: Col[] }) {
     <div className="h-full flex flex-col gap-2 p-2 md:p-3">
       <p className="flex items-center gap-1.5 text-[11px] text-faint">
         <span className="inline-flex items-center gap-1 px-1 rounded bg-up/15 text-up font-semibold"><span className="size-1.5 rounded-full bg-up animate-pulse" />LIVE</span>
-        Monad mainnet data via GeckoTerminal, refreshed every 30s. Quick buy uses your demo balance.
+        Monad mainnet data, refreshed every 30s. Quick buy trades a testnet mirror of the token with free test USDC.
       </p>
       <div className="md:hidden grid grid-cols-3 p-0.5 rounded-lg bg-raised">
         {cols.map((c) => (

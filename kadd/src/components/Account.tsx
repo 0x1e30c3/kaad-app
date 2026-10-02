@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Copy, Droplet, ExternalLink, Lock, LogOut, Star, Users, Wallet } from "lucide-react";
+import { ChevronDown, Coins, Copy, Droplet, ExternalLink, Lock, LogOut, Star, Users, Wallet } from "lucide-react";
 import { short } from "@/lib/mock";
 import { logout, openLogin, toast, useStore } from "@/lib/store";
+import { faucet, useWallet } from "@/lib/swap";
 import { chain, getMonBalance, isUnlocked, lock } from "@/lib/wallet";
 
 export default function Account() {
-  const { user, balance } = useStore();
+  const { user } = useStore();
+  const wallet = useWallet();
   const [open, setOpen] = useState(false);
   const [mon, setMon] = useState<number | "error" | null>(null);
 
@@ -34,8 +36,8 @@ export default function Account() {
           {user.name[0].toUpperCase()}
           {!unlocked && <Lock className="absolute -bottom-1 -right-1 size-3 p-px rounded-full bg-panel text-muted" />}
         </span>
-        <span className="hidden sm:flex items-center gap-1.5 tabular-nums text-[12px] font-medium" title="Demo balance for simulated trading">
-          {balance.toFixed(2)} USDC <span className="px-1 rounded bg-warn/15 text-warn text-[10px] font-semibold">DEMO</span>
+        <span className="hidden xl:flex items-center gap-1.5 tabular-nums text-[12px] font-medium" title="Free test USDC on Monad testnet">
+          {wallet ? wallet.usdc.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "…"} tUSDC <span className="px-1 rounded bg-warn/15 text-warn text-[10px] font-semibold">TESTNET</span>
         </span>
         <ChevronDown className="size-3.5 text-muted" />
       </button>
@@ -53,15 +55,28 @@ export default function Account() {
             >
               {short(user.address)} <Copy className="size-3" />
             </button>
-            <div className="text-[12px] text-muted tabular-nums">
-              {mon === null ? "Loading balance…" : mon === "error" ? "Couldn't load balance" : `${mon.toFixed(4)} MON`} <span className="text-faint">· {chain.name}</span>
-            </div>
+            <dl className="mt-1 grid grid-cols-2 gap-1.5 tabular-nums">
+              <div className="rounded-md bg-raised px-2 py-1.5">
+                <dt className="text-[10px] text-muted">tUSDC</dt>
+                <dd className="font-semibold">{wallet ? wallet.usdc.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "…"}</dd>
+              </div>
+              <div className="rounded-md bg-raised px-2 py-1.5" title="Testnet MON pays for gas">
+                <dt className="text-[10px] text-muted">MON (gas)</dt>
+                <dd className={`font-semibold ${typeof mon === "number" && mon < 0.05 ? "text-warn" : ""}`}>{mon === null ? "…" : mon === "error" ? "–" : mon.toFixed(3)}</dd>
+              </div>
+            </dl>
+            {typeof mon === "number" && mon < 0.05 && (
+              <a href="https://faucet.monad.xyz" target="_blank" rel="noreferrer" className="text-[11px] text-warn hover:underline">
+                You need testnet MON for gas. Get some at faucet.monad.xyz →
+              </a>
+            )}
             {!unlocked && (
               <button onClick={() => (close(), openLogin())} className="mt-1 h-8 rounded-md bg-fg text-bg font-semibold text-[12px]">
                 Unlock with passkey
               </button>
             )}
           </div>
+          <button onClick={() => (close(), faucet())} className={item}><Coins className="size-4 text-muted" /> Get 1,000 test USDC</button>
           <Link href="/portfolio" onClick={close} className={item}><Wallet className="size-4 text-muted" /> Portfolio</Link>
           <Link href="/groups" onClick={close} className={item}><Users className="size-4 text-muted" /> My groups</Link>
           <Link href="/portfolio#watchlist" onClick={close} className={item}><Star className="size-4 text-muted" /> Watchlist</Link>

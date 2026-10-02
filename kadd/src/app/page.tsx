@@ -9,11 +9,11 @@ import Cta from "@/components/landing/Cta";
 import Live from "@/components/landing/Live";
 import { ActivityFeed, ClubMini, LeaderboardMini, PasskeySheet, TrenchesMini } from "@/components/landing/Widgets";
 import { Logo } from "@/components/ui";
-import { CLUB_FACTORY } from "@/lib/kuru";
+import { CLUB_FACTORY } from "@/lib/addresses";
 
 export const metadata: Metadata = {
   title: "Kadd — Trade together on Monad",
-  description: "The social trading terminal for Monad: passkey sign-in, trading with friends, and onchain clubs on Kuru.",
+  description: "The social trading terminal for Monad: passkey sign-in, live Monad token data, trading with friends, and onchain clubs.",
 };
 
 const STEPS = [
@@ -30,7 +30,7 @@ const TAGS: [string, string][] = [
   ["Onchain clubs", "#b79bff"],
   ["Risk labels", "#ffc14d"],
   ["Leaderboards", "#3fd1a8"],
-  ["Kuru order book", "#ff8fbf"],
+  ["Testnet swaps", "#ff8fbf"],
   ["400ms blocks", "#ff9a3d"],
 ];
 
@@ -38,12 +38,12 @@ const WHY = [
   ["No seed phrase", "The passkey already on your phone is the key. New device? Your account follows the same passkey."],
   ["Social by default", "gmgn is built for solo traders. Kadd is built for groups: friends' feeds, shared clubs, weekly leaderboards."],
   ["Risk you can read", "Every token gets a safety check with plain-language reasons: holder concentration, dev wallet, snipers, insiders."],
-  ["Exchange-grade speed", "Monad closes a block every 400ms. Orders go straight to Kuru's order book — no pending states."],
+  ["Exchange-grade speed", "Monad closes a block every 400ms, so a trade confirms in under a second — no pending states."],
 ];
 
 const FEATURES = [
-  { title: "Trenches", ui: <TrenchesMini />, tags: ["Discovery", "Risk labels"], body: "Every new Monad token from launch to its Kuru listing, with safety checks written in plain language.", href: "/trenches" },
-  { title: "Onchain clubs", ui: <ClubMini />, tags: ["Live on testnet", "Kuru"], body: "Pool USDC with friends. The captain trades inside contract-enforced limits; every member can exit any time.", href: "/groups" },
+  { title: "Trenches", ui: <TrenchesMini />, tags: ["Discovery", "Risk labels"], body: "Every new Monad token as it launches, with safety checks written in plain language.", href: "/trenches" },
+  { title: "Onchain clubs", ui: <ClubMini />, tags: ["Live on testnet", "Onchain"], body: "Pool USDC with friends. The captain trades inside contract-enforced limits; every member can exit any time.", href: "/groups" },
   { title: "Passkey accounts", ui: <PasskeySheet />, tags: ["Mera", "No seed phrase"], body: "One tap with Face ID and you're in. No extension to install, nothing to write down, works across devices.", href: "/trenches" },
 ];
 
@@ -65,7 +65,7 @@ const FAQ = [
   ["Does Kadd hold my funds?", "No. Your account comes from the passkey on your device, and club funds are held by a contract on Monad. Kadd has no access to your keys and no way to withdraw club funds."],
   ["What if a club's captain disappears?", "Every member can withdraw their share at any time, straight from the contract, without the captain's permission. Captains can only trade approved markets, within a per-trade limit."],
   ["How is this different from gmgn?", "gmgn is a terminal for experienced traders trading alone. Kadd is about trading together: groups, friends' feeds, pooled clubs, and risk explained in plain language."],
-  ["Can I use it today?", "Kadd runs on Monad testnet. Passkey sign-in and onchain clubs are live; some token data and trading are still demo until Kuru testnet liquidity is available."],
+  ["Can I use it today?", "Yes, on Monad testnet. Token data is live from mainnet; swaps and clubs are real testnet transactions with free test USDC, so nothing has real value yet."],
 ];
 
 export default function Landing() {
@@ -233,7 +233,7 @@ export default function Landing() {
                 <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-muted">Live on testnet</span>
                 <p className="mt-3 text-[40px] font-medium leading-none tracking-[-0.03em]">Today</p>
                 <ul className="mt-8 grid gap-3 text-[15px]">
-                  {["Passkey accounts with Mera", "Onchain clubs (KaddClub, verified)", "Groups, feeds and leaderboards", "Trenches & Trending (demo data)"].map((x) => (
+                  {["Passkey accounts with Mera", "Onchain clubs (KaddClub, verified)", "Groups, feeds and leaderboards", "Live token data, testnet swaps"].map((x) => (
                     <li key={x} className="flex gap-2.5"><Check className="mt-0.5 size-4 shrink-0" />{x}</li>
                   ))}
                 </ul>
@@ -243,7 +243,7 @@ export default function Landing() {
                 <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-brand">Coming next</span>
                 <p className="mt-3 text-[40px] font-medium leading-none tracking-[-0.03em]">Soon</p>
                 <ul className="mt-8 grid gap-3 text-[15px]">
-                  {["Real trading on Kuru's order book", "Live Monad token data", "Copy trading with capped permissions", "Installable mobile app"].map((x) => (
+                  {["Mainnet trading on Kuru's order book", "Live Monad token data", "Copy trading with capped permissions", "Installable mobile app"].map((x) => (
                     <li key={x} className="flex gap-2.5"><Check className="mt-0.5 size-4 shrink-0 text-brand" />{x}</li>
                   ))}
                 </ul>
@@ -307,7 +307,7 @@ export default function Landing() {
               <Logo size={40} />
               <span className="text-[clamp(48px,9vw,140px)] font-medium leading-none tracking-[-0.06em]">kadd</span>
             </div>
-            <span className="hidden text-right text-[13px] text-faint sm:block">Built on Monad · Kuru · Mera<br />Testnet, unaudited</span>
+            <span className="hidden text-right text-[13px] text-faint sm:block">Built on Monad · Mera<br />Testnet, unaudited</span>
           </div>
         </div>
       </footer>

@@ -5,17 +5,17 @@ import { useRouter } from "next/navigation";
 import { formatUnits } from "viem";
 import { Landmark, Loader2, Plus, ShieldCheck } from "lucide-react";
 import { createClub, listClubs, txError } from "@/lib/club";
-import { MARKETS, USDC_DECIMALS } from "@/lib/kuru";
+import { USDC_DECIMALS, VENUE_READY, listMarkets, type Market } from "@/lib/venue";
 import { requireAccount, toast, useStore } from "@/lib/store";
 import { useAsync } from "@/lib/useAsync";
 import { short } from "@/lib/mock";
 
 const CAPS = [1_000, 2_500, 5_000];
 
-function CreateClubForm({ onDone }: { onDone: (club: string) => void }) {
+function CreateClubForm({ markets, onDone }: { markets: Market[]; onDone: (club: string) => void }) {
   const [name, setName] = useState("");
   const [cap, setCap] = useState(2_500);
-  const [picked, setPicked] = useState<string[]>([MARKETS[0].address, MARKETS[1].address]);
+  const [picked, setPicked] = useState<string[]>(markets.slice(0, 3).map((m) => m.address));
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -24,7 +24,7 @@ function CreateClubForm({ onDone }: { onDone: (club: string) => void }) {
     setBusy(true);
     try {
       if (!(await requireAccount())) return;
-      const club = await createClub(name.trim(), cap, MARKETS.filter((m) => picked.includes(m.address)));
+      const club = await createClub(name.trim(), cap, markets.filter((m) => picked.includes(m.address)));
       toast(`Club "${name.trim()}" created onchain`);
       onDone(club);
     } catch (err) {
@@ -41,11 +41,11 @@ function CreateClubForm({ onDone }: { onDone: (club: string) => void }) {
       <div className="flex flex-col gap-2">
         <span className="text-[12px] text-muted">Markets the captain can trade</span>
         <div className="flex flex-wrap gap-1.5">
-          {MARKETS.map((m) => {
+          {markets.map((m) => {
             const on = picked.includes(m.address);
             return (
               <button type="button" key={m.address} aria-pressed={on} onClick={() => setPicked(on ? picked.filter((a) => a !== m.address) : [...picked, m.address])} className={`h-8 px-3 rounded-md border text-[12px] font-medium ${on ? "border-fg/50 text-fg" : "border-line text-faint"}`}>
-                {m.symbol}/USDC
+                {m.symbol}
               </button>
             );
           })}
@@ -53,7 +53,7 @@ function CreateClubForm({ onDone }: { onDone: (club: string) => void }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-[12px] text-muted">Buy limit per trade (of club USDC balance)</span>
+        <span className="text-[12px] text-muted">Buy limit per trade (of the club’s tUSDC)</span>
         <div className="flex gap-1.5">
           {CAPS.map((c) => (
             <button type="button" key={c} onClick={() => setCap(c)} className={`h-8 px-3 rounded-md border text-[12px] font-medium tabular-nums ${cap === c ? "border-fg/50 text-fg" : "border-line text-faint"}`}>
@@ -79,6 +79,7 @@ export default function ClubsSection() {
   const { user } = useStore();
   const [creating, setCreating] = useState(false);
   const { data: clubs, error, loading } = useAsync(listClubs, []);
+  const { data: markets } = useAsync(listMarkets, []);
 
   return (
     <section className="mb-8">
@@ -92,10 +93,19 @@ export default function ClubsSection() {
         </button>
       </div>
       <p className="text-muted text-[12px] mb-3 max-w-2xl">
-        Pool funds on Kuru: members deposit USDC, the captain trades within a per-trade cap enforced by the contract, and any member can withdraw their share anytime. Anyone can create a club, so check the captain before you deposit.
+        Pool funds onchain: members deposit test USDC, the captain trades within a per-trade cap enforced by the contract, and any member can withdraw their share anytime. Runs on Monad testnet pools that mirror mainnet tokens.
       </p>
 
-      {creating && <CreateClubForm onDone={(c) => router.push(`/clubs/${c}`)} />}
+      {creating &&
+        (!VENUE_READY ? (
+          <p className="mb-4 p-4 rounded-lg border border-line text-muted">The testnet venue isn’t deployed yet.</p>
+        ) : !markets?.length ? (
+          <p className="mb-4 p-4 rounded-lg border border-line text-muted">
+            No testnet pools yet. Buy any token in <Link href="/trenches" className="text-fg underline">Trenches</Link> to open its pool, then come back.
+          </p>
+        ) : (
+          <CreateClubForm markets={markets} onDone={(c) => router.push(`/clubs/${c}`)} />
+        ))}
 
       {loading ? (
         <div className="h-24 grid place-items-center text-muted"><Loader2 className="size-5 animate-spin" /></div>
@@ -120,8 +130,8 @@ export default function ClubsSection() {
                 </div>
               </div>
               <div className="flex items-baseline justify-between text-[12px]">
-                <span className="text-muted">USDC in club</span>
-                <span className="font-semibold tabular-nums">{Number(formatUnits(c.usdc, USDC_DECIMALS)).toLocaleString("en-US")} USDC</span>
+                <span className="text-muted">tUSDC in club</span>
+                <span className="font-semibold tabular-nums">{Number(formatUnits(c.usdc, USDC_DECIMALS)).toLocaleString("en-US")} tUSDC</span>
               </div>
             </Link>
           ))}
