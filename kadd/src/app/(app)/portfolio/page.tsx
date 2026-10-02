@@ -9,6 +9,8 @@ import { useQuotes } from "@/lib/useQuotes";
 import { EXPLORER } from "@/lib/venue";
 import { PageHeader, Pct, TokenIcon } from "@/components/ui";
 import LoginGate from "@/components/LoginGate";
+import SecurityPanel from "@/components/SecurityPanel";
+import StrategiesList from "@/components/StrategiesList";
 
 function Card({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
@@ -157,6 +159,10 @@ export default function PortfolioPage() {
           </ul>
         )}
       </section>
+
+      <StrategiesList />
+
+      <SecurityPanel />
 
       <section className="rounded-lg border border-line bg-panel overflow-hidden">
         <h2 className="px-4 h-11 flex items-center font-semibold border-b border-line">Trade history</h2>

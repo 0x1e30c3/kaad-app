@@ -1,19 +1,26 @@
 "use client";
 import { useEffect, useState } from "react";
 import { formatUnits, parseUnits } from "viem";
-import { Droplets, ExternalLink, FlaskConical, Loader2, Zap } from "lucide-react";
+import { Droplets, ExternalLink, FlaskConical, Loader2, OctagonAlert, Zap } from "lucide-react";
 import { num } from "@/lib/mock";
 import type { MarketToken } from "@/lib/market";
+import type { RiskAnalysis } from "@/lib/risk";
+import { LEVEL } from "./RiskPanel";
+import StrategyForm from "./StrategyForm";
+import StrategiesList from "./StrategiesList";
+import type { Kind } from "@/lib/strategies";
 import { openLogin, useStore } from "@/lib/store";
 import { buyToken, faucet, sellToken, useWallet } from "@/lib/swap";
 import { EXPLORER, USDC_DECIMALS, VENUE_READY, marketFor, quote, type Market } from "@/lib/venue";
 
 const PRESETS = { buy: ["10", "25", "50", "100"], sell: ["25", "50", "75", "100"] };
 
-export default function TradePanel({ t }: { t: MarketToken }) {
+export default function TradePanel({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState<"trade" | "faucet" | null>(null);
+  const [warned, setWarned] = useState(false); // high-risk buys need an explicit second confirm
+  const [mode, setMode] = useState<"market" | Kind>("market");
   const { user, rev, fills } = useStore();
   const wallet = useWallet();
   const [market, setMarket] = useState<{ key: string; m: Market | null } | null>(null);
@@ -28,7 +35,10 @@ export default function TradePanel({ t }: { t: MarketToken }) {
   useEffect(() => {
     if (!VENUE_READY) return;
     let live = true;
-    marketFor(t.address).then((m) => live && setMarket({ key: marketKey, m }), () => {});
+    marketFor(t.address).then(
+      (m) => live && setMarket({ key: marketKey, m }),
+      (e) => console.warn("[kadd] testnet pool lookup failed", e),
+    );
     return () => {
       live = false;
     };
@@ -49,16 +59,42 @@ export default function TradePanel({ t }: { t: MarketToken }) {
   }, [m, n, buy, held, estKey]);
   const receive = !n ? null : m ? (est?.key === estKey ? Number(formatUnits(est.out, buy ? 18 : USDC_DECIMALS)) : undefined) : buy ? (n / t.price) * 0.997 : null;
 
+  const risky = buy && (t.analysis?.level === "high" || t.analysis?.level === "critical");
   const submit = async () => {
     if (!user) return openLogin();
+    if (risky && !warned) return setWarned(true);
+    setWarned(false);
     setBusy("trade");
     const ok = buy ? await buyToken(t, n) : await sellToken(t, n);
     setBusy(null);
     if (ok) setAmount("");
   };
 
+  const modes: ["market" | Kind, string][] = [["market", "Market"], ["limit", "Limit"], ["takeProfit", "TP"], ["stopLoss", "SL"], ["dca", "DCA"]];
+  const modeTabs = (
+    <div role="tablist" aria-label="Order type" className="flex gap-1 text-[12px] font-medium">
+      {modes.map(([k, label]) => (
+        <button key={k} role="tab" aria-selected={mode === k} onClick={() => setMode(k)} className={`h-7 px-2.5 rounded-md ${mode === k ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (mode !== "market")
+    return (
+      <div className="flex flex-col">
+        <div className="flex flex-col gap-3 p-3">
+          {modeTabs}
+          <StrategyForm key={mode} t={t} kind={mode} held={held} />
+        </div>
+        <StrategiesList source={t.address} compact />
+      </div>
+    );
+
   return (
     <div className="flex flex-col gap-3 p-3">
+      {modeTabs}
       <div className="grid grid-cols-2 p-0.5 rounded-lg bg-raised text-[13px] font-semibold">
         {(["buy", "sell"] as const).map((s) => (
           <button
@@ -114,13 +150,26 @@ export default function TradePanel({ t }: { t: MarketToken }) {
         </div>
         <div className="flex justify-between">
           <dt className="text-muted">Testnet pool price</dt>
-          <dd className="tabular-nums">{m ? `$${m.price.toLocaleString("en-US", { maximumSignificantDigits: 4 })}` : m === null ? "Opens at mainnet price" : "–"}</dd>
+          <dd className="tabular-nums">{m ? `$${m.price.toLocaleString("en-US", { maximumSignificantDigits: 4 })}` : m === null ? "Opens at mainnet price" : VENUE_READY ? <Loader2 className="inline size-3 animate-spin" /> : "–"}</dd>
         </div>
       </dl>
 
+      {warned && t.analysis && (
+        <div role="alert" className="flex flex-col gap-2 p-2.5 rounded-lg border border-down/40 bg-down/5 text-[12px]">
+          <div className={`flex items-center gap-1.5 font-semibold ${LEVEL[t.analysis.level].text}`}>
+            <OctagonAlert className="size-4" /> {LEVEL[t.analysis.level].label}: are you sure?
+          </div>
+          <p className="text-muted">{t.analysis.factors.find((f) => f.severity !== "good")?.detail}</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button onClick={() => setWarned(false)} className="h-8 rounded-md border border-line-strong font-semibold hover:bg-hover">Cancel</button>
+            <button onClick={submit} className="h-8 rounded-md bg-down text-white font-semibold">Buy anyway</button>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={submit}
-        disabled={!VENUE_READY || (!!user && !n) || !!busy}
+        disabled={!VENUE_READY || (!!user && !n) || !!busy || warned}
         className={`h-11 rounded-lg inline-flex items-center justify-center gap-1.5 font-semibold text-[14px] text-white disabled:opacity-40 disabled:cursor-not-allowed ${buy ? "bg-up" : "bg-down"}`}
       >
         {busy === "trade" ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4 fill-current" />}

@@ -82,7 +82,7 @@ export async function faucet(): Promise<boolean> {
 }
 
 export type Holding = { market: Market; amount: number; value: number };
-export type Wallet = { usdc: number; holdings: Holding[] };
+export type Wallet = { usdc: number; mon: number; holdings: Holding[] };
 
 /** tUSDC + every mirror token the signed-in wallet holds, re-read after each transaction. */
 export function useWallet(): Wallet | null {
@@ -104,7 +104,7 @@ export function useWallet(): Wallet | null {
 }
 
 async function readWallet(owner: Address): Promise<Wallet> {
-  const markets = await listMarkets();
+  const [markets, monWei] = await Promise.all([listMarkets(), publicClient.getBalance({ address: owner })]);
   const balances = await publicClient.multicall({
     allowFailure: false,
     contracts: [TUSDC, ...markets.map((m) => m.base)].map((token) => ({ address: token, abi: erc20Abi, functionName: "balanceOf", args: [owner] }) as const),
@@ -116,5 +116,5 @@ async function readWallet(owner: Address): Promise<Wallet> {
       return { market, amount, value: amount * market.price };
     })
     .filter((h) => h.amount > 0);
-  return { usdc: Number(formatUnits(usdc, USDC_DECIMALS)), holdings };
+  return { usdc: Number(formatUnits(usdc, USDC_DECIMALS)), mon: Number(formatUnits(monWei, 18)), holdings };
 }

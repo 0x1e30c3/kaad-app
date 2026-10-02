@@ -2,6 +2,7 @@
 // - GeckoTerminal (no key, ~30 req/min): token lists, charts, trades, token info. Cached server-side.
 // - DexScreener (no key, ~300 req/min): search and price quotes, which are per-user and can't share a cache.
 import { age, type Candle, type Risk } from "./mock";
+import { analyzeRisk, badgeOf, type RiskAnalysis } from "./risk";
 
 const GT = "https://api.geckoterminal.com/api/v2";
 const DS = "https://api.dexscreener.com";
@@ -32,6 +33,7 @@ export type TokenDetail = MarketToken & {
   description: string;
   links: { label: string; url: string }[];
   checks: Check[];
+  analysis: RiskAnalysis;
   /** null = the chart / trades provider is rate-limiting right now; the page retries on its own. */
   candles: Candle[] | null;
   trades: TokenTrade[] | null;
@@ -271,9 +273,7 @@ export async function tokenDetail(address: string): Promise<TokenDetail | null> 
 
   const supply = base.price ? base.mc / base.price : 0;
   // Candles in market cap (what memecoin traders read), oldest first.
-  const candles: Candle[] | null = ohlcv
-    ? ohlcv.map(([time, o, h, l, c, v]) => ({ time, open: o * supply, high: h * supply, low: l * supply, close: c * supply, value: v })).reverse()
-    : null;
+  const candles: Candle[] | null = ohlcv ? toCandles(ohlcv, supply) : null;
   // Pool stats describe the pool's base token; when our token is the quote side, derive change from the candles.
   const change = isBase || !candles ? base.change : frames({ m5: 300, h1: 3600, h6: 21600, h24: 86400 }, (sec) => changeOver(candles, sec), 0);
   const txns = isBase ? base.txns : frames(base.txns, (t) => ({ buys: t.sells, sells: t.buys }), { buys: 0, sells: 0 });
@@ -304,8 +304,21 @@ export async function tokenDetail(address: string): Promise<TokenDetail | null> 
     { label: "Holders", value: holders == null ? "–" : holders.toLocaleString("en-US"), ok: holders == null ? null : holders >= 500 },
     { label: "Verified info", value: info?.gt_verified ? "Yes" : info ? "No" : "–", ok: info ? !!info.gt_verified : null },
   ];
-  const risk: Risk =
-    info?.is_honeypot || base.liq < 5_000 || (score != null && score < 35) ? "danger" : checks.some((c) => c.ok === false) ? "caution" : "safe";
+  const analysis = analyzeRisk({
+    symbol: base.symbol,
+    liq: base.liq,
+    mc: base.mc,
+    createdAt: base.createdAt,
+    change,
+    vol: base.vol,
+    txns,
+    holders,
+    score,
+    honeypot: info?.is_honeypot ?? null,
+    verified: info ? !!info.gt_verified : null,
+    trades: tradeRows,
+  });
+  const risk: Risk = badgeOf(analysis.level);
 
   const links = info
     ? [
@@ -317,7 +330,22 @@ export async function tokenDetail(address: string): Promise<TokenDetail | null> 
     : extraLinks;
   links.push({ label: "GeckoTerminal", url: `https://www.geckoterminal.com/${NET}/pools/${pool}` });
 
-  return { ...base, change, txns, risk, holders, score, description: info?.description ?? "", links, checks, candles, trades: tradeRows };
+  return { ...base, change, txns, risk, holders, score, description: info?.description ?? "", links, checks, analysis, candles, trades: tradeRows };
+}
+
+/** GeckoTerminal sometimes repeats a timestamp; the chart needs strictly increasing times, so merge duplicates. */
+export function toCandles(ohlcv: number[][], scale: number): Candle[] {
+  const byTime = new Map<number, Candle>();
+  for (const [time, o, h, l, c, v] of [...ohlcv].sort((a, b) => a[0] - b[0])) {
+    const prev = byTime.get(time);
+    byTime.set(
+      time,
+      prev
+        ? { ...prev, high: Math.max(prev.high, h * scale), low: Math.min(prev.low, l * scale), close: c * scale, value: prev.value + v }
+        : { time, open: o * scale, high: h * scale, low: l * scale, close: c * scale, value: v },
+    );
+  }
+  return [...byTime.values()];
 }
 
 function changeOver(candles: Candle[], sec: number) {

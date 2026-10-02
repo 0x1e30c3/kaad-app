@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CircleCheck, CircleHelp, CircleX } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { num, usd } from "@/lib/mock";
-import { FRAMES, FRAME_LABEL, ageOf, tokenDetail, type TokenDetail } from "@/lib/market";
-import { Pct, RiskBadge, TokenIcon } from "@/components/ui";
+import { FRAMES, FRAME_LABEL, ageOf, tokenDetail } from "@/lib/market";
+import { Pct, TokenIcon } from "@/components/ui";
 import CopyAddress from "@/components/CopyAddress";
 import Chart from "@/components/Chart";
 import TradePanel from "@/components/TradePanel";
 import TokenTabs from "@/components/TokenTabs";
 import TokenActions from "@/components/TokenActions";
+import RiskPanel from "@/components/RiskPanel";
 import AutoRefresh from "@/components/AutoRefresh";
 
 export const revalidate = 30;
@@ -24,30 +25,6 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
       <span className="text-[11px] text-muted">{label}</span>
       <span className="font-medium tabular-nums">{children}</span>
     </div>
-  );
-}
-
-function SafetyChecks({ t }: { t: TokenDetail }) {
-  const failed = t.checks.filter((c) => c.ok === false).length;
-  return (
-    <section className="p-3 border-t border-line flex flex-col gap-2.5">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-[13px]">Safety checks</h3>
-        <RiskBadge risk={t.risk} />
-      </div>
-      <p className="text-[12px] text-muted">
-        {failed === 0 ? "No red flags in the data we have." : `${failed} of ${t.checks.length} checks need attention.`} Not financial advice.
-      </p>
-      <ul className="flex flex-col">
-        {t.checks.map(({ label, ok, value }) => (
-          <li key={label} className="flex items-center gap-2 py-1.5 border-b border-line last:border-0 text-[12px]">
-            {ok === null ? <CircleHelp className="size-3.5 text-faint shrink-0" /> : ok ? <CircleCheck className="size-3.5 text-up shrink-0" /> : <CircleX className="size-3.5 text-down shrink-0" />}
-            <span className="flex-1">{label}</span>
-            <span className={`tabular-nums font-medium ${ok === false ? "text-down" : ok === null ? "text-faint" : ""}`}>{value}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 
@@ -117,7 +94,7 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
         <div id="trade" className="scroll-mt-2">
           <TradePanel t={token} />
         </div>
-        <SafetyChecks t={t} />
+        <RiskPanel a={t.analysis} checks={t.checks} />
         <div className="h-16 lg:hidden" />
       </aside>
 

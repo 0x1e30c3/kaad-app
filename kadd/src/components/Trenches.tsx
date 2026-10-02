@@ -7,6 +7,7 @@ import { ageOf, dexName, type MarketToken } from "@/lib/market";
 import { RiskBadge, TokenIcon } from "./ui";
 import CopyAddress from "./CopyAddress";
 import QuickBuy from "./QuickBuy";
+import Onboarding from "./Onboarding";
 
 type Col = { key: string; title: string; hint: string; tokens: MarketToken[] };
 
@@ -131,6 +132,7 @@ export default function Trenches({ cols }: { cols: Col[] }) {
         <span className="inline-flex items-center gap-1 px-1 rounded bg-up/15 text-up font-semibold"><span className="size-1.5 rounded-full bg-up animate-pulse" />LIVE</span>
         Monad mainnet data, refreshed every 30s. Quick buy trades a testnet mirror of the token with free test USDC.
       </p>
+      <Onboarding />
       <div className="md:hidden grid grid-cols-3 p-0.5 rounded-lg bg-raised">
         {cols.map((c) => (
           <button

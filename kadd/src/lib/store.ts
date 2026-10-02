@@ -9,6 +9,8 @@ import { isUnlocked, unlock } from "./wallet";
 
 export type Fill = TokenRef & { side: "buy" | "sell"; usd: number; amount: number; at: number; hash: string };
 export type Toast = { id: number; msg: string; tone: "ok" | "err" };
+/** Fires once when the live price crosses `price` in the given direction. */
+export type Alert = TokenRef & { id: number; above: boolean; price: number };
 
 type State = {
   user: { address: `0x${string}`; name: string; credentialId: string } | null;
@@ -16,6 +18,8 @@ type State = {
   costs: Record<string, number>;
   fills: Fill[];
   watchlist: TokenRef[];
+  alerts: Alert[];
+  onboardingDone: boolean;
   joined: string[];
   myGroups: Group[];
   // not persisted
@@ -25,7 +29,7 @@ type State = {
   rev: number;
 };
 
-const EMPTY: State = { user: null, costs: {}, fills: [], watchlist: [], joined: [], myGroups: [], loginOpen: false, toasts: [], rev: 0 };
+const EMPTY: State = { user: null, costs: {}, fills: [], watchlist: [], alerts: [], onboardingDone: false, joined: [], myGroups: [], loginOpen: false, toasts: [], rev: 0 };
 const KEY = "kadd:v1";
 
 function load(): State {
@@ -36,7 +40,7 @@ function load(): State {
     const refs = <T,>(xs: unknown): T[] => (Array.isArray(xs) ? xs.filter((x) => x && typeof x === "object" && "symbol" in x) : []);
     // Demo-era balances/positions/fills (no tx hash) are dropped; trades are onchain now.
     const fills = refs<Fill>(saved.fills).filter((f) => f.hash);
-    return { ...EMPTY, user: saved.user ?? null, costs: saved.costs ?? {}, fills, watchlist: refs(saved.watchlist), joined: saved.joined ?? [], myGroups: saved.myGroups ?? [] };
+    return { ...EMPTY, user: saved.user ?? null, costs: saved.costs ?? {}, fills, watchlist: refs(saved.watchlist), alerts: refs(saved.alerts), onboardingDone: !!saved.onboardingDone, joined: saved.joined ?? [], myGroups: saved.myGroups ?? [] };
   } catch {
     return EMPTY;
   }
@@ -100,6 +104,13 @@ export function recordFill(f: Fill, soldFraction = 0) {
 export const refreshChain = () => set((s) => ({ rev: s.rev + 1 }));
 
 export const isWatched = (s: State, address: string) => s.watchlist.some((w) => w.address === address);
+
+export function addAlert(t: TokenRef, above: boolean, price: number) {
+  set((s) => ({ alerts: [...s.alerts, { ...ref(t), id: Date.now(), above, price }] }));
+  toast(`Alert set: ${t.symbol} ${above ? "above" : "below"} $${price.toLocaleString("en-US", { maximumSignificantDigits: 4 })}`);
+}
+export const removeAlert = (id: number) => set((s) => ({ alerts: s.alerts.filter((a) => a.id !== id) }));
+export const dismissOnboarding = () => set({ onboardingDone: true });
 
 export function toggleWatch(t: TokenRef) {
   const on = isWatched(state, t.address);
