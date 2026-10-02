@@ -1,0 +1,391 @@
+{
+  "network": "Monad testnet",
+  "chainId": 10143,
+  "rpc": "https://testnet-rpc.monad.xyz",
+  "explorer": "https://testnet.monadexplorer.com",
+  "generatedAt": "2026-10-02T08:32:43.512Z",
+  "usedByApp": {
+    "KaddVenue": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+    "KaddClubFactory (venue)": "0x4e24ba0762624eaa63e02f3834105efa423a624c",
+    "KaddStrategies": "0xc12684b7063e3c749f0227539601a7b370073cea",
+    "KaddCore": "0x3f8674797756ceba5a217830b6f74a00bf89da70",
+    "TestUSDC (tUSDC)": "0x9173048f7c1d6ebfc72a1932c8d15e3eade180cb"
+  },
+  "contracts": [
+    {
+      "name": "KaddClubFactory (Kuru v1, deprecated)",
+      "contract": "KaddClubFactory",
+      "address": "0x54b16973803397beb3804774fb1f356d6e30ad27",
+      "deployTx": "0x064f696d1445fdcd74c6c6f2cce87a74a38740b1f928d089325a8bd201a2e98e",
+      "block": 67440799,
+      "deployer": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "time": "2026-10-02T03:52:25.567Z",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0x54b16973803397beb3804774fb1f356d6e30ad27"
+    },
+    {
+      "name": "KaddClubFactory (Kuru v2)",
+      "contract": "KaddClubFactory",
+      "address": "0xcf7e32d79553aa97259724bb780b951115f5b647",
+      "deployTx": "0x999ffd5f562e85389b3271352356ab5aba0d559b59c3144b65f9c0d50142401c",
+      "block": 67447080,
+      "deployer": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "time": "2026-10-02T04:24:05.825Z",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0xcf7e32d79553aa97259724bb780b951115f5b647"
+    },
+    {
+      "name": "KaddVenue",
+      "contract": "KaddVenue",
+      "address": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "deployTx": "0x423b7fc0cef317641d5fa24e1f8a9b409384606dca2ea3b20a9182f84a4b91fb",
+      "block": 67481453,
+      "deployer": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "time": "2026-10-02T07:17:12.366Z",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379"
+    },
+    {
+      "name": "KaddClubFactory (venue)",
+      "contract": "KaddClubFactory",
+      "address": "0x4e24ba0762624eaa63e02f3834105efa423a624c",
+      "deployTx": "0xa4d9b9c9fbd4759d4e5b8306b8dbbcc6bade61c4a74aea6d62fb20b2aaf0c717",
+      "block": 67481456,
+      "deployer": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "time": "2026-10-02T07:17:12.366Z",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0x4e24ba0762624eaa63e02f3834105efa423a624c"
+    },
+    {
+      "name": "KaddStrategies",
+      "contract": "KaddStrategies",
+      "address": "0xc12684b7063e3c749f0227539601a7b370073cea",
+      "deployTx": "0x3fc98a73be86ebcd185fecce76613b1af1fc4ad05c3f7f8d005cfc16794e04ec",
+      "block": 67493202,
+      "deployer": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "time": "2026-10-02T08:16:20.318Z",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0xc12684b7063e3c749f0227539601a7b370073cea"
+    },
+    {
+      "name": "KaddCore",
+      "contract": "KaddCore",
+      "address": "0x3f8674797756ceba5a217830b6f74a00bf89da70",
+      "deployTx": "0x423b7fc0cef317641d5fa24e1f8a9b409384606dca2ea3b20a9182f84a4b91fb",
+      "block": 67481453,
+      "deployer": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "time": "2026-10-02T07:17:12.366Z",
+      "createdBy": "KaddVenue constructor",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0x3f8674797756ceba5a217830b6f74a00bf89da70"
+    },
+    {
+      "name": "TestUSDC (tUSDC)",
+      "contract": "TestUSDC",
+      "address": "0x9173048f7c1d6ebfc72a1932c8d15e3eade180cb",
+      "deployTx": "0x423b7fc0cef317641d5fa24e1f8a9b409384606dca2ea3b20a9182f84a4b91fb",
+      "block": 67481453,
+      "deployer": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "time": "2026-10-02T07:17:12.366Z",
+      "createdBy": "KaddVenue constructor",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0x9173048f7c1d6ebfc72a1932c8d15e3eade180cb"
+    }
+  ],
+  "mirrors": [
+    {
+      "symbol": "CHOG",
+      "mainnetToken": "0x350035555e10d9afaf1566aaebfced5ba6c27777",
+      "pool": "0xefe4a63c8a7dd95f5b6eb07496fff0ad18ff0c54",
+      "mirrorToken": "0x11e8d0f48508bdb5a2ab38f56f451f60da9fedb4",
+      "tx": "0xdf20662b8bcdec4ef42cd41e089365444755e05c4d5cebe66a489edc7e84d7ec",
+      "block": 67495087
+    },
+    {
+      "symbol": "MOLANDAK",
+      "mainnetToken": "0x7b2728c04ad436153285702e969e6efac3a97777",
+      "pool": "0x725cdae4c26bca5fa665344674c992de08756b40",
+      "mirrorToken": "0xeb2467a884391f7194bcb8ecd4503a1b7e66474b",
+      "tx": "0x9648147239dd0613a14cf6c0724bd1d18f57b9bd98d4b10a4c47476576f74dfd",
+      "block": 67495090
+    },
+    {
+      "symbol": "emo",
+      "mainnetToken": "0x81a224f8a62f52bde942dbf23a56df77a10b7777",
+      "pool": "0x7fdf3d69b77c0d9f663b567a019a465416c1f774",
+      "mirrorToken": "0x5b0191166f20d25055fff2386c284cc8a1f23ea2",
+      "tx": "0x57cd49f702a929f4107956403aa8ed343dcd5d4068bec7902aacf66ea33de30a",
+      "block": 67495098
+    },
+    {
+      "symbol": "FLING",
+      "mainnetToken": "0xa9da3c77ec7cdc4dfaa1fe142af583543d1c540f",
+      "pool": "0x76d42785f0cc35a76886c35273ea2d7e527c4fe8",
+      "mirrorToken": "0x82869dcb5566782d54e0a00d85d5be3fd73bd805",
+      "tx": "0xbb744324ee267e440c786d91594596c77859b49647824a34ace285a0cc52e1a7",
+      "block": 67495101
+    },
+    {
+      "symbol": "ANAGO",
+      "mainnetToken": "0x3ec7310937281ca4bf89d5bb11704be9b7ff7777",
+      "pool": "0x4d34b1c5e7182c9c5ddc6b96fb433415ba2f983b",
+      "mirrorToken": "0xa631d4ef6c892952d1f9640055af891d2d55eae2",
+      "tx": "0x14c3e199277463d6c6e7f6473537cc2283bc0371c5ee26524ed8dd00673525a5",
+      "block": 67495109
+    },
+    {
+      "symbol": "APR",
+      "mainnetToken": "0x0a332311633c0625f63cfc51ee33fc49826e0a3c",
+      "pool": "0x679c0316c25c648d2160830cc89c1d1edaf0cda7",
+      "mirrorToken": "0x62acb5ea5c4c085146b35e17cba40981e071ee31",
+      "tx": "0x79c7353154f92d004515509fbbc40bac8f35ce371f20060b6e5e35f785a49202",
+      "block": 67495112
+    }
+  ],
+  "transactions": [
+    {
+      "script": "Deploy.s.sol",
+      "type": "CREATE",
+      "contract": "KaddClubFactory",
+      "function": null,
+      "arguments": [
+        "0xdbaaDe7B42c95399bb1E9614D51B5B9e2cf78038",
+        "0xA402B424f392EAA05DBc8779e4502A1F6A96fEF1"
+      ],
+      "address": "0x54b16973803397beb3804774fb1f356d6e30ad27",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0x064f696d1445fdcd74c6c6f2cce87a74a38740b1f928d089325a8bd201a2e98e",
+      "block": 67440799,
+      "status": "success",
+      "gasUsed": 2691375,
+      "feeMon": 0.27721162500269136,
+      "time": "2026-10-02T03:52:25.567Z",
+      "gitCommit": null,
+      "explorer": "https://testnet.monadexplorer.com/tx/0x064f696d1445fdcd74c6c6f2cce87a74a38740b1f928d089325a8bd201a2e98e",
+      "logCount": 0
+    },
+    {
+      "script": "Deploy.s.sol",
+      "type": "CREATE",
+      "contract": "KaddClubFactory",
+      "function": null,
+      "arguments": [
+        "0xdbaaDe7B42c95399bb1E9614D51B5B9e2cf78038",
+        "0xA402B424f392EAA05DBc8779e4502A1F6A96fEF1"
+      ],
+      "address": "0xcf7e32d79553aa97259724bb780b951115f5b647",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0x999ffd5f562e85389b3271352356ab5aba0d559b59c3144b65f9c0d50142401c",
+      "block": 67447080,
+      "status": "success",
+      "gasUsed": 3030261,
+      "feeMon": 0.318177405,
+      "time": "2026-10-02T04:24:05.825Z",
+      "gitCommit": null,
+      "explorer": "https://testnet.monadexplorer.com/tx/0x999ffd5f562e85389b3271352356ab5aba0d559b59c3144b65f9c0d50142401c",
+      "logCount": 0
+    },
+    {
+      "script": "DeployVenue.s.sol",
+      "type": "CREATE",
+      "contract": "KaddVenue",
+      "function": null,
+      "arguments": null,
+      "address": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0x423b7fc0cef317641d5fa24e1f8a9b409384606dca2ea3b20a9182f84a4b91fb",
+      "block": 67481453,
+      "status": "success",
+      "gasUsed": 3943895,
+      "feeMon": 0.4062211850039439,
+      "time": "2026-10-02T07:17:12.366Z",
+      "gitCommit": "bcd2a51",
+      "explorer": "https://testnet.monadexplorer.com/tx/0x423b7fc0cef317641d5fa24e1f8a9b409384606dca2ea3b20a9182f84a4b91fb",
+      "logCount": 0
+    },
+    {
+      "script": "DeployVenue.s.sol",
+      "type": "CREATE",
+      "contract": "KaddClubFactory",
+      "function": null,
+      "arguments": [
+        "0x3F8674797756cEbA5A217830b6F74A00Bf89DA70",
+        "0x9173048f7c1D6ebfC72a1932C8d15E3EADE180CB"
+      ],
+      "address": "0x4e24ba0762624eaa63e02f3834105efa423a624c",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0xa4d9b9c9fbd4759d4e5b8306b8dbbcc6bade61c4a74aea6d62fb20b2aaf0c717",
+      "block": 67481456,
+      "status": "success",
+      "gasUsed": 3030245,
+      "feeMon": 0.3121152350030303,
+      "time": "2026-10-02T07:17:12.366Z",
+      "gitCommit": "bcd2a51",
+      "explorer": "https://testnet.monadexplorer.com/tx/0xa4d9b9c9fbd4759d4e5b8306b8dbbcc6bade61c4a74aea6d62fb20b2aaf0c717",
+      "logCount": 0
+    },
+    {
+      "script": "DeployStrategies.s.sol",
+      "type": "CREATE",
+      "contract": "KaddStrategies",
+      "function": null,
+      "arguments": [
+        "0xe4c0c88a4b2e5b150D3bB8D3d391E6A87b3d5379"
+      ],
+      "address": "0xc12684b7063e3c749f0227539601a7b370073cea",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0x3fc98a73be86ebcd185fecce76613b1af1fc4ad05c3f7f8d005cfc16794e04ec",
+      "block": 67493202,
+      "status": "success",
+      "gasUsed": 1645736,
+      "feeMon": 0.16951080800164572,
+      "time": "2026-10-02T08:16:20.318Z",
+      "gitCommit": "0276db0",
+      "explorer": "https://testnet.monadexplorer.com/tx/0x3fc98a73be86ebcd185fecce76613b1af1fc4ad05c3f7f8d005cfc16794e04ec",
+      "logCount": 0
+    },
+    {
+      "script": "SeedMirrors.s.sol",
+      "type": "CALL",
+      "contract": null,
+      "function": "createMirror(address,string,string,uint256)",
+      "arguments": [
+        "0x350035555E10d9AfAF1566AaebfCeD5BA6C27777",
+        "Chog",
+        "CHOG",
+        "16501650165017000000000000"
+      ],
+      "address": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0xdf20662b8bcdec4ef42cd41e089365444755e05c4d5cebe66a489edc7e84d7ec",
+      "block": 67495087,
+      "status": "success",
+      "gasUsed": 1876417,
+      "feeMon": 0.1932709510018764,
+      "time": "2026-10-02T08:25:55.842Z",
+      "gitCommit": "0276db0",
+      "explorer": "https://testnet.monadexplorer.com/tx/0xdf20662b8bcdec4ef42cd41e089365444755e05c4d5cebe66a489edc7e84d7ec",
+      "logCount": 4
+    },
+    {
+      "script": "SeedMirrors.s.sol",
+      "type": "CALL",
+      "contract": null,
+      "function": "createMirror(address,string,string,uint256)",
+      "arguments": [
+        "0x7B2728c04aD436153285702e969e6EfAc3a97777",
+        "MOLANDAK",
+        "MOLANDAK",
+        "99383820314053000000000000"
+      ],
+      "address": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0x9648147239dd0613a14cf6c0724bd1d18f57b9bd98d4b10a4c47476576f74dfd",
+      "block": 67495090,
+      "status": "success",
+      "gasUsed": 1832008,
+      "feeMon": 0.188696824001832,
+      "time": "2026-10-02T08:25:55.842Z",
+      "gitCommit": "0276db0",
+      "explorer": "https://testnet.monadexplorer.com/tx/0x9648147239dd0613a14cf6c0724bd1d18f57b9bd98d4b10a4c47476576f74dfd",
+      "logCount": 4
+    },
+    {
+      "script": "SeedMirrors.s.sol",
+      "type": "CALL",
+      "contract": null,
+      "function": "createMirror(address,string,string,uint256)",
+      "arguments": [
+        "0x81A224F8A62f52BdE942dBF23A56df77A10b7777",
+        "emonad",
+        "emo",
+        "45289855072464000000000000"
+      ],
+      "address": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0x57cd49f702a929f4107956403aa8ed343dcd5d4068bec7902aacf66ea33de30a",
+      "block": 67495098,
+      "status": "success",
+      "gasUsed": 1831883,
+      "feeMon": 0.18868394900183189,
+      "time": "2026-10-02T08:25:55.842Z",
+      "gitCommit": "0276db0",
+      "explorer": "https://testnet.monadexplorer.com/tx/0x57cd49f702a929f4107956403aa8ed343dcd5d4068bec7902aacf66ea33de30a",
+      "logCount": 4
+    },
+    {
+      "script": "SeedMirrors.s.sol",
+      "type": "CALL",
+      "contract": null,
+      "function": "createMirror(address,string,string,uint256)",
+      "arguments": [
+        "0xA9da3C77eC7cDc4DfaA1FE142AF583543D1c540F",
+        "Fling",
+        "FLING",
+        "134698275862069000000000000"
+      ],
+      "address": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0xbb744324ee267e440c786d91594596c77859b49647824a34ace285a0cc52e1a7",
+      "block": 67495101,
+      "status": "success",
+      "gasUsed": 1831914,
+      "feeMon": 0.1886871420018319,
+      "time": "2026-10-02T08:25:55.842Z",
+      "gitCommit": "0276db0",
+      "explorer": "https://testnet.monadexplorer.com/tx/0xbb744324ee267e440c786d91594596c77859b49647824a34ace285a0cc52e1a7",
+      "logCount": 4
+    },
+    {
+      "script": "SeedMirrors.s.sol",
+      "type": "CALL",
+      "contract": null,
+      "function": "createMirror(address,string,string,uint256)",
+      "arguments": [
+        "0x3Ec7310937281CA4Bf89D5bB11704bE9b7ff7777",
+        "ANAGO",
+        "ANAGO",
+        "480769230769231000000000000"
+      ],
+      "address": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0x14c3e199277463d6c6e7f6473537cc2283bc0371c5ee26524ed8dd00673525a5",
+      "block": 67495109,
+      "status": "success",
+      "gasUsed": 1831930,
+      "feeMon": 0.18868879000183195,
+      "time": "2026-10-02T08:25:55.842Z",
+      "gitCommit": "0276db0",
+      "explorer": "https://testnet.monadexplorer.com/tx/0x14c3e199277463d6c6e7f6473537cc2283bc0371c5ee26524ed8dd00673525a5",
+      "logCount": 4
+    },
+    {
+      "script": "SeedMirrors.s.sol",
+      "type": "CALL",
+      "contract": null,
+      "function": "createMirror(address,string,string,uint256)",
+      "arguments": [
+        "0x0a332311633C0625f63CFc51EE33fC49826E0a3C",
+        "aPriori",
+        "APR",
+        "377358490566000000000000"
+      ],
+      "address": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0x79c7353154f92d004515509fbbc40bac8f35ce371f20060b6e5e35f785a49202",
+      "block": 67495112,
+      "status": "success",
+      "gasUsed": 1831898,
+      "feeMon": 0.1886854940018319,
+      "time": "2026-10-02T08:25:55.842Z",
+      "gitCommit": "0276db0",
+      "explorer": "https://testnet.monadexplorer.com/tx/0x79c7353154f92d004515509fbbc40bac8f35ce371f20060b6e5e35f785a49202",
+      "logCount": 4
+    }
+  ],
+  "totals": {
+    "transactions": 11,
+    "gasUsed": 25377562,
+    "feeMon": 2.619949408022347
+  }
+}

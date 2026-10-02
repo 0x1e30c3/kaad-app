@@ -18,6 +18,9 @@ See the contract header in `src/KaddClub.sol` for the design and trust assumptio
 
 Wired to Kuru AccountCore `0xdbaaDe7B42c95399bb1E9614D51B5B9e2cf78038` and USDC `0xA402B424f392EAA05DBc8779e4502A1F6A96fEF1`.
 
+All deployments, deploy transactions (hash, block, gas, fee), verification status and the seeded mirror pools are in
+[`deployment.json`](./deployment.json). Regenerate it after any deploy with `node export-deployments.mjs`.
+
 ## Testnet venue (what the app trades on)
 
 Kuru's testnet books are empty and its USDC is admin-mint only, and Kuru V2 only lists governance-whitelisted tokens,
