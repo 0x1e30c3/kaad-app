@@ -91,7 +91,13 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
         </div>
 
         <div className="h-[340px] md:h-[400px] shrink-0 px-1 pt-2 border-b border-line bg-panel">
-          {candles.length ? <Chart data={candles} /> : <p className="grid h-full place-items-center text-muted">No trades in the last 24 hours.</p>}
+          {candles === null ? (
+            <p className="grid h-full place-items-center px-6 text-center text-muted">Chart is temporarily unavailable (data provider busy). It refreshes on its own in a moment.</p>
+          ) : candles.length ? (
+            <Chart data={candles} />
+          ) : (
+            <p className="grid h-full place-items-center text-muted">No trades in the last 24 hours.</p>
+          )}
         </div>
 
         <div className="bg-panel flex-1">

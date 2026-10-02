@@ -9,7 +9,7 @@ import { allGroups, useStore } from "@/lib/store";
 const SCAN = "https://monadscan.com";
 const ago = (sec: number) => (sec < 60 ? `${sec}s` : sec < 3600 ? `${Math.floor(sec / 60)}m` : `${Math.floor(sec / 3600)}h`);
 
-export default function TokenTabs({ t, trades }: { t: Omit<TokenDetail, "candles" | "trades">; trades: TokenTrade[] }) {
+export default function TokenTabs({ t, trades }: { t: Omit<TokenDetail, "candles" | "trades">; trades: TokenTrade[] | null }) {
   const tabs = [
     ["trades", "Trades"],
     ["info", "Info"],
@@ -38,7 +38,9 @@ export default function TokenTabs({ t, trades }: { t: Omit<TokenDetail, "candles
       </div>
 
       {tab === "trades" &&
-        (trades.length ? (
+        (trades === null ? (
+          <p className="py-16 px-6 text-center text-muted">Trades are temporarily unavailable (data provider busy). They refresh on their own in a moment.</p>
+        ) : trades.length ? (
           <table className="w-full text-[12px] tabular-nums">
             <thead className="text-[11px] text-muted">
               <tr className="border-b border-line">

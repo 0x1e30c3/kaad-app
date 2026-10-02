@@ -32,8 +32,9 @@ export type TokenDetail = MarketToken & {
   description: string;
   links: { label: string; url: string }[];
   checks: Check[];
-  candles: Candle[];
-  trades: TokenTrade[];
+  /** null = the chart / trades provider is rate-limiting right now; the page retries on its own. */
+  candles: Candle[] | null;
+  trades: TokenTrade[] | null;
 };
 
 // "Money" assets (stables, wrapped majors, MON liquid-staking tokens) aren't what a memecoin terminal lists, and a
@@ -152,15 +153,15 @@ type Pair = {
   fdv?: number;
   marketCap?: number;
   pairCreatedAt?: number;
-  info?: { imageUrl?: string };
+  info?: { imageUrl?: string; websites?: { label?: string; url: string }[]; socials?: { type: string; url: string }[] };
 };
 
-/** Monad pairs → one token each (its most liquid pair), skipping money assets. */
-function fromPairs(pairs: Pair[]): MarketToken[] {
+/** Monad pairs → one token each (its most liquid pair), skipping money assets unless `all`. */
+function fromPairs(pairs: Pair[], all = false): MarketToken[] {
   const best = new Map<string, Pair>();
   for (const p of pairs) {
     const addr = p.baseToken.address.toLowerCase();
-    if (p.chainId !== NET || isMoney({ ...p.baseToken, image_url: null })) continue;
+    if (p.chainId !== NET || (!all && isMoney({ ...p.baseToken, image_url: null }))) continue;
     if ((best.get(addr)?.liquidity?.usd ?? -1) < (p.liquidity?.usd ?? 0)) best.set(addr, p);
   }
   return [...best.values()].map((p) => {
@@ -216,10 +217,19 @@ type Info = {
   is_honeypot: boolean | null;
 };
 
-/** Everything the token page needs. Returns null when GeckoTerminal doesn't know the token or it has no pool. */
-export async function tokenDetail(address: string): Promise<TokenDetail | null> {
-  const addr = address.toLowerCase();
-  if (!isAddress(addr)) return null;
+/** The token's main pool and stats: DexScreener first (generous rate limit), GeckoTerminal if it doesn't know it. */
+async function tokenCore(addr: string): Promise<{ base: MarketToken; isBase: boolean; extraLinks: { label: string; url: string }[] } | null> {
+  const pairs = await ds<Pair[]>(`/tokens/v1/${NET}/${addr}`).catch(() => null);
+  const fromDs = pairs ? fromPairs(pairs, true).find((t) => t.address === addr) : undefined;
+  if (fromDs) {
+    const info = pairs!.find((p) => p.pairAddress.toLowerCase() === fromDs.pool)?.info;
+    const extraLinks = [
+      ...(info?.websites ?? []).slice(0, 1).map((w) => ({ label: "Website", url: w.url })),
+      ...(info?.socials ?? []).map((x) => ({ label: x.type === "twitter" ? "X" : x.type[0].toUpperCase() + x.type.slice(1), url: x.url })),
+    ];
+    return { base: fromDs, isBase: true, extraLinks };
+  }
+
   const id = `${NET}_${addr}`;
   let tok: { data: { attributes: TokenAttrs & { price_usd: string; market_cap_usd: string | null; fdv_usd: string | null } }; included?: Pool[] };
   try {
@@ -231,41 +241,57 @@ export async function tokenDetail(address: string): Promise<TokenDetail | null> 
   const pools = tok.included ?? [];
   const top = pools.find((p) => p.relationships.base_token.data?.id === id) ?? pools[0];
   if (!top) return null;
-  const isBase = top.relationships.base_token.data?.id === id;
-  const pool = top.attributes.address;
+  const t = tok.data.attributes;
+  const base = toToken(top, t);
+  return {
+    base: { ...base, price: n(t.price_usd) || base.price, mc: n(t.market_cap_usd) || n(t.fdv_usd) || base.mc },
+    isBase: top.relationships.base_token.data?.id === id,
+    extraLinks: [],
+  };
+}
+
+/** Everything the token page needs. Returns null when no provider knows the token or it has no pool. Chart, trades
+ * and info are best-effort: if GeckoTerminal rate-limits, those parts come back empty and the page still renders. */
+export async function tokenDetail(address: string): Promise<TokenDetail | null> {
+  const addr = address.toLowerCase();
+  if (!isAddress(addr)) return null;
+  const core = await tokenCore(addr);
+  if (!core) return null;
+  const { base, isBase, extraLinks } = core;
+  const pool = base.pool;
 
   const [info, ohlcv, trades] = await Promise.all([
     gt<{ data: { attributes: Info } }>(`/networks/${NET}/tokens/${addr}/info`, 600).then((j) => j.data.attributes, () => null),
-    gt<{ data: { attributes: { ohlcv_list: number[][] } } }>(`/networks/${NET}/pools/${pool}/ohlcv/minute?aggregate=5&limit=288&token=${addr}`, 60),
-    gt<{ data: { attributes: Record<string, string> }[] }>(`/networks/${NET}/pools/${pool}/trades`, 15),
+    gt<{ data: { attributes: { ohlcv_list: number[][] } } }>(`/networks/${NET}/pools/${pool}/ohlcv/minute?aggregate=5&limit=288&token=${addr}`, 60).then(
+      (j) => j.data.attributes.ohlcv_list,
+      () => null,
+    ),
+    gt<{ data: { attributes: Record<string, string> }[] }>(`/networks/${NET}/pools/${pool}/trades`, 30).then((j) => j.data, () => null),
   ]);
 
-  const base = toToken(top, tok.data.attributes);
-  const price = n(tok.data.attributes.price_usd) || base.price;
-  const mc = n(tok.data.attributes.market_cap_usd) || n(tok.data.attributes.fdv_usd) || base.mc;
-  const supply = price ? mc / price : 0;
-
+  const supply = base.price ? base.mc / base.price : 0;
   // Candles in market cap (what memecoin traders read), oldest first.
-  const candles: Candle[] = ohlcv.data.attributes.ohlcv_list
-    .map(([time, o, h, l, c, v]) => ({ time, open: o * supply, high: h * supply, low: l * supply, close: c * supply, value: v }))
-    .reverse();
+  const candles: Candle[] | null = ohlcv
+    ? ohlcv.map(([time, o, h, l, c, v]) => ({ time, open: o * supply, high: h * supply, low: l * supply, close: c * supply, value: v })).reverse()
+    : null;
   // Pool stats describe the pool's base token; when our token is the quote side, derive change from the candles.
-  const change = isBase ? base.change : frames({ m5: 300, h1: 3600, h6: 21600, h24: 86400 }, (sec) => changeOver(candles, sec), 0);
+  const change = isBase || !candles ? base.change : frames({ m5: 300, h1: 3600, h6: 21600, h24: 86400 }, (sec) => changeOver(candles, sec), 0);
   const txns = isBase ? base.txns : frames(base.txns, (t) => ({ buys: t.sells, sells: t.buys }), { buys: 0, sells: 0 });
 
   const now = Date.now();
-  const tradeRows: TokenTrade[] = trades.data.slice(0, 50).map(({ attributes: t }) => {
-    const buy = t.to_token_address?.toLowerCase() === addr;
-    return {
-      ageSec: Math.max(0, Math.round((now - Date.parse(t.block_timestamp)) / 1000)),
-      side: buy ? "buy" : "sell",
-      usd: n(t.volume_in_usd),
-      amount: n(buy ? t.to_token_amount : t.from_token_amount),
-      mc: n(buy ? t.price_to_in_usd : t.price_from_in_usd) * supply,
-      trader: t.tx_from_address,
-      tx: t.tx_hash,
-    };
-  });
+  const tradeRows: TokenTrade[] | null =
+    trades?.slice(0, 50).map(({ attributes: t }) => {
+      const buy = t.to_token_address?.toLowerCase() === addr;
+      return {
+        ageSec: Math.max(0, Math.round((now - Date.parse(t.block_timestamp)) / 1000)),
+        side: buy ? "buy" : "sell",
+        usd: n(t.volume_in_usd),
+        amount: n(buy ? t.to_token_amount : t.from_token_amount),
+        mc: n(buy ? t.price_to_in_usd : t.price_from_in_usd) * supply,
+        trader: t.tx_from_address,
+        tx: t.tx_hash,
+      };
+    }) ?? null;
 
   const holders = info?.holders?.count ?? null;
   const score = info?.gt_score ?? null;
@@ -276,20 +302,22 @@ export async function tokenDetail(address: string): Promise<TokenDetail | null> 
     { label: "Liquidity", value: `$${Math.round(base.liq).toLocaleString("en-US")}`, ok: base.liq >= 10_000 },
     { label: "Pool age", value: ageH < 48 ? `${Math.round(ageH)}h` : `${Math.round(ageH / 24)}d`, ok: ageH >= 24 },
     { label: "Holders", value: holders == null ? "–" : holders.toLocaleString("en-US"), ok: holders == null ? null : holders >= 500 },
-    { label: "Verified info", value: info?.gt_verified ? "Yes" : "No", ok: info ? !!info.gt_verified : null },
+    { label: "Verified info", value: info?.gt_verified ? "Yes" : info ? "No" : "–", ok: info ? !!info.gt_verified : null },
   ];
   const risk: Risk =
     info?.is_honeypot || base.liq < 5_000 || (score != null && score < 35) ? "danger" : checks.some((c) => c.ok === false) ? "caution" : "safe";
 
-  const links = [
-    ...(info?.websites ?? []).slice(0, 1).map((url) => ({ label: "Website", url })),
-    ...(info?.twitter_handle ? [{ label: "X", url: `https://x.com/${info.twitter_handle}` }] : []),
-    ...(info?.telegram_handle ? [{ label: "Telegram", url: `https://t.me/${info.telegram_handle}` }] : []),
-    ...(info?.discord_url ? [{ label: "Discord", url: info.discord_url }] : []),
-    { label: "GeckoTerminal", url: `https://www.geckoterminal.com/${NET}/pools/${pool}` },
-  ];
+  const links = info
+    ? [
+        ...(info.websites ?? []).slice(0, 1).map((url) => ({ label: "Website", url })),
+        ...(info.twitter_handle ? [{ label: "X", url: `https://x.com/${info.twitter_handle}` }] : []),
+        ...(info.telegram_handle ? [{ label: "Telegram", url: `https://t.me/${info.telegram_handle}` }] : []),
+        ...(info.discord_url ? [{ label: "Discord", url: info.discord_url }] : []),
+      ]
+    : extraLinks;
+  links.push({ label: "GeckoTerminal", url: `https://www.geckoterminal.com/${NET}/pools/${pool}` });
 
-  return { ...base, price, mc, change, txns, risk, holders, score, description: info?.description ?? "", links, checks, candles, trades: tradeRows };
+  return { ...base, change, txns, risk, holders, score, description: info?.description ?? "", links, checks, candles, trades: tradeRows };
 }
 
 function changeOver(candles: Candle[], sec: number) {
