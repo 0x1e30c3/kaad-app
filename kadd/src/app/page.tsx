@@ -36,7 +36,7 @@ const TAGS: [string, string][] = [
 
 const WHY = [
   ["No seed phrase", "The passkey already on your phone is the key. New device? Your account follows the same passkey."],
-  ["Social by default", "gmgn is built for solo traders. Kadd is built for groups: friends' feeds, shared clubs, weekly leaderboards."],
+  ["Social by default", "Most trading tools assume you trade alone. Kadd is built for groups: friends' feeds, shared clubs, weekly leaderboards."],
   ["Risk you can read", "Every token gets a safety check with plain-language reasons: holder concentration, dev wallet, snipers, insiders."],
   ["Exchange-grade speed", "Monad closes a block every 400ms, so a trade confirms in under a second — no pending states."],
 ];
@@ -64,7 +64,7 @@ const STATS: [string, number | null, string, string][] = [
 const FAQ = [
   ["Does Kadd hold my funds?", "No. Your account comes from the passkey on your device, and club funds are held by a contract on Monad. Kadd has no access to your keys and no way to withdraw club funds."],
   ["What if a club's captain disappears?", "Every member can withdraw their share at any time, straight from the contract, without the captain's permission. Captains can only trade approved markets, within a per-trade limit."],
-  ["How is this different from gmgn?", "gmgn is a terminal for experienced traders trading alone. Kadd is about trading together: groups, friends' feeds, pooled clubs, and risk explained in plain language."],
+  ["How is Kadd different from other trading terminals?", "Most terminals are built for experienced traders working alone. Kadd is about trading together: groups, friends' feeds, pooled onchain clubs, and risk explained in plain language."],
   ["Can I use it today?", "Yes, on Monad testnet. Token data is live from mainnet; swaps and clubs are real testnet transactions with free test USDC, so nothing has real value yet."],
 ];
 
