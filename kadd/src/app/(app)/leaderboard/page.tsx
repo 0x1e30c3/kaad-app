@@ -29,7 +29,8 @@ export default function LeaderboardPage() {
 
   return (
     <div className="p-3 md:p-5 max-w-5xl mx-auto">
-      <PageHeader title="Leaderboard" desc="Top traders and groups by PnL on Kadd.">
+      <PageHeader title="Leaderboard" desc="Top traders and groups by PnL. Demo data until groups go onchain.">
+        <Link href="/stats" className="h-8 px-3 grid place-items-center rounded-md border border-line text-[12px] font-medium text-muted hover:text-fg">Real network stats →</Link>
         <div className="flex p-0.5 rounded-lg bg-raised">
           {TABS.map(([v, l]) => <button key={v} onClick={() => setTab(v)} className={seg(tab === v)}>{l}</button>)}
         </div>

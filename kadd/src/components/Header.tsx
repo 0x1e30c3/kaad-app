@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Flame, Layers, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
+import { BarChart3, Flame, Layers, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import Search from "./Search";
 import Account from "./Account";
@@ -15,13 +15,15 @@ const NAV: [string, string, LucideIcon, string, boolean?][] = [
   ["/groups", "Groups & Clubs", Users, "3"],
   ["/leaderboard", "Leaderboard", Trophy, "4"],
   ["/portfolio", "Portfolio", Wallet, "5"],
+  ["/stats", "Stats", BarChart3, "6"],
 ];
+const MOBILE = NAV.slice(0, 5); // Stats is reachable from Leaderboard on phones
 const SHORT: Record<string, string> = { "/groups": "Groups" }; // label where space is tight
 
 const isActive = (path: string, href: string) =>
   href === "/trenches" ? path.startsWith("/trenches") || path.startsWith("/token") : href === "/groups" ? path.startsWith("/groups") || path.startsWith("/clubs") : path.startsWith(href);
 
-/** Number keys 1–5 jump between sections, unless the user is typing. */
+/** Number keys 1–6 jump between sections, unless the user is typing. */
 function useShortcuts() {
   const router = useRouter();
   useEffect(() => {
@@ -83,7 +85,7 @@ export default function Header() {
       </header>
 
       <nav aria-label="Main" className="md:hidden fixed bottom-0 inset-x-0 z-20 grid grid-cols-5 border-t border-line bg-panel/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
-        {NAV.map(([href, label, Icon, , live]) => {
+        {MOBILE.map(([href, label, Icon, , live]) => {
           const on = isActive(path, href);
           return (
             <Link

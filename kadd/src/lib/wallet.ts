@@ -7,13 +7,9 @@ import { toViemAccount } from "@category-labs/mera/viem";
 import { HDKey } from "@scure/bip32";
 import { entropyToMnemonic, mnemonicToSeedSync } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
-import { createPublicClient, createWalletClient, formatEther, http, type LocalAccount } from "viem";
-import { monadTestnet } from "viem/chains";
-
-export const chain = monadTestnet;
-// NEXT_PUBLIC_RPC_URL lets the app point at a local fork (anvil) for testing; defaults to the public RPC.
-const transport = () => http(process.env.NEXT_PUBLIC_RPC_URL || undefined);
-export const publicClient = createPublicClient({ chain, transport: transport() });
+import { createWalletClient, formatEther, type LocalAccount } from "viem";
+import { chain, publicClient, transport } from "./chain";
+export { chain, publicClient };
 
 let session: Secp256k1SigningSession | null = null;
 let account: LocalAccount | null = null;
