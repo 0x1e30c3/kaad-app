@@ -7,7 +7,8 @@ import { toViemAccount } from "@category-labs/mera/viem";
 import { HDKey } from "@scure/bip32";
 import { entropyToMnemonic, mnemonicToSeedSync } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
-import { createWalletClient, formatEther, type LocalAccount } from "viem";
+import { createWalletClient, formatEther, http, type LocalAccount } from "viem";
+import { monad } from "viem/chains";
 import { chain, publicClient, transport } from "./chain";
 export { chain, publicClient };
 
@@ -57,6 +58,12 @@ export const isUnlocked = () => account !== null;
 export function walletClient() {
   if (!account) throw new Error("Account locked, sign in with your passkey first");
   return createWalletClient({ account, chain, transport: transport() });
+}
+
+/** The same passkey account on Monad mainnet (same address), for live trades routed through Kuru. */
+export function mainnetWalletClient() {
+  if (!account) throw new Error("Account locked, sign in with your passkey first");
+  return createWalletClient({ account, chain: monad, transport: http() });
 }
 
 export async function getMonBalance(address: `0x${string}`) {

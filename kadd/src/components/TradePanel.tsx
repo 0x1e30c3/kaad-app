@@ -8,6 +8,7 @@ import type { RiskAnalysis } from "@/lib/risk";
 import { LEVEL } from "./RiskPanel";
 import StrategyForm from "./StrategyForm";
 import StrategiesList from "./StrategiesList";
+import KuruTrade from "./KuruTrade";
 import type { Kind } from "@/lib/strategies";
 import { openLogin, useStore } from "@/lib/store";
 import { buyToken, faucet, sellToken, useWallet } from "@/lib/swap";
@@ -15,7 +16,27 @@ import { EXPLORER, USDC_DECIMALS, VENUE_READY, marketFor, quote, type Market } f
 
 const PRESETS = { buy: ["10", "25", "50", "100"], sell: ["25", "50", "75", "100"] };
 
+/** Practice on Kadd testnet (free test USDC, mainnet prices) or trade live on Monad mainnet through Kuru. */
 export default function TradePanel({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
+  const [net, setNet] = useState<"testnet" | "mainnet">("testnet");
+  return (
+    <div className="flex flex-col">
+      <div className="px-3 pt-3">
+        <div role="tablist" aria-label="Network" className="grid grid-cols-2 p-0.5 rounded-lg bg-raised text-[12px] font-semibold">
+          <button role="tab" aria-selected={net === "testnet"} onClick={() => setNet("testnet")} className={`h-8 rounded-md ${net === "testnet" ? "bg-panel shadow-sm text-fg" : "text-muted hover:text-fg"}`}>
+            Practice · testnet
+          </button>
+          <button role="tab" aria-selected={net === "mainnet"} onClick={() => setNet("mainnet")} className={`h-8 rounded-md ${net === "mainnet" ? "bg-panel shadow-sm text-fg" : "text-muted hover:text-fg"}`}>
+            Live · Kuru
+          </button>
+        </div>
+      </div>
+      {net === "testnet" ? <TestnetTrade t={t} /> : <KuruTrade token={t.address as `0x${string}`} symbol={t.symbol} />}
+    </div>
+  );
+}
+
+function TestnetTrade({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState<"trade" | "faucet" | null>(null);
