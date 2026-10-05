@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ChevronDown, Coins, Copy, Droplet, ExternalLink, Lock, LogOut, Star, Users, Wallet } from "lucide-react";
 import { short } from "@/lib/mock";
 import { logout, openLogin, toast, useStore } from "@/lib/store";
-import { faucet, useWallet } from "@/lib/swap";
+import { faucet, requestGas, useWallet } from "@/lib/swap";
 import { chain, getMonBalance, isUnlocked, lock } from "@/lib/wallet";
 
 export default function Account() {
@@ -66,9 +66,9 @@ export default function Account() {
               </div>
             </dl>
             {typeof mon === "number" && mon < 0.05 && (
-              <a href="https://faucet.monad.xyz" target="_blank" rel="noreferrer" className="text-[11px] text-warn hover:underline">
-                You need testnet MON for gas. Get some at faucet.monad.xyz →
-              </a>
+              <button onClick={() => (close(), requestGas(user.address))} className="text-left text-[11px] text-warn hover:underline">
+                You need testnet MON for gas. Get some free →
+              </button>
             )}
             {!unlocked && (
               <button onClick={() => (close(), openLogin())} className="mt-1 h-8 rounded-md bg-fg text-bg font-semibold text-[12px]">

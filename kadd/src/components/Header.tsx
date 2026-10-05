@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Flame, Layers, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
+import { BarChart3, Bot, Flame, Layers, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import Search from "./Search";
 import Account from "./Account";
@@ -16,14 +16,15 @@ const NAV: [string, string, LucideIcon, string, boolean?][] = [
   ["/leaderboard", "Leaderboard", Trophy, "4"],
   ["/portfolio", "Portfolio", Wallet, "5"],
   ["/stats", "Stats", BarChart3, "6"],
+  ["/agents", "AI Agents", Bot, "7"],
 ];
-const MOBILE = NAV.slice(0, 5); // Stats is reachable from Leaderboard on phones
+const MOBILE = NAV.slice(0, 5); // Stats and AI Agents are reachable from Leaderboard on phones
 const SHORT: Record<string, string> = { "/groups": "Groups" }; // label where space is tight
 
 const isActive = (path: string, href: string) =>
   href === "/trenches" ? path.startsWith("/trenches") || path.startsWith("/token") : href === "/groups" ? path.startsWith("/groups") || path.startsWith("/clubs") : path.startsWith(href);
 
-/** Number keys 1–6 jump between sections, unless the user is typing. */
+/** Number keys 1–7 jump between sections, unless the user is typing. */
 function useShortcuts() {
   const router = useRouter();
   useEffect(() => {

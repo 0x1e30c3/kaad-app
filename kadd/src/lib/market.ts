@@ -4,7 +4,10 @@
 import { age, type Candle, type Risk } from "./mock";
 import { analyzeRisk, badgeOf, type RiskAnalysis } from "./risk";
 
-const GT = "https://api.geckoterminal.com/api/v2";
+// GeckoTerminal data. With COINGECKO_API_KEY (CoinGecko's free Demo plan works) the same endpoints go through
+// CoinGecko's onchain API, rate-limited per key instead of per IP (shared cloud IPs get throttled by others' traffic).
+const CG_KEY = process.env.COINGECKO_API_KEY;
+const GT = CG_KEY ? "https://api.coingecko.com/api/v3/onchain" : "https://api.geckoterminal.com/api/v2";
 const DS = "https://api.dexscreener.com";
 const NET = "monad";
 
@@ -69,9 +72,20 @@ export class NotFound extends Error {}
 // error page. ponytail: per-server-instance memory, unbounded by URL count; fine at hackathon traffic.
 const lastGood = new Map<string, unknown>();
 
-async function get<T>(url: string, revalidate: number): Promise<T> {
-  const res = await fetch(url, { headers: { accept: "application/json" }, next: { revalidate } }).catch(() => null);
+// GeckoTerminal allows ~30 requests/minute per IP. Background readers (copy-trade feeds, sparklines) back off for a
+// minute after any 429, so whatever budget is left goes to the page a user is looking at.
+let backoffUntil = 0;
+
+async function get<T>(url: string, revalidate: number, background = false): Promise<T> {
+  if (background && Date.now() < backoffUntil) {
+    if (lastGood.has(url)) return lastGood.get(url) as T;
+    throw new Error("Market data unavailable (backing off after a rate limit)");
+  }
+  const headers: Record<string, string> = { accept: "application/json" };
+  if (CG_KEY && url.startsWith(GT)) headers["x-cg-demo-api-key"] = CG_KEY;
+  const res = await fetch(url, { headers, next: { revalidate } }).catch(() => null);
   if (res?.status === 404) throw new NotFound(url);
+  if (res?.status === 429) backoffUntil = Date.now() + 60_000;
   if (!res?.ok) {
     if (lastGood.has(url)) return lastGood.get(url) as T;
     throw new Error(`Market data unavailable (${new URL(url).hostname} ${res?.status ?? "offline"})`);
@@ -80,7 +94,7 @@ async function get<T>(url: string, revalidate: number): Promise<T> {
   lastGood.set(url, json);
   return json;
 }
-const gt = <T,>(path: string, revalidate = 30) => get<T>(GT + path, revalidate);
+const gt = <T,>(path: string, revalidate = 30, background = false) => get<T>(GT + path, revalidate, background);
 const ds = <T,>(path: string, revalidate = 30) => get<T>(DS + path, revalidate);
 
 const n = (v: string | number | null | undefined) => Number(v) || 0;
@@ -194,13 +208,21 @@ export async function searchTokens(q: string) {
   return fromPairs(pairs ?? []).sort((a, b) => b.liq - a.liq);
 }
 
-export type Quote = { price: number; mc: number; change24h: number };
+export type Quote = { price: number; mc: number; change24h: number; symbol: string; image: string | null; pool: string; buys24h: number; sells24h: number };
 /** Price, market cap and 24h change for up to 30 tokens in one call. */
 export async function quotes(addresses: string[]): Promise<Record<string, Quote>> {
   const list = [...new Set(addresses.map((a) => a.toLowerCase()).filter(isAddress))].slice(0, 30);
   if (!list.length) return {};
   const tokens = fromPairs(await ds<Pair[]>(`/tokens/v1/${NET}/${list.join(",")}`));
-  return Object.fromEntries(tokens.map((t) => [t.address, { price: t.price, mc: t.mc, change24h: t.change.h24 }]));
+  return Object.fromEntries(
+    tokens.map((t) => [t.address, { price: t.price, mc: t.mc, change24h: t.change.h24, symbol: t.symbol, image: t.image, pool: t.pool, buys24h: t.txns.h24.buys, sells24h: t.txns.h24.sells }]),
+  );
+}
+
+/** Last 24 hourly closes (USD) of a mainnet pool, oldest first. Cached 10 min: it only feeds small sparklines. */
+export async function hourlyCloses(pool: string, token: string): Promise<{ t: number; v: number }[]> {
+  const j = await gt<{ data: { attributes: { ohlcv_list: number[][] } } }>(`/networks/${NET}/pools/${pool}/ohlcv/hour?aggregate=1&limit=24&token=${token}`, 600, true);
+  return toCandles(j.data.attributes.ohlcv_list, 1).map((c) => ({ t: c.time, v: c.close }));
 }
 
 export const isAddress = (s: string) => /^0x[0-9a-f]{40}$/i.test(s);
@@ -264,10 +286,14 @@ export async function tokenDetail(address: string): Promise<TokenDetail | null> 
 
   const [info, ohlcv, trades] = await Promise.all([
     gt<{ data: { attributes: Info } }>(`/networks/${NET}/tokens/${addr}/info`, 600).then((j) => j.data.attributes, () => null),
-    gt<{ data: { attributes: { ohlcv_list: number[][] } } }>(`/networks/${NET}/pools/${pool}/ohlcv/minute?aggregate=5&limit=288&token=${addr}`, 60).then(
-      (j) => j.data.attributes.ohlcv_list,
-      () => null,
-    ),
+    // The chart loads separately (/api/chart). Candles are only needed here when the token is the pool's quote side,
+    // to derive its % changes; otherwise skip the call so the page doesn't wait on it.
+    isBase
+      ? Promise.resolve(null)
+      : gt<{ data: { attributes: { ohlcv_list: number[][] } } }>(`/networks/${NET}/pools/${pool}/ohlcv/minute?aggregate=5&limit=288&token=${addr}`, 60).then(
+          (j) => j.data.attributes.ohlcv_list,
+          () => null,
+        ),
     gt<{ data: { attributes: Record<string, string> }[] }>(`/networks/${NET}/pools/${pool}/trades`, 30).then((j) => j.data, () => null),
   ]);
 
@@ -353,4 +379,89 @@ function changeOver(candles: Candle[], sec: number) {
   if (!last) return 0;
   const from = candles.find((c) => c.time >= last.time - sec) ?? candles[0];
   return from.open ? ((last.close - from.open) / from.open) * 100 : 0;
+}
+
+export type PoolTrade = { at: number; side: "buy" | "sell"; usd: number; amount: number; price: number; trader: string; tx: string };
+
+/** A mainnet pool's latest trades (GeckoTerminal returns the last 300), from `token`'s side. Newest first. */
+export async function poolTrades(pool: string, token: string): Promise<PoolTrade[]> {
+  const j = await gt<{ data: { attributes: Record<string, string> }[] }>(`/networks/${NET}/pools/${pool}/trades`, 120, true);
+  return j.data.map(({ attributes: t }) => {
+    const buy = t.to_token_address?.toLowerCase() === token;
+    return {
+      at: Date.parse(t.block_timestamp),
+      side: buy ? "buy" : "sell",
+      usd: n(t.volume_in_usd),
+      amount: n(buy ? t.to_token_amount : t.from_token_amount),
+      price: n(buy ? t.price_to_in_usd : t.price_from_in_usd),
+      trader: t.tx_from_address.toLowerCase(),
+      tx: t.tx_hash,
+    };
+  });
+}
+
+// ---------------------------------------------------------------- charts
+
+/** Chart timeframes: GeckoTerminal's OHLCV period + aggregate, candle length, and how long a response stays fresh. */
+export const TIMEFRAMES = {
+  "1m": { period: "minute", aggregate: 1, sec: 60, ttl: 20 },
+  "5m": { period: "minute", aggregate: 5, sec: 300, ttl: 30 },
+  "15m": { period: "minute", aggregate: 15, sec: 900, ttl: 60 },
+  "1h": { period: "hour", aggregate: 1, sec: 3600, ttl: 120 },
+  "4h": { period: "hour", aggregate: 4, sec: 14400, ttl: 300 },
+  "1d": { period: "day", aggregate: 1, sec: 86400, ttl: 600 },
+} as const;
+export type Timeframe = keyof typeof TIMEFRAMES;
+const MAX_CANDLES = 300;
+
+/**
+ * GeckoTerminal only returns candles for intervals that had trades, so a quiet token's chart would glue candles
+ * hours apart side by side. Fill every missing interval with a flat candle at the last close (zero volume), the way
+ * trading terminals do, so the time axis is honest. Keeps the newest `max` candles.
+ */
+export function fillGaps(candles: Candle[], step: number, until: number, max = MAX_CANDLES): Candle[] {
+  if (!candles.length) return [];
+  const out: Candle[] = [];
+  const end = Math.floor(until / step) * step;
+  let i = 0;
+  let last = candles[0];
+  for (let t = candles[0].time; t <= end; t += step) {
+    if (i < candles.length && candles[i].time === t) out.push((last = candles[i++]));
+    else if (i < candles.length && candles[i].time < t) {
+      // Off-grid timestamp (shouldn't happen): take it and continue from it.
+      out.push((last = candles[i++]));
+      t = last.time;
+    } else out.push({ time: t, open: last.close, high: last.close, low: last.close, close: last.close, value: 0 });
+  }
+  return out.slice(-max);
+}
+
+/** USD price candles for `token` in `pool`, gap-filled, oldest first. `trades` = candles in view that had trades. */
+export async function ohlcv(pool: string, token: string, tf: Timeframe) {
+  const f = TIMEFRAMES[tf];
+  const j = await gt<{ data: { attributes: { ohlcv_list: number[][] } } }>(
+    `/networks/${NET}/pools/${pool}/ohlcv/${f.period}?aggregate=${f.aggregate}&limit=${MAX_CANDLES}&token=${token}&currency=usd`,
+    f.ttl,
+  );
+  const candles = fillGaps(toCandles(j.data.attributes.ohlcv_list, 1), f.sec, Date.now() / 1000);
+  return { tf, candles, trades: candles.filter((c) => c.value > 0).length };
+}
+
+const MON_USDC_POOL = "0x659bd0bc4167ba25c62e05656f78043e7ed4a9da"; // Uniswap V3, the deepest MON/USDC pool
+const WMON = "0x3bd359c1119da7da1d913d1c4d2b7c461115433a";
+
+/**
+ * Hourly MON/USD closes (oldest first), to value MON-quoted swaps in dollars at the time they happened. One small
+ * cached call per 30 min; if it's unavailable, falls back to today's MON price as a single point.
+ */
+export async function monUsdCandles(): Promise<{ time: number; close: number }[]> {
+  try {
+    const j = await gt<{ data: { attributes: { ohlcv_list: number[][] } } }>(`/networks/${NET}/pools/${MON_USDC_POOL}/ohlcv/hour?aggregate=1&limit=1000&token=${WMON}`, 1800, true);
+    const hours = toCandles(j.data.attributes.ohlcv_list, 1).map((c) => ({ time: c.time, close: c.close }));
+    if (hours.length) return hours;
+  } catch {}
+  // Lists filter out MON itself, so read the MON/USDC pair directly.
+  const pair = await ds<{ pairs: { priceUsd: string }[] | null }>(`/latest/dex/pairs/${NET}/${MON_USDC_POOL}`, 60).catch(() => null);
+  const price = Number(pair?.pairs?.[0]?.priceUsd);
+  return price > 0 ? [{ time: 0, close: price }] : [];
 }

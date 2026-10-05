@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { KeyRound, Loader2, Lock, ShieldCheck, Unlock } from "lucide-react";
+import { KeyRound, Loader2, Lock, Unlock } from "lucide-react";
+import { Panel, btnSm } from "./ui";
 import { approvalsOf, revoke, type Approval } from "@/lib/security";
 import { refreshChain, requireAccount, toast, useStore } from "@/lib/store";
 import { useAsync } from "@/lib/useAsync";
@@ -34,8 +35,7 @@ export default function SecurityPanel() {
 
   if (!user) return null;
   return (
-    <section className="rounded-lg border border-line bg-panel overflow-hidden">
-      <h2 className="px-4 h-11 flex items-center gap-2 font-semibold border-b border-line"><ShieldCheck className="size-4" /> Security</h2>
+    <Panel title="Security" count={data?.length ? `${data.length} approval${data.length === 1 ? "" : "s"}` : undefined}>
       <div className="flex items-center gap-3 px-4 py-3 border-b border-line text-[13px]">
         {unlocked ? <Unlock className="size-4 text-up" /> : <Lock className="size-4 text-muted" />}
         <div className="flex-1">
@@ -45,7 +45,7 @@ export default function SecurityPanel() {
           </div>
         </div>
         {unlocked && (
-          <button onClick={() => (lock(), refreshChain(), toast("Session locked"))} className="h-8 px-3 rounded-md border border-line-strong text-[12px] font-semibold hover:bg-hover">
+          <button onClick={() => (lock(), refreshChain(), toast("Session locked"))} className={btnSm}>
             Lock now
           </button>
         )}
@@ -71,7 +71,7 @@ export default function SecurityPanel() {
               <button
                 onClick={() => onRevoke(a)}
                 disabled={!!busy}
-                className="h-7 px-2.5 rounded-md border border-line-strong text-[12px] font-semibold hover:bg-hover disabled:opacity-40 inline-flex items-center gap-1"
+                className={btnSm}
               >
                 {busy === a.token + a.spender && <Loader2 className="size-3 animate-spin" />} Revoke
               </button>
@@ -79,6 +79,6 @@ export default function SecurityPanel() {
           ))}
         </ul>
       )}
-    </section>
+    </Panel>
   );
 }

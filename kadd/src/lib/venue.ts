@@ -20,11 +20,23 @@ export type Market = { address: Address; symbol: string; base: Address; source: 
 const priceOf = (raw: bigint) => Number(raw) / 10 ** USDC_DECIMALS; // pool.price() is tUSDC atoms per 1e18 base atoms
 const dustOf = (raw: bigint) => (raw > 0n ? (10_000n * 10n ** 18n) / raw : 0n);
 
-export async function listMarkets(): Promise<Market[]> {
-  if (!VENUE_READY) return [];
-  const pools = await publicClient.readContract({ address: VENUE, abi: kaddVenueAbi, functionName: "allPools" });
-  return Promise.all(pools.map(readMarket));
+// Many components need the market list at once (header, portfolio, security, strategies). Share one read per 15s
+// and one in-flight request, so a page load doesn't trip the public RPC's ~15 requests/second limit.
+let marketsCache: { at: number; p: Promise<Market[]> } | null = null;
+
+export function listMarkets(): Promise<Market[]> {
+  if (!VENUE_READY) return Promise.resolve([]);
+  if (marketsCache && Date.now() - marketsCache.at < 15_000) return marketsCache.p;
+  const p = publicClient
+    .readContract({ address: VENUE, abi: kaddVenueAbi, functionName: "allPools" })
+    .then((pools) => Promise.all(pools.map(readMarket)));
+  marketsCache = { at: Date.now(), p };
+  p.catch(() => marketsCache?.p === p && (marketsCache = null));
+  return p;
 }
+
+/** Prices and the pool list changed (swap, new pool): next read goes to chain. */
+export const invalidateMarkets = () => (marketsCache = null);
 
 export async function readMarket(pool: Address): Promise<Market> {
   const [base, raw] = await publicClient.multicall({
@@ -91,6 +103,7 @@ export async function openMirror(t: { address: string; name: string; symbol: str
   const baseSeed = parseUnits((SEED_USD / t.price).toFixed(6), 18);
   const receipt = await send({ address: VENUE, abi: kaddVenueAbi, functionName: "createMirror", args: [getAddress(t.address), t.name, t.symbol, baseSeed] });
   const [log] = parseEventLogs({ abi: kaddVenueAbi, eventName: "MirrorCreated", logs: receipt.logs });
+  invalidateMarkets();
   return readMarket(log.args.pool);
 }
 
@@ -107,6 +120,7 @@ export async function swap(market: Market, isBuy: boolean, amountIn: bigint, sli
     functionName: "swapExact",
     args: [isBuy, amountIn, minOut, deadline, walletClient().account.address],
   });
+  invalidateMarkets();
   return { hash: receipt.transactionHash, out };
 }
 
@@ -126,6 +140,9 @@ const MESSAGES: Record<string, string> = {
   TooSoon: "Faucet already claimed. You can claim again within the hour.",
   AlreadyMirrored: "A testnet pool for this token already exists.",
   InvalidSeed: "Couldn't open a testnet pool at this price.",
+  Invalid: "Check the settings: amount per trade above 0, daily limit at least one trade, deposit above 0.",
+  Inactive: "This copy is already stopped.",
+  NotOwner: "Only the owner can do that.",
 };
 
 export function txError(e: unknown): string {

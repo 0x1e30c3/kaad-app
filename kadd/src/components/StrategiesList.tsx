@@ -5,6 +5,7 @@ import { Loader2, Workflow } from "lucide-react";
 import { toast, useStore } from "@/lib/store";
 import { KIND_LABEL, STRATEGIES_READY, cancelStrategy, executeStrategy, strategiesOf } from "@/lib/strategies";
 import { useAsync } from "@/lib/useAsync";
+import { Panel, btnSm } from "./ui";
 import { txError } from "@/lib/venue";
 
 const sig = (n: number) => n.toLocaleString("en-US", { maximumSignificantDigits: 4 });
@@ -30,15 +31,12 @@ export default function StrategiesList({ source, compact }: { source?: string; c
     setBusy(null);
   };
 
-  return (
-    <section className={compact ? "border-t border-line" : "rounded-lg border border-line bg-panel overflow-hidden"}>
-      <h2 className={`flex items-center gap-2 font-semibold ${compact ? "px-3 pt-3 text-[13px]" : "px-4 h-11 border-b border-line"}`}>
-        <Workflow className="size-4" /> {compact ? "Your orders" : "Strategies"} <span className="text-faint font-normal">{open.length}</span>
-      </h2>
+  const body = (
+    <>
       {loading && !data ? (
         <div className="h-14 grid place-items-center text-muted"><Loader2 className="size-4 animate-spin" /></div>
       ) : !rows.length ? (
-        <p className="p-6 text-center text-muted text-[13px]">No strategies yet. Open any token and pick Limit, TP / SL or DCA in the trade panel.</p>
+        <p className="px-4 py-5 text-[13px] text-muted">No strategies yet. Open any token and pick Limit, TP / SL or DCA in the trade panel.</p>
       ) : (
         <ul className={compact ? "p-2" : ""}>
           {(compact ? open : rows).map((s) => {
@@ -62,7 +60,7 @@ export default function StrategiesList({ source, compact }: { source?: string; c
                   </button>
                 )}
                 {!s.done && (
-                  <button onClick={() => act(`c${s.id}`, () => cancelStrategy(s.id))} disabled={!!busy} className="h-7 px-2 rounded-md border border-line-strong font-semibold hover:bg-hover disabled:opacity-40 inline-flex items-center gap-1">
+                  <button onClick={() => act(`c${s.id}`, () => cancelStrategy(s.id))} disabled={!!busy} className={btnSm}>
                     {busy === `c${s.id}` && <Loader2 className="size-3 animate-spin" />} Cancel
                   </button>
                 )}
@@ -71,6 +69,19 @@ export default function StrategiesList({ source, compact }: { source?: string; c
           })}
         </ul>
       )}
+    </>
+  );
+
+  return compact ? (
+    <section className="border-t border-line">
+      <h2 className="flex items-center gap-2 px-3 pt-3 text-[13px] font-semibold">
+        <Workflow className="size-4" /> Your orders <span className="text-faint font-normal">{open.length}</span>
+      </h2>
+      {body}
     </section>
+  ) : (
+    <Panel title="Strategies" count={open.length}>
+      {body}
+    </Panel>
   );
 }

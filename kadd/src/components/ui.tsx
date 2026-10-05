@@ -59,3 +59,71 @@ export function PageHeader({ title, desc, children }: { title: string; desc?: st
     </div>
   );
 }
+
+/** The one container used on data pages: header bar (title · count · actions) over a body of divided rows. */
+export function Panel({ title, count, actions, children, className = "" }: { title: React.ReactNode; count?: number | string; actions?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return (
+    <section className={`rounded-lg border border-line bg-panel overflow-hidden ${className}`}>
+      <header className="flex items-center gap-2 h-11 px-4 border-b border-line">
+        <h2 className="text-[13px] font-semibold">{title}</h2>
+        {count !== undefined && <span className="text-[12px] text-faint tabular-nums">{count}</span>}
+        {actions && <div className="ml-auto flex items-center gap-1.5">{actions}</div>}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+/** One line inside a Panel when there's nothing to list: what's missing, and the one thing to do about it. */
+export function PanelEmpty({ children }: { children: React.ReactNode }) {
+  return <p className="px-4 py-5 text-[13px] text-muted">{children}</p>;
+}
+
+export type Stat = { label: string; value: React.ReactNode; note?: React.ReactNode; tone?: "up" | "down" };
+
+/** Key numbers in one divided strip instead of a grid of separate cards. */
+export function StatStrip({ stats, className = "" }: { stats: Stat[]; className?: string }) {
+  return (
+    <div className={`grid grid-cols-2 gap-px rounded-lg border border-line bg-line overflow-hidden md:grid-cols-[repeat(var(--n),minmax(0,1fr))] ${className}`} style={{ "--n": stats.length } as React.CSSProperties}>
+      {stats.map((s) => (
+        <div key={s.label} className="bg-panel px-4 py-3">
+          <div className="text-[11px] text-muted">{s.label}</div>
+          <div className={`mt-0.5 text-[20px] font-semibold tabular-nums tracking-[-0.02em] ${s.tone === "up" ? "text-up" : s.tone === "down" ? "text-down" : ""}`}>{s.value}</div>
+          {s.note && <div className="text-[11px] text-faint tabular-nums">{s.note}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Small action button used in Panel headers and table rows. */
+export const btnSm = "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-line-strong text-[12px] font-semibold hover:bg-hover disabled:opacity-40";
+
+/** Stable hue for anything with a name or address, so a group/club/token keeps one identity colour everywhere. */
+export function hueOf(key: string) {
+  let h = 2166136261; // FNV-1a, then spread by the golden angle so similar names still land far apart
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+  return Math.round(((h >>> 0) * 137.508) % 360);
+}
+
+/** Coloured letter tile: the identity mark for groups and clubs. */
+export function Monogram({ name, size = 40, hue = hueOf(name) }: { name: string; size?: number; hue?: number }) {
+  return (
+    <span
+      className="shrink-0 grid place-items-center rounded-xl font-semibold text-white"
+      style={{ width: size, height: size, fontSize: size * 0.42, background: `hsl(${hue} 55% 46%)` }}
+      aria-hidden
+    >
+      {name.trim()[0]?.toUpperCase() ?? "?"}
+    </span>
+  );
+}
+
+export function StatusPill({ tone, children }: { tone: "up" | "warn" | "down" | "muted"; children: React.ReactNode }) {
+  const cls = { up: "text-up bg-up/10", warn: "text-warn bg-warn/10", down: "text-down bg-down/10", muted: "text-muted bg-raised" }[tone];
+  return <span className={`inline-flex items-center gap-1 h-5 px-1.5 rounded-md text-[11px] font-medium whitespace-nowrap ${cls}`}>{children}</span>;
+}
+
+/** Card surface used by the "story" cards: identity, headline number, context, one clear action. */
+export const card = "relative flex flex-col rounded-xl border border-line bg-panel transition-[border-color,box-shadow] hover:border-line-strong hover:shadow-[0_6px_24px_-12px_rgb(0_0_0/0.25)]";
+

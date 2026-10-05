@@ -22,6 +22,10 @@ type State = {
   onboardingDone: boolean;
   joined: string[];
   myGroups: Group[];
+  /** Wallets (lowercase addresses) the user follows. */
+  following: string[];
+  /** tUSDC spent per copied buy. */
+  copySize: number;
   // not persisted
   loginOpen: boolean;
   toasts: Toast[];
@@ -29,7 +33,7 @@ type State = {
   rev: number;
 };
 
-const EMPTY: State = { user: null, costs: {}, fills: [], watchlist: [], alerts: [], onboardingDone: false, joined: [], myGroups: [], loginOpen: false, toasts: [], rev: 0 };
+const EMPTY: State = { user: null, costs: {}, fills: [], watchlist: [], alerts: [], onboardingDone: false, joined: [], myGroups: [], following: [], copySize: 10, loginOpen: false, toasts: [], rev: 0 };
 const KEY = "kadd:v1";
 
 function load(): State {
@@ -40,7 +44,7 @@ function load(): State {
     const refs = <T,>(xs: unknown): T[] => (Array.isArray(xs) ? xs.filter((x) => x && typeof x === "object" && "symbol" in x) : []);
     // Demo-era balances/positions/fills (no tx hash) are dropped; trades are onchain now.
     const fills = refs<Fill>(saved.fills).filter((f) => f.hash);
-    return { ...EMPTY, user: saved.user ?? null, costs: saved.costs ?? {}, fills, watchlist: refs(saved.watchlist), alerts: refs(saved.alerts), onboardingDone: !!saved.onboardingDone, joined: saved.joined ?? [], myGroups: saved.myGroups ?? [] };
+    return { ...EMPTY, user: saved.user ?? null, costs: saved.costs ?? {}, fills, watchlist: refs(saved.watchlist), alerts: refs(saved.alerts), onboardingDone: !!saved.onboardingDone, joined: saved.joined ?? [], myGroups: saved.myGroups ?? [], following: saved.following ?? [], copySize: saved.copySize ?? 10 };
   } catch {
     return EMPTY;
   }
@@ -111,6 +115,15 @@ export function addAlert(t: TokenRef, above: boolean, price: number) {
 }
 export const removeAlert = (id: number) => set((s) => ({ alerts: s.alerts.filter((a) => a.id !== id) }));
 export const dismissOnboarding = () => set({ onboardingDone: true });
+
+export const setCopySize = (copySize: number) => set({ copySize });
+
+export function toggleFollow(address: string) {
+  const a = address.toLowerCase();
+  const on = state.following.includes(a);
+  set((s) => ({ following: on ? s.following.filter((f) => f !== a) : [...s.following, a] }));
+  toast(on ? "Unfollowed" : "Following");
+}
 
 export function toggleWatch(t: TokenRef) {
   const on = isWatched(state, t.address);

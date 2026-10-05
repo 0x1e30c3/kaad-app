@@ -17,6 +17,8 @@ export type ClubSummary = {
   totalShares: bigint;
   usdc: bigint;
   maxTradeBps: number;
+  flat: boolean; // false = holding positions, deposits paused
+  markets: Address[];
 };
 
 export type ClubPosition = { market: Market; balance: bigint };
@@ -48,7 +50,7 @@ export async function listClubs(): Promise<ClubSummary[]> {
 
 async function readSummary(address: Address): Promise<ClubSummary> {
   const c = { address, abi: kaddClubAbi } as const;
-  const [name, captain, totalShares, usdc, maxTradeBps] = await publicClient.multicall({
+  const [name, captain, totalShares, usdc, maxTradeBps, flat, markets] = await publicClient.multicall({
     allowFailure: false,
     contracts: [
       { ...c, functionName: "name" },
@@ -56,9 +58,11 @@ async function readSummary(address: Address): Promise<ClubSummary> {
       { ...c, functionName: "totalShares" },
       { ...c, functionName: "quoteBalance" },
       { ...c, functionName: "maxTradeBps" },
+      { ...c, functionName: "isFlat" },
+      { ...c, functionName: "markets" },
     ],
   });
-  return { address, name, captain, totalShares, usdc, maxTradeBps };
+  return { address, name, captain, totalShares, usdc, maxTradeBps, flat, markets: [...markets] };
 }
 
 export async function getClub(address: Address, user?: Address): Promise<ClubDetail> {

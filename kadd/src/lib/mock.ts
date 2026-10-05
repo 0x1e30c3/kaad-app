@@ -120,15 +120,14 @@ const TRADER_NAMES = ["rara", "bimo", "sinta", "dimas", "ayu", "fajar", "nadia",
 
 export const TRADERS: Trader[] = TRADER_NAMES.map((name, i) => {
   const r = rng(i + 300);
-  return {
-    address: addr(r),
-    name,
-    hue: Math.round(r() * 360),
-    pnl7d: Math.round((r() - 0.35) * 4000),
-    winRate: Math.round(35 + r() * 45),
-    trades: Math.round(5 + r() * 120),
-    volume: Math.round(200 + r() ** 2 * 40_000),
-  };
+  const address = addr(r);
+  const hue = Math.round(r() * 360);
+  const pnl7d = Math.round((r() - 0.35) * 4000);
+  const winRate = Math.round(35 + r() * 45);
+  const trades = Math.round(5 + r() * 120);
+  // Volume follows trade count, and stays well above |PnL| so ROI looks like trading, not a lottery.
+  const volume = Math.round(Math.max(trades * (80 + r() * 320), Math.abs(pnl7d) * (4 + r() * 6)));
+  return { address, name, hue, pnl7d, winRate, trades, volume };
 });
 
 export type Group = { id: string; name: string; desc: string; code: string; members: string[] };
@@ -152,6 +151,24 @@ export const FEED_TOKENS: TokenRef[] = [
 ];
 
 export type GroupTrade = { trader: Trader; token: TokenRef; side: "buy" | "sell"; usd: number; agoMin: number };
+
+/** Demo: members' combined PnL over the last 7 days (8 points, ends at the weekly total), top trader, latest trade. */
+/** Demo cumulative PnL path over 7 days (8 points) that ends at `total`. */
+export function pnlSeries(seed: number, total: number) {
+  const r = rng(seed);
+  const series = [0];
+  for (let i = 1; i < 7; i++) series.push(series[i - 1] + (total / 7) * (0.4 + r() * 1.2) + (r() - 0.5) * Math.abs(total) * 0.15);
+  series.push(total);
+  return series;
+}
+
+export function groupStory(g: Group) {
+  const people = g.members.map(getTrader).filter(Boolean) as Trader[];
+  const total = people.reduce((s, t) => s + t.pnl7d, 0);
+  const series = pnlSeries(g.code.length * 97 + g.members.length, total);
+  const top = [...people].sort((a, b) => b.pnl7d - a.pnl7d)[0] ?? null;
+  return { total, series, top, latest: groupFeed(g.members, 1)[0] ?? null, people };
+}
 
 export function groupFeed(members: string[], n = 14): GroupTrade[] {
   const r = rng(members.length * 31 + members[0]?.charCodeAt(5));

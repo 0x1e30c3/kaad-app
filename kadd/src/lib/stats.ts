@@ -5,25 +5,73 @@ import "server-only";
 import { createPublicClient, erc20Abi, formatUnits, getAbiItem, http, zeroAddress, type Address } from "viem";
 import { kaddClubAbi, kaddClubFactoryAbi, kaddPoolAbi, kaddVenueAbi, mirrorTokenAbi } from "./abi";
 import { CLUB_FACTORY, STRATEGIES, TUSDC, VENUE } from "./addresses";
+import { hourlyCloses, quotes } from "./market";
+import { swr } from "./cache";
 import { chain, publicClient } from "./chain";
 
-const DEPLOY_BLOCK = 67_481_453; // KaddVenue deployment
-const HYPERRPC = "https://monad-testnet.rpc.hypersync.xyz/";
+export const DEPLOY_BLOCK = 67_481_453; // KaddVenue deployment
+export const HYPERRPC = "https://monad-testnet.rpc.hypersync.xyz/";
+/** HyperRPC for full-range getLogs. It rate-limits bursts (429), so retry with a longer backoff than viem's default. */
+export const hyperClient = (token: string) => createPublicClient({ chain, transport: http(HYPERRPC + token, { retryCount: 4, retryDelay: 600 }) });
 const SEED_QUOTE = 50_000;
 const usdc = (v: bigint) => Number(formatUnits(v, 6));
 
-export type PoolStat = { pool: Address; symbol: string; source: Address; liquidity: number; price: number; trades: number | null; volume: number | null };
+export type PoolStat = {
+  pool: Address;
+  symbol: string;
+  source: Address;
+  liquidity: number;
+  price: number;
+  trades: number | null;
+  volume: number | null;
+  /** Mainnet reference (DexScreener): logo, price and 24h change of the token this pool mirrors. */
+  image: string | null;
+  mainnetPrice: number | null;
+  change24h: number | null;
+  /** Mainnet 24h: hourly closes for the sparkline, and buys/sells for buy pressure. */
+  spark: { t: number; v: number }[];
+  buys24h: number;
+  sells24h: number;
+};
 export type Stats = {
+  /** Set when the chain read failed and these are the last good numbers instead. */
+  staleSince?: number;
   pools: PoolStat[];
   poolLiquidity: number;
   clubs: number;
   clubTvl: number;
   faucetClaims: number;
   strategies: number | null;
-  activity: { trades: number; volume: number; traders: number; deposits: number; since: number } | null;
+  activity: {
+    trades: number;
+    volume: number;
+    traders: number;
+    deposits: number;
+    since: number;
+    /** Last 24 hours (hourly) and last 7 days (daily), oldest → newest, with each bucket's start time. */
+    hourly: { t: number[]; trades: number[]; volume: number[] };
+    daily: { t: number[]; trades: number[]; volume: number[] };
+  } | null;
 };
 
-export async function getStats(): Promise<Stats> {
+// Last good result: the public RPC rate-limits bursts, and an older snapshot beats an error page.
+let lastGood: { at: number; stats: Stats } | null = null;
+
+// 5 min: HyperRPC's free quota is ~5 requests/minute, shared with the leaderboard and chart fallback.
+export const getStats = () => swr("stats", 5 * 60_000, readStatsOrLast);
+
+async function readStatsOrLast(): Promise<Stats> {
+  try {
+    const stats = await readStats();
+    lastGood = { at: Date.now(), stats };
+    return stats;
+  } catch (e) {
+    if (lastGood) return { ...lastGood.stats, staleSince: lastGood.at };
+    throw e;
+  }
+}
+
+async function readStats(): Promise<Stats> {
   const c = publicClient;
   const [poolAddrs, clubCount, supply, strategies] = await Promise.all([
     c.readContract({ address: VENUE, abi: kaddVenueAbi, functionName: "allPools" }),
@@ -61,7 +109,17 @@ export async function getStats(): Promise<Stats> {
     ? await c.multicall({ allowFailure: false, contracts: clubAddrs.map((a) => ({ address: a, abi: kaddClubAbi, functionName: "quoteBalance" }) as const) })
     : [];
 
-  const activity = await readActivity(poolAddrs, clubAddrs).catch(() => null);
+  const [activity, refs] = await Promise.all([
+    readActivity(poolAddrs, clubAddrs).catch(() => null),
+    quotes(poolAddrs.map((_, i) => meta[i * 2 + 1] as Address)).catch(() => ({}) as Awaited<ReturnType<typeof quotes>>),
+  ]);
+  const sparks = await Promise.all(
+    poolAddrs.map((_, i) => {
+      const src = (meta[i * 2 + 1] as string).toLowerCase();
+      const ref = refs[src];
+      return ref ? hourlyCloses(ref.pool, src).catch(() => []) : Promise.resolve([]);
+    }),
+  );
   const pools: PoolStat[] = poolAddrs.map((pool, i) => ({
     pool,
     symbol: meta[i * 2] as string,
@@ -70,6 +128,12 @@ export async function getStats(): Promise<Stats> {
     price: usdc(poolInfo[i * 3 + 1] as bigint),
     trades: activity?.perPool.get(pool.toLowerCase())?.trades ?? (activity ? 0 : null),
     volume: activity?.perPool.get(pool.toLowerCase())?.volume ?? (activity ? 0 : null),
+    image: refs[(meta[i * 2 + 1] as string).toLowerCase()]?.image ?? null,
+    mainnetPrice: refs[(meta[i * 2 + 1] as string).toLowerCase()]?.price ?? null,
+    change24h: refs[(meta[i * 2 + 1] as string).toLowerCase()]?.change24h ?? null,
+    spark: sparks[i],
+    buys24h: refs[(meta[i * 2 + 1] as string).toLowerCase()]?.buys24h ?? 0,
+    sells24h: refs[(meta[i * 2 + 1] as string).toLowerCase()]?.sells24h ?? 0,
   }));
   pools.sort((a, b) => (b.volume ?? b.liquidity) - (a.volume ?? a.liquidity));
 
@@ -81,7 +145,7 @@ export async function getStats(): Promise<Stats> {
     // Every tUSDC not seeded into a pool came from the faucet, 1,000 per claim.
     faucetClaims: Math.max(0, Math.round((usdc(supply) - SEED_QUOTE * poolAddrs.length) / 1_000)),
     strategies: strategies === null ? null : Number(strategies),
-    activity: activity && { trades: activity.trades, volume: activity.volume, traders: activity.traders, deposits: activity.deposits, since: DEPLOY_BLOCK },
+    activity: activity && { trades: activity.trades, volume: activity.volume, traders: activity.traders, deposits: activity.deposits, since: DEPLOY_BLOCK, hourly: activity.hourly, daily: activity.daily },
   };
 }
 
@@ -89,10 +153,11 @@ export async function getStats(): Promise<Stats> {
 async function readActivity(pools: readonly Address[], clubs: readonly Address[]) {
   const token = process.env.ENVIO_API_TOKEN;
   if (!token) return null;
-  if (!pools.length) return { perPool: new Map<string, { trades: number; volume: number }>(), trades: 0, volume: 0, traders: 0, deposits: 0 };
-  const hyper = createPublicClient({ chain, transport: http(HYPERRPC + token) });
+  if (!pools.length) return { perPool: new Map<string, { trades: number; volume: number }>(), trades: 0, volume: 0, traders: 0, deposits: 0, ...buckets(BigInt(0), []) };
+  const hyper = hyperClient(token);
   const fromBlock = BigInt(DEPLOY_BLOCK);
-  const [swaps, deposits] = await Promise.all([
+  const [head, swaps, deposits] = await Promise.all([
+    publicClient.getBlockNumber(), // the head from the regular RPC: one less HyperRPC call
     hyper.getLogs({ address: [...pools], event: getAbiItem({ abi: kaddPoolAbi, name: "Swap" }), fromBlock }),
     clubs.length ? hyper.getLogs({ address: [...clubs], event: getAbiItem({ abi: kaddClubAbi, name: "Deposited" }), fromBlock }) : [],
   ]);
@@ -108,5 +173,23 @@ async function readActivity(pools: readonly Address[], clubs: readonly Address[]
     volume += v;
   }
   for (const l of deposits) traders.add(l.args.member!.toLowerCase());
-  return { perPool, trades: swaps.length, volume, traders: traders.size, deposits: deposits.length };
+  const swapPoints = swaps.map((l) => ({ block: l.blockNumber!, usd: usdc(l.args.isBuy ? l.args.amountIn! : l.args.amountOut!) }));
+  return { perPool, trades: swaps.length, volume, traders: traders.size, deposits: deposits.length, ...buckets(head, swapPoints) };
+}
+
+/** Hourly (24) and daily (7) buckets. Monad makes a block every ~0.4s, so distance from the head is a good clock. */
+function buckets(head: bigint, swaps: { block: bigint; usd: number }[]) {
+  const now = Math.floor(Date.now() / 1000);
+  const make = (n: number, size: number) => {
+    const out = { t: Array.from({ length: n }, (_, i) => now - (n - i) * size), trades: Array<number>(n).fill(0), volume: Array<number>(n).fill(0) };
+    for (const s of swaps) {
+      const ago = Math.floor((Number(head - s.block) * 0.4) / size);
+      if (ago < n) {
+        out.trades[n - 1 - ago] += 1;
+        out.volume[n - 1 - ago] += s.usd;
+      }
+    }
+    return out;
+  };
+  return { hourly: make(24, 3600), daily: make(7, 86400) };
 }

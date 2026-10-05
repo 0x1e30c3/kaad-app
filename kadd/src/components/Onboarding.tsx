@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, ChevronDown, Loader2, X } from "lucide-react";
 import { dismissOnboarding, openLogin, useStore } from "@/lib/store";
-import { faucet, useWallet } from "@/lib/swap";
+import { faucet, requestGas, useWallet } from "@/lib/swap";
 
 /** "Get started" checklist. Every step ticks itself off from real state (chain balances, history, groups). */
 export default function Onboarding() {
@@ -17,9 +17,13 @@ export default function Onboarding() {
     { title: "Sign in with a passkey", detail: "Face ID or fingerprint. No seed phrase.", done: !!user, action: <button onClick={() => openLogin()} className="font-semibold underline">Sign in</button> },
     {
       title: "Get testnet MON for gas",
-      detail: "Every transaction needs a tiny bit of MON.",
+      detail: "Every transaction needs a tiny bit of MON. We send it for free.",
       done: (wallet?.mon ?? 0) >= 0.01,
-      action: <a href="https://faucet.monad.xyz" target="_blank" rel="noreferrer" className="font-semibold underline">Open faucet</a>,
+      action: user && (
+        <button onClick={async () => (setBusy(true), await requestGas(user.address), setBusy(false))} disabled={busy} className="font-semibold underline inline-flex items-center gap-1">
+          {busy && <Loader2 className="size-3 animate-spin" />} Get gas
+        </button>
+      ),
     },
     {
       title: "Claim 1,000 free test USDC",

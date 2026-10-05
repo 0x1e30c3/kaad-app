@@ -5,4 +5,5 @@ import { monadTestnet } from "viem/chains";
 // local fork (anvil) for testing; defaults to the public RPC.
 export const chain = monadTestnet;
 export const transport = () => http(process.env.NEXT_PUBLIC_RPC_URL || undefined);
-export const publicClient = createPublicClient({ chain, transport: transport() });
+// Concurrent reads in the same tick are merged into one multicall: the public RPC allows ~15 requests/second.
+export const publicClient = createPublicClient({ chain, transport: transport(), batch: { multicall: { wait: 16 } } });

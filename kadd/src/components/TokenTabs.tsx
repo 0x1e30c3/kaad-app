@@ -65,7 +65,7 @@ export default function TokenTabs({ t, trades }: { t: Omit<TokenDetail, "candles
                     <td className="px-3 text-right">{num(x.amount)}</td>
                     <td className={`px-3 text-right ${c}`}>{usd(x.usd)}</td>
                     <td className="px-3 text-right">
-                      <a href={`${SCAN}/address/${x.trader}`} target="_blank" rel="noreferrer" className="font-mono text-[11px] text-muted hover:text-fg hover:underline">{short(x.trader)}</a>
+                      <Link href={`/wallet/${x.trader.toLowerCase()}`} className="font-mono text-[11px] text-muted hover:text-fg hover:underline">{short(x.trader)}</Link>
                     </td>
                   </tr>
                 );

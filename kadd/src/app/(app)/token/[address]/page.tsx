@@ -5,7 +5,7 @@ import { num, usd } from "@/lib/mock";
 import { FRAMES, FRAME_LABEL, ageOf, tokenDetail } from "@/lib/market";
 import { Pct, TokenIcon } from "@/components/ui";
 import CopyAddress from "@/components/CopyAddress";
-import Chart from "@/components/Chart";
+import TokenChart from "@/components/TokenChart";
 import TradePanel from "@/components/TradePanel";
 import TokenTabs from "@/components/TokenTabs";
 import TokenActions from "@/components/TokenActions";
@@ -31,7 +31,7 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
 export default async function TokenPage(props: PageProps<"/token/[address]">) {
   const t = await tokenDetail((await props.params).address);
   if (!t) notFound();
-  const { candles, trades, ...token } = t;
+  const { trades, ...token } = t;
 
   return (
     <div className="lg:h-full flex flex-col lg:flex-row">
@@ -67,14 +67,8 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
           </div>
         </div>
 
-        <div className="h-[340px] md:h-[400px] shrink-0 px-1 pt-2 border-b border-line bg-panel">
-          {candles === null ? (
-            <p className="grid h-full place-items-center px-6 text-center text-muted">Chart is temporarily unavailable (data provider busy). It refreshes on its own in a moment.</p>
-          ) : candles.length ? (
-            <Chart data={candles} />
-          ) : (
-            <p className="grid h-full place-items-center text-muted">No trades in the last 24 hours.</p>
-          )}
+        <div className="h-[360px] md:h-[440px] shrink-0 px-1 pt-2 border-b border-line bg-panel">
+          <TokenChart pool={t.pool} token={t.address} supply={t.price > 0 ? t.mc / t.price : 0} />
         </div>
 
         <div className="bg-panel flex-1">

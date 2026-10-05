@@ -92,7 +92,7 @@ export function useWallet(): Wallet | null {
   useEffect(() => {
     if (!user || !VENUE_READY) return;
     let live = true;
-    const load = () => readWallet(user.address).then((data) => live && setWallet({ key, data }), () => {});
+    const load = () => readWallet(user.address, `${key}:${Math.floor(Date.now() / 20_000)}`).then((data) => live && setWallet({ key, data }), () => {});
     load();
     const id = setInterval(load, 20_000);
     return () => {
@@ -103,7 +103,18 @@ export function useWallet(): Wallet | null {
   return user && wallet?.key.startsWith(`${user.address}:`) ? wallet.data : null;
 }
 
-async function readWallet(owner: Address): Promise<Wallet> {
+// Header, portfolio and onboarding all read the same wallet: share one in-flight read per (owner, refresh).
+const walletReads = new Map<string, Promise<Wallet>>();
+function readWallet(owner: Address, key: string): Promise<Wallet> {
+  const hit = walletReads.get(key);
+  if (hit) return hit;
+  const p = loadWallet(owner);
+  walletReads.set(key, p);
+  setTimeout(() => walletReads.delete(key), 5_000);
+  return p;
+}
+
+async function loadWallet(owner: Address): Promise<Wallet> {
   const [markets, monWei] = await Promise.all([listMarkets(), publicClient.getBalance({ address: owner })]);
   const balances = await publicClient.multicall({
     allowFailure: false,
@@ -117,4 +128,16 @@ async function readWallet(owner: Address): Promise<Wallet> {
     })
     .filter((h) => h.amount > 0);
   return { usdc: Number(formatUnits(usdc, USDC_DECIMALS)), mon: Number(formatUnits(monWei, 18)), holdings };
+}
+
+/** Asks the server's gas drip for a little testnet MON. Quiet = no error toast (used for the automatic request). */
+export async function requestGas(address: Address, quiet = false): Promise<boolean> {
+  const r = await fetch("/api/drip", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ address }) })
+    .then((res) => res.json() as Promise<{ ok: boolean; amount?: string; error?: string }>)
+    .catch((): { ok: boolean; amount?: string; error?: string } => ({ ok: false, error: "Couldn't reach the gas drip." }));
+  if (r.ok) {
+    refreshChain();
+    toast(`Sent you ${r.amount} testnet MON for gas`);
+  } else if (!quiet) toast(r.error ?? "Couldn't send gas.", "err");
+  return r.ok;
 }
