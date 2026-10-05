@@ -3,7 +3,7 @@
   "chainId": 10143,
   "rpc": "https://testnet-rpc.monad.xyz",
   "explorer": "https://testnet.monadexplorer.com",
-  "generatedAt": "2026-10-02T08:32:43.512Z",
+  "generatedAt": "2026-10-05T03:43:33.260Z",
   "usedByApp": {
     "KaddVenue": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
     "KaddClubFactory (venue)": "0x4e24ba0762624eaa63e02f3834105efa423a624c",
@@ -66,6 +66,17 @@
       "time": "2026-10-02T08:16:20.318Z",
       "verified": "exact_match",
       "explorer": "https://testnet.monadexplorer.com/address/0xc12684b7063e3c749f0227539601a7b370073cea"
+    },
+    {
+      "name": "KaddCopy",
+      "contract": "KaddCopy",
+      "address": "0x27bb7d06af7ba8ea359cfe00a628145ed0bf1661",
+      "deployTx": "0xfbe53d2de49cbd463f2138e2355dc6b91e57a7242507fbd4a1faa580ec72c614",
+      "block": 68296938,
+      "deployer": "0x4ff54485854be63824efbbba9eeb3eb0396cd17b",
+      "time": "2026-10-05T03:42:41.046Z",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0x27bb7d06af7ba8ea359cfe00a628145ed0bf1661"
     },
     {
       "name": "KaddCore",
@@ -381,11 +392,32 @@
       "gitCommit": "0276db0",
       "explorer": "https://testnet.monadexplorer.com/tx/0x79c7353154f92d004515509fbbc40bac8f35ce371f20060b6e5e35f785a49202",
       "logCount": 4
+    },
+    {
+      "script": "DeployCopy.s.sol",
+      "type": "CREATE",
+      "contract": "KaddCopy",
+      "function": null,
+      "arguments": [
+        "0xe4c0c88a4b2e5b150D3bB8D3d391E6A87b3d5379",
+        "0x4FF54485854bE63824EFBBBA9eEB3EB0396cd17B"
+      ],
+      "address": "0x27bb7d06af7ba8ea359cfe00a628145ed0bf1661",
+      "from": "0x4ff54485854be63824efbbba9eeb3eb0396cd17b",
+      "hash": "0xfbe53d2de49cbd463f2138e2355dc6b91e57a7242507fbd4a1faa580ec72c614",
+      "block": 68296938,
+      "status": "success",
+      "gasUsed": 2132920,
+      "feeMon": 0.21969076000213292,
+      "time": "2026-10-05T03:42:41.046Z",
+      "gitCommit": "919b441",
+      "explorer": "https://testnet.monadexplorer.com/tx/0xfbe53d2de49cbd463f2138e2355dc6b91e57a7242507fbd4a1faa580ec72c614",
+      "logCount": 0
     }
   ],
   "totals": {
-    "transactions": 11,
-    "gasUsed": 25377562,
-    "feeMon": 2.619949408022347
+    "transactions": 12,
+    "gasUsed": 27510482,
+    "feeMon": 2.83964016802448
   }
 }
