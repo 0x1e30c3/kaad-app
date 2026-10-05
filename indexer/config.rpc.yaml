@@ -1,0 +1,51 @@
+# Same indexer, reading through an RPC (for local runs whose Envio token lacks HyperSync access):
+#   ENVIO_CONFIG=config.rpc.yaml ENVIO_RPC_URL=https://monad-testnet.rpc.hypersync.xyz/<token> pnpm test
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: kadd-indexer
+description: Every trade, club, strategy and copy vault on Kadd (Monad testnet), with per-trader, per-pool and daily aggregates.
+field_selection:
+  transaction_fields:
+    - hash
+contracts:
+  # Opens one mirror pool per mainnet token; each new pool is registered for indexing.
+  - name: KaddVenue
+    events:
+      - event: MirrorCreated(address indexed source, address indexed pool, address token, string symbol)
+  - name: KaddPool
+    events:
+      - event: Swap(address indexed trader, bool isBuy, uint256 amountIn, uint256 amountOut)
+  # Creates clubs; each new club is registered for indexing.
+  - name: KaddClubFactory
+    events:
+      - event: ClubCreated(address indexed club, address indexed captain, string name)
+  - name: KaddClub
+    events:
+      - event: Deposited(address indexed member, uint256 amount, uint256 shares)
+      - event: Redeemed(address indexed member, uint256 shares)
+  - name: KaddStrategies
+    events:
+      - event: Created(uint256 indexed id, address indexed owner, address indexed pool, bool isBuy, uint256 amount)
+      - event: Executed(uint256 indexed id, address indexed executor, uint256 amountIn, uint256 amountOut, uint256 price)
+      - event: Cancelled(uint256 indexed id, uint256 refunded)
+  - name: KaddCopy
+    events:
+      - event: Followed(uint256 indexed id, address indexed owner, address indexed leader, uint256 perTrade, uint256 dailyCap, bool copySells, uint256 deposit)
+      - event: Funded(uint256 indexed id, uint256 amount)
+      - event: Copied(uint256 indexed id, bytes32 indexed leaderTx, address indexed pool, bool isBuy, uint256 amountIn, uint256 amountOut)
+      - event: Closed(uint256 indexed id, uint256 cash)
+chains:
+  - id: 10143 # Monad testnet
+    # Local runs without HyperSync access: read through an RPC instead (Envio HyperRPC handles wide log ranges).
+    rpc:
+      - url: ${ENVIO_RPC_URL}
+        for: sync
+    start_block: 67481453 # KaddVenue deployment
+    contracts:
+      - name: KaddVenue
+        address: 0xe4c0c88a4b2e5b150D3bB8D3d391E6A87b3d5379
+      - name: KaddClubFactory
+        address: 0x4E24bA0762624EAa63E02f3834105efa423A624c
+      - name: KaddStrategies
+        address: 0xC12684b7063e3C749f0227539601a7b370073cEA
+      - name: KaddCopy
+        address: 0x27bB7D06AF7BA8Ea359CFe00A628145ED0Bf1661

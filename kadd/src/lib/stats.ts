@@ -7,6 +7,7 @@ import { kaddClubAbi, kaddClubFactoryAbi, kaddPoolAbi, kaddVenueAbi, mirrorToken
 import { CLUB_FACTORY, STRATEGIES, TUSDC, VENUE } from "./addresses";
 import { hourlyCloses, quotes } from "./market";
 import { swr } from "./cache";
+import { indexedDepositors, indexedSwaps, indexerUrl } from "./indexer";
 import { chain, publicClient } from "./chain";
 
 export const DEPLOY_BLOCK = 67_481_453; // KaddVenue deployment
@@ -151,9 +152,16 @@ async function readStats(): Promise<Stats> {
 
 /** Swap + club deposit history since the venue deploy, via Envio HyperRPC. Null when no token is configured. */
 async function readActivity(pools: readonly Address[], clubs: readonly Address[]) {
+  if (indexerUrl()) {
+    try {
+      return await readActivityIndexed();
+    } catch (e) {
+      console.error("indexer stats failed, falling back to HyperRPC", e);
+    }
+  }
   const token = process.env.ENVIO_API_TOKEN;
   if (!token) return null;
-  if (!pools.length) return { perPool: new Map<string, { trades: number; volume: number }>(), trades: 0, volume: 0, traders: 0, deposits: 0, ...buckets(BigInt(0), []) };
+  if (!pools.length) return { perPool: new Map<string, { trades: number; volume: number }>(), trades: 0, volume: 0, traders: 0, deposits: 0, ...buckets([]) };
   const hyper = hyperClient(token);
   const fromBlock = BigInt(DEPLOY_BLOCK);
   const [head, swaps, deposits] = await Promise.all([
@@ -173,17 +181,34 @@ async function readActivity(pools: readonly Address[], clubs: readonly Address[]
     volume += v;
   }
   for (const l of deposits) traders.add(l.args.member!.toLowerCase());
-  const swapPoints = swaps.map((l) => ({ block: l.blockNumber!, usd: usdc(l.args.isBuy ? l.args.amountIn! : l.args.amountOut!) }));
-  return { perPool, trades: swaps.length, volume, traders: traders.size, deposits: deposits.length, ...buckets(head, swapPoints) };
+  // Testnet blocks are ~0.4 s apart, so block distance from the head is a good clock here.
+  const points = swaps.map((l) => ({ ago: Number(head - l.blockNumber!) * 0.4, usd: usdc(l.args.isBuy ? l.args.amountIn! : l.args.amountOut!) }));
+  return { perPool, trades: swaps.length, volume, traders: traders.size, deposits: deposits.length, ...buckets(points) };
 }
 
-/** Hourly (24) and daily (7) buckets. Monad makes a block every ~0.4s, so distance from the head is a good clock. */
-function buckets(head: bigint, swaps: { block: bigint; usd: number }[]) {
+/** The same numbers from the Kadd indexer, with real timestamps. */
+async function readActivityIndexed() {
+  const [swaps, deposits] = await Promise.all([indexedSwaps(), indexedDepositors()]);
+  const perPool = new Map<string, { trades: number; volume: number }>();
+  const traders = new Set(deposits.map((d) => d.member));
+  let volume = 0;
+  for (const s of swaps) {
+    const p = perPool.get(s.pool) ?? { trades: 0, volume: 0 };
+    perPool.set(s.pool, { trades: p.trades + 1, volume: p.volume + s.usd });
+    traders.add(s.trader);
+    volume += s.usd;
+  }
+  const now = Date.now() / 1000;
+  return { perPool, trades: swaps.length, volume, traders: traders.size, deposits: deposits.length, ...buckets(swaps.map((s) => ({ ago: now - s.timestamp, usd: s.usd }))) };
+}
+
+/** Hourly (24) and daily (7) buckets from each swap's age in seconds. */
+function buckets(swaps: { ago: number; usd: number }[]) {
   const now = Math.floor(Date.now() / 1000);
   const make = (n: number, size: number) => {
     const out = { t: Array.from({ length: n }, (_, i) => now - (n - i) * size), trades: Array<number>(n).fill(0), volume: Array<number>(n).fill(0) };
     for (const s of swaps) {
-      const ago = Math.floor((Number(head - s.block) * 0.4) / size);
+      const ago = Math.floor(s.ago / size);
       if (ago < n) {
         out.trades[n - 1 - ago] += 1;
         out.volume[n - 1 - ago] += s.usd;

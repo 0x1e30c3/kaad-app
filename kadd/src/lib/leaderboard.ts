@@ -8,6 +8,7 @@ import { publicClient } from "./chain";
 import { DEPLOY_BLOCK, hyperClient } from "./stats";
 import { swr } from "./cache";
 import { profiles } from "./nns";
+import { indexedClubs, indexedSwaps, indexerUrl } from "./indexer";
 
 export type Period = "1" | "7" | "30";
 export type BoardRow = {
@@ -73,6 +74,13 @@ export const getLeaderboard = (): Promise<Board> =>
   });
 
 async function readBoard(): Promise<Board> {
+  if (indexerUrl()) {
+    try {
+      return await readBoardIndexed();
+    } catch (e) {
+      console.error("indexer leaderboard failed, falling back to HyperRPC", e);
+    }
+  }
   const token = process.env.ENVIO_API_TOKEN;
   if (!token) return { ready: false, traders: empty(), clubs: empty() };
   const hyper = hyperClient(token);
@@ -128,6 +136,11 @@ async function readBoard(): Promise<Board> {
     byWho.set(who, [...(byWho.get(who) ?? []), t]);
   }
 
+  return rank(byWho, price, clubName);
+}
+
+/** PnL per account and period from attributed trades, plus .nad names for wallets. */
+async function rank(byWho: Map<string, Trade[]>, price: Map<string, number>, clubName: Map<string, string>): Promise<Board> {
   const traders = empty();
   const clubs = empty();
   for (const period of Object.keys(DAYS) as Period[]) {
@@ -144,4 +157,22 @@ async function readBoard(): Promise<Board> {
   const names = await profiles([...byWho.keys()].filter((w) => !clubName.has(w)));
   for (const rows of Object.values(traders)) for (const r of rows) Object.assign(r, names.get(r.address));
   return { ready: true, traders, clubs };
+}
+
+/** The same board from the Kadd indexer: swaps arrive already attributed (strategy and copy swaps to their owner). */
+async function readBoardIndexed(): Promise<Board> {
+  const [swaps, clubs, pools] = await Promise.all([
+    indexedSwaps(),
+    indexedClubs(),
+    publicClient.readContract({ address: VENUE, abi: kaddVenueAbi, functionName: "allPools" }),
+  ]);
+  const prices = pools.length ? await publicClient.multicall({ allowFailure: false, contracts: pools.map((p) => ({ address: p, abi: kaddPoolAbi, functionName: "price" }) as const) }) : [];
+  const price = new Map(pools.map((p, i) => [p.toLowerCase(), Number(prices[i]) / 1e6]));
+  const now = Date.now() / 1000;
+  const byWho = new Map<string, Trade[]>();
+  for (const x of swaps) {
+    const t: Trade = { who: x.trader, pool: x.pool, isBuy: x.isBuy, quote: x.usd, base: x.tokens, ago: now - x.timestamp };
+    byWho.set(x.trader, [...(byWho.get(x.trader) ?? []), t]);
+  }
+  return rank(byWho, price, new Map(clubs.map((c) => [c.id, c.name])));
 }
