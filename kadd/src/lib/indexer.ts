@@ -45,3 +45,23 @@ export async function indexedClubs(): Promise<{ id: string; name: string }[]> {
 export async function indexedDepositors(): Promise<{ member: string }[]> {
   return (await gql<{ ClubDeposit: { member: string }[] }>(`{ ClubDeposit(limit: 10000) { member } }`)).ClubDeposit;
 }
+
+export type IndexedPerplDay = { account: string; address: string; day: number; pnlUsd: number; closes: number; wins: number; liquidations: number };
+
+/** Perpl realized PnL per account and UTC day since `sinceDay` (Perpl on Monad mainnet, from the same indexer). */
+export async function indexedPerplDays(sinceDay: number): Promise<IndexedPerplDay[]> {
+  const out: IndexedPerplDay[] = [];
+  for (let offset = 0; offset < MAX; offset += PAGE) {
+    const { PerplTraderDay } = await gql<{ PerplTraderDay: IndexedPerplDay[] }>(
+      `query($since: Int!, $limit: Int!, $offset: Int!) {
+        PerplTraderDay(where: { day: { _gte: $since } }, order_by: { id: asc }, limit: $limit, offset: $offset) {
+          account address day pnlUsd closes wins liquidations
+        }
+      }`,
+      { since: sinceDay, limit: PAGE, offset },
+    );
+    out.push(...PerplTraderDay.map((d) => ({ ...d, pnlUsd: Number(d.pnlUsd) })));
+    if (PerplTraderDay.length < PAGE) break;
+  }
+  return out;
+}

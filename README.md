@@ -137,6 +137,7 @@ harmless: the contract copies each leader trade once, so extra runs find nothing
 - **Strategies**: limit buy, take-profit, stop-loss and DCA orders that execute onchain
 - **Token pages**: live mainnet chart (1m to 1D), trades, a 0–100 risk score with the reason for every point
 - **Live · Kuru**: buy and sell on Monad mainnet routed by Kuru Flow, with a review step showing the guaranteed minimum
+- **Perps leaderboard (Perpl)**: every open perps position on Monad mainnet with leverage and open PnL, 30-day realized PnL per trader, and Kadd's copy bot mirroring one of them on testnet
 - **Best auto copy leaderboard**: every live vault and copy club ranked by return
 - **Share cards**: wallet and vault links unfold into image cards with live numbers on X and Telegram
 - **Invites, counted onchain**: shared links carry `?ref=`, `KaddReferrals` records the inviter once, Stats shows who
@@ -161,7 +162,7 @@ harmless: the contract copies each leader trade once, so extra runs find nothing
 | Backend | Next.js route handlers on Vercel: keeper, gas drip, agent API, Telegram webhook |
 | Storage | Onchain for everything that moves money; Upstash Redis (REST) only for Telegram subscriptions |
 | Share cards | `next/og` (Satori) image routes per wallet and vault |
-| Tests | Foundry (96), an indexer replay test on real chain history, 8 self-checks for the data logic |
+| Tests | Foundry (96), an indexer replay test on real chain history, 9 self-checks for the data logic |
 
 ---
 
@@ -188,8 +189,9 @@ Kuru's testnet order books are empty and only list governance-whitelisted tokens
 |---|---|---|
 | **Nansen** | Smart-money PnL leaderboard: Smart Money tab, SMART badges, wallet cards, `/start` picks, agent API. One paid call a day, shared | [`NANSEN.md`](NANSEN.md), [`nansen.ts`](kadd/src/lib/nansen.ts) |
 | **Kuru** | Live mainnet trades through Kuru Flow (quote → review with minimum → passkey signs); `KaddCopyKuru` for mainnet auto copy; `KaddClub` fork-tested on Kuru Spot V2 | [`kuru.ts`](kadd/src/lib/kuru.ts), [`KuruTrade.tsx`](kadd/src/components/KuruTrade.tsx) |
-| **Envio** | HyperIndex indexer of every Kadd contract, swaps attributed to whoever's money it was; HyperRPC for event history and the chart fallback | [`indexer/`](indexer/), [`events.ts`](kadd/src/lib/events.ts) |
+| **Envio** | Multichain HyperIndex indexer: every Kadd contract (testnet) and Perpl's realized PnL (mainnet), swaps attributed to whoever's money it was; HyperRPC for event history and the chart fallback | [`indexer/`](indexer/), [`events.ts`](kadd/src/lib/events.ts) |
 | **Mera** | The whole account layer: one passkey ceremony, prompt-free signing, no seed phrase | [`wallet.ts`](kadd/src/lib/wallet.ts) |
+| **Perpl** | Perps leaderboard from the Exchange contract (open positions, leverage, open PnL) and the indexer (30-day realized PnL); Kadd's copy bot mirrors a mainnet trader on Perpl testnet through the API | [`perpl.ts`](kadd/src/lib/perpl.ts), [`perplBot.ts`](kadd/src/lib/perplBot.ts) |
 | **Nad Name Service** | `.nad` names and avatars for wallets | [`nns.ts`](kadd/src/lib/nns.ts) |
 
 ## AI Agent Integration
@@ -284,7 +286,7 @@ Every unset contract address falls back to the live testnet deployment.
 
 ```bash
 npm run dev / build / lint                                      # app
-npx tsx --conditions=react-server src/lib/<name>.check.ts       # self-checks: cache, events, keeper, leaderboard, market, onchain, telegram, wallets
+npx tsx --conditions=react-server src/lib/<name>.check.ts       # self-checks: cache, events, keeper, leaderboard, market, onchain, perplBot, telegram, wallets
 node contracts/export-abi.mjs                                   # ABIs for the app, after forge build
 node contracts/export-deployments.mjs                           # contracts/deployment.json from broadcasts
 eval "$(node script/kuru-quotes.mjs)" && forge test --match-contract KaddCopyKuruFork --fork-url https://rpc.monad.xyz   # mainnet fork test on a real Kuru Flow route
@@ -421,7 +423,7 @@ testnet RPC.
 |---|---|
 | **Event** | Monad Metropolis |
 | **Track** | Onchain Finance & Trading |
-| **Bounties** | Nansen · Kuru (Consumer Trading App) · Envio · Mera (UX) |
+| **Bounties** | Nansen · Kuru (Consumer Trading App) · Perpl · Envio · Mera (UX) |
 | **Network** | Monad testnet (chain 10143) and Monad mainnet (chain 143) |
 | **Live demo** | [kaad-app.vercel.app](https://kaad-app.vercel.app) |
 | **Submission notes** | [`SUBMISSION.md`](SUBMISSION.md) |
@@ -444,6 +446,7 @@ testnet RPC.
 | [Nansen](NANSEN.md) | How Kadd uses Nansen and its credit budget |
 | [Indexer](indexer/README.md) | Entities, attribution and deploying to Envio Cloud |
 | [Telegram setup](docs/telegram-setup.md) | Bot, Upstash and webhook in six steps |
+| [Perpl setup](docs/perpl-setup.md) | Perps leaderboard, the copy bot and its testnet setup |
 | [Phase-2 spec](docs/phase-2-spec.md) | Social proof, `/start`, share cards, notifications, copy clubs, mainnet copy |
 | [Skills](skills/README.md) | Agent skills and the agent API |
 

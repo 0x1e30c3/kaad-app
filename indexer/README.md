@@ -11,6 +11,7 @@ leaderboard read one GraphQL endpoint instead of scanning raw logs.
 | `DailyStat` | Network activity per UTC day: trades, volume, new traders, club deposits, copies, strategies |
 | `Club`, `ClubDeposit` | Clubs (registered dynamically from `KaddClubFactory.ClubCreated`) and every deposit |
 | `Strategy` | Limit / TP / SL / DCA orders and their executions |
+| `PerplTrader`, `PerplTraderDay` | Perpl perps on **Monad mainnet** (second chain): realized PnL per account (price PnL + funding) from closes, partial closes, flips and liquidations, all time and per day |
 | `CopyVault`, `CopyTrade` | Auto-copy vaults, their limits, and every copied trade (copy club trades too, `vault = "club:<id>"`) |
 | `CopyClub`, `CopyClubMember` | Copy clubs (`KaddCopyClubs`): rules, members, shares, deposits, redemptions, copies; each member's shares |
 
