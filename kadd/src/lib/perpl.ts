@@ -1,13 +1,14 @@
 // Perpl (perpetual futures on Monad): every open position on mainnet, read straight from the Exchange contract.
 // getPositionsV2 pages through each market's position list with unrealized PnL, so live "who holds what" needs no
-// indexer; realized PnL history comes from the Kadd indexer (indexer/, Perpl Exchange on chain 143).
+// indexer. The Kadd indexer (indexer/, Perpl on chain 143) adds deposits / withdrawals and liquidations per account,
+// which turn live equity into all-time PnL (equity − net deposits).
 import "server-only";
 import { createPublicClient, erc20Abi, http, parseAbi, type Address } from "viem";
 import { monad, monadTestnet } from "viem/chains";
 import { swr } from "./cache";
 import type { PerpTerms } from "./perplOrder";
-import { indexedPerplCloses, indexedPerplDaily, indexedPerplDays, indexerUrl, type IndexedPerplClose, type IndexedPerplDaily } from "./indexer";
-import { liqDistance, liquidationMap, walletPerf, type LiqBucket, type WalletPerf } from "./perplRisk";
+import { indexedPerplAccounts, indexedPerplDaily, indexedPerplLiquidations, indexerUrl, type IndexedPerplAccount, type IndexedPerplDaily, type IndexedPerplLiquidation } from "./indexer";
+import { liqDistance, liquidationMap, type LiqBucket } from "./perplRisk";
 
 const CNS = 1e6; // AUSD collateral, 6 decimals
 
@@ -180,51 +181,62 @@ export function tradersFrom(positions: PerpPosition[]): PerpTrader[] {
 
 export type PerpRow = {
   address: string;
-  /** Realized over the last 30 days (closes, partial closes, liquidations; incl. funding, before fees). Null without the indexer. */
-  realized: number | null;
-  closes: number;
-  wins: number;
+  equity: number; // free balance + margin in positions + open PnL
+  /** All-time PnL: equity minus net deposits (fees and funding included). Null without the indexer. */
+  allTime: number | null;
+  netDeposits: number | null;
   liquidations: number;
   open: PerpPosition[];
   unrealized: number;
   notional: number;
   leverage: number; // open notional / open margin
 };
-export type PerpBoard = { rows: PerpRow[]; realized: boolean; markets: number; positions: number; holders: number; openInterest: number; volume24h: number; marketStats: PerpMarketStat[] };
+export type PerpBoard = { rows: PerpRow[]; history: boolean; markets: number; positions: number; holders: number; openInterest: number; volume24h: number; marketStats: PerpMarketStat[] };
 
-/** Perpl traders: realized PnL over 30 days (indexer) joined with what they hold right now (contract). Cached 2 min. */
+/** Every Perpl account (indexer) by address, cached 5 min. Null without the indexer. */
+const perplAccounts = () =>
+  indexerUrl() ? swr("perpl:accounts", 5 * 60_000, async () => new Map((await indexedPerplAccounts()).map((a) => [a.address, a]))).catch(() => null) : Promise.resolve(null);
+
+/** Free AUSD per account id, read from the contract. */
+async function balances(ids: number[]): Promise<Map<number, number>> {
+  const { client, exchange } = PERPL.mainnet;
+  const r = await client.multicall({ allowFailure: true, contracts: ids.map((id) => ({ address: exchange, abi: perplAbi, functionName: "getAccountById", args: [BigInt(id)] }) as const) });
+  return new Map(ids.map((id, i) => [id, r[i].status === "success" ? Number((r[i].result as { balanceCNS: bigint }).balanceCNS) / CNS : 0]));
+}
+
+/** Perpl traders holding positions now: equity and open PnL (contract), all-time PnL and liquidations (indexer). Cached 2 min. */
 export const perpBoard = () =>
   swr("perpl:board", 2 * 60_000, async (): Promise<PerpBoard> => {
-    const since = Math.floor(Date.now() / 86_400_000) - 30;
-    const [positions, days, markets, tickers, funding] = await Promise.all([
+    const [positions, accounts, markets, tickers, funding] = await Promise.all([
       perpPositions(),
-      indexerUrl() ? indexedPerplDays(since).catch(() => null) : Promise.resolve(null),
+      perplAccounts(),
       perpMarkets("mainnet"),
       perpTickers("mainnet").catch(() => ({}) as Record<number, PerpTicker>),
       perpFunding("mainnet").catch(() => ({}) as Record<number, number>),
     ]);
     const stats = marketStats(markets, positions, tickers, funding);
-    const rows = new Map<string, PerpRow>();
-    const row = (a: string) => rows.get(a) ?? rows.set(a, { address: a, realized: days ? 0 : null, closes: 0, wins: 0, liquidations: 0, open: [], unrealized: 0, notional: 0, leverage: 0 }).get(a)!;
-    for (const d of days ?? []) {
-      if (!d.address) continue;
-      const r = row(d.address);
-      r.realized = (r.realized ?? 0) + d.pnlUsd;
-      r.closes += d.closes;
-      r.wins += d.wins;
-      r.liquidations += d.liquidations;
-    }
-    for (const t of tradersFrom(positions)) {
-      const r = row(t.address);
-      r.open = t.positions.sort((a, b) => b.notional - a.notional);
-      r.unrealized = t.pnl;
-      r.notional = t.notional;
-      r.leverage = t.deposit > 0 ? t.notional / t.deposit : 0;
-    }
-    const score = (r: PerpRow) => (r.realized ?? 0) + r.unrealized;
+    const traders = tradersFrom(positions);
+    const free = await balances(traders.map((t) => t.positions[0].account));
+    const rows: PerpRow[] = traders.map((t) => {
+      const a = accounts?.get(t.address);
+      const equity = (free.get(t.positions[0].account) ?? 0) + t.deposit + t.pnl;
+      const net = a ? a.depositedUsd - a.withdrawnUsd : null;
+      return {
+        address: t.address,
+        equity,
+        allTime: net === null ? null : equity - net,
+        netDeposits: net,
+        liquidations: a?.liquidations ?? 0,
+        open: t.positions.sort((x, y) => y.notional - x.notional),
+        unrealized: t.pnl,
+        notional: t.notional,
+        leverage: t.deposit > 0 ? t.notional / t.deposit : 0,
+      };
+    });
+    const score = (r: PerpRow) => r.allTime ?? r.unrealized;
     return {
-      rows: [...rows.values()].sort((a, b) => score(b) - score(a)).slice(0, 200),
-      realized: !!days,
+      rows: rows.sort((a, b) => score(b) - score(a)).slice(0, 200),
+      history: !!accounts,
       markets: new Set(positions.map((p) => p.marketId)).size,
       positions: positions.length,
       holders: new Set(positions.map((p) => p.address)).size,
@@ -292,6 +304,29 @@ export function marketStats(markets: PerpMarket[], positions: PerpPosition[], ti
 
 const AUSD_MAINNET: Address = "0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a";
 
+/** Protocol volume per UTC day (USD), summed over every market's official daily candles. Cached 30 min. */
+export const perpDailyVolume = (days = 30) =>
+  swr(`perpl:volume:${days}`, 30 * 60_000, async (): Promise<{ day: number; usd: number; trades: number }[]> => {
+    const markets = await perpMarkets("mainnet");
+    const to = Date.now();
+    const from = to - days * 86_400_000;
+    const per = await Promise.all(
+      markets.map((m) =>
+        fetch(`${PERPL.mainnet.api}/v1/market-data/${m.id}/candles/86400/${from}-${to}`, { cache: "no-store" })
+          .then((r) => r.json() as Promise<{ d?: { t: number; v: string; n: number }[] }>)
+          .then((j) => j.d ?? [], () => []),
+      ),
+    );
+    const byDay = new Map<number, { usd: number; trades: number }>();
+    for (const candles of per)
+      for (const c of candles) {
+        const day = Math.floor(c.t / 86_400_000);
+        const d = byDay.get(day) ?? { usd: 0, trades: 0 };
+        byDay.set(day, { usd: d.usd + Number(c.v) / 1e6, trades: d.trades + c.n }); // v: AUSD atoms
+      }
+    return [...byDay].sort((a, b) => a[0] - b[0]).map(([day, d]) => ({ day, ...d }));
+  });
+
 export type AtRisk = PerpPosition & { distance: number };
 export type PerpRisk = {
   tvl: number; // AUSD held by the Exchange contract
@@ -300,20 +335,24 @@ export type PerpRisk = {
   markets: (PerpMarketStat & { liqMap: LiqBucket[] })[];
   atRisk: AtRisk[]; // the 25 closest to liquidation (within 10%), closest first
   near: { count: number; notional: number }; // every position within 5% of liquidation
-  daily: IndexedPerplDaily[] | null; // last 30 days, null without the indexer
+  volume: { day: number; usd: number; trades: number }[]; // last 30 days, from Perpl's candles
+  daily: IndexedPerplDaily[] | null; // flows and liquidations, last 30 days; null without the indexer
+  liquidations: IndexedPerplLiquidation[] | null; // latest, null without the indexer
 };
 
 /** Perpl risk dashboard: liquidation map per market, positions closest to liquidation, protocol health. Cached 1 min. */
 export const perpRisk = () =>
   swr("perpl:risk", 60_000, async (): Promise<PerpRisk> => {
     const today = Math.floor(Date.now() / 86_400_000);
-    const [positions, markets, tickers, funding, tvl, daily] = await Promise.all([
+    const [positions, markets, tickers, funding, tvl, daily, liquidations, volume] = await Promise.all([
       perpPositions("mainnet"),
       perpMarkets("mainnet"),
       perpTickers("mainnet").catch(() => ({}) as Record<number, PerpTicker>),
       perpFunding("mainnet").catch(() => ({}) as Record<number, number>),
       PERPL.mainnet.client.readContract({ address: AUSD_MAINNET, abi: erc20Abi, functionName: "balanceOf", args: [PERPL.mainnet.exchange] }),
       indexerUrl() ? indexedPerplDaily(today - 30).catch(() => null) : Promise.resolve(null),
+      indexerUrl() ? indexedPerplLiquidations(undefined, 20).catch(() => null) : Promise.resolve(null),
+      perpDailyVolume(30).catch(() => []),
     ]);
     const stats = marketStats(markets, positions, tickers, funding);
     const withDistance = positions.map((p) => ({ ...p, distance: liqDistance(p.side, p.mark, p.liquidation) })).filter((p) => p.address);
@@ -328,7 +367,9 @@ export const perpRisk = () =>
         .filter((p) => p.distance < 0.1)
         .sort((a, b) => a.distance - b.distance || b.notional - a.notional)
         .slice(0, 25),
+      volume,
       daily,
+      liquidations,
     };
   });
 
@@ -340,34 +381,36 @@ export type WalletRisk = {
   equity: number; // balance + margin + open PnL
   marginUse: number; // margin / equity, %
   open: (PerpPosition & { distance: number })[];
-  perf: WalletPerf | null; // null without the indexer
-  history: IndexedPerplClose[];
+  /** From the indexer (null without it): money in and out, all-time PnL (equity − net deposits) and liquidations. */
+  history: { deposited: number; withdrawn: number; allTime: number; liquidations: IndexedPerplLiquidation[]; liquidatedUsd: number } | null;
 };
 
-/** One wallet's Perpl risk profile: margin, distance to liquidation per position, and how it has traded. */
+/** One wallet's Perpl risk profile: margin, distance to liquidation per position, all-time PnL and liquidations. */
 export async function walletRisk(address: string): Promise<WalletRisk | null> {
   const a = address.toLowerCase();
-  const [positions, info, closes] = await Promise.all([
+  const [positions, info, accounts, liquidations] = await Promise.all([
     perpPositions("mainnet"),
     PERPL.mainnet.client.readContract({ address: PERPL.mainnet.exchange, abi: perplAbi, functionName: "getAccountByAddr", args: [a as Address] }).catch(() => null),
-    indexerUrl() ? indexedPerplCloses(a).catch(() => null) : Promise.resolve(null),
+    perplAccounts(),
+    indexerUrl() ? indexedPerplLiquidations(a, 30).catch(() => null) : Promise.resolve(null),
   ]);
-  if (!info && !closes?.length) return null;
+  if (!info) return null;
   const open = positions.filter((p) => p.address === a).map((p) => ({ ...p, distance: liqDistance(p.side, p.mark, p.liquidation) }));
-  const balance = Number(info?.balanceCNS ?? 0n) / 1e6;
-  const locked = Number(info?.lockedBalanceCNS ?? 0n) / 1e6;
-  const free = Math.max(0, balance - locked);
+  const balance = Number(info.balanceCNS) / 1e6;
+  const locked = Number(info.lockedBalanceCNS) / 1e6;
   const margin = open.reduce((s, p) => s + p.deposit, 0);
   const equity = balance + margin + open.reduce((s, p) => s + p.pnl, 0);
+  const acct: IndexedPerplAccount | undefined = accounts?.get(a);
   return {
-    account: info ? Number(info.accountId) : null,
-    free,
+    account: Number(info.accountId),
+    free: Math.max(0, balance - locked),
     locked,
     margin,
     equity,
     marginUse: equity > 0 ? (margin / equity) * 100 : 0,
     open: open.sort((x, y) => x.distance - y.distance),
-    perf: closes ? walletPerf(closes) : null,
-    history: closes?.slice(0, 50) ?? [],
+    history: acct
+      ? { deposited: acct.depositedUsd, withdrawn: acct.withdrawnUsd, allTime: equity - (acct.depositedUsd - acct.withdrawnUsd), liquidations: liquidations ?? [], liquidatedUsd: acct.liquidatedUsd }
+      : null,
   };
 }

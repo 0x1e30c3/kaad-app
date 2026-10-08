@@ -120,12 +120,12 @@ export default async function StatsPage() {
               ["Open interest", money(perps.openInterest), "per side"],
               ["24h volume", money(perps.volume24h), `${perps.markets.length} markets`],
               ["Near liquidation", int(perps.near.count), "positions within 5%"],
+              ...(perps.volume.length ? ([["7d volume", money(perps.volume.slice(-7).reduce((a, d) => a + d.usd, 0)), `${int(perps.volume.slice(-7).reduce((a, d) => a + d.trades, 0))} trades`]] as [string, string, string][]) : []),
               ...(perps.daily?.length
                 ? ([
-                    ["7d volume", money(perps.daily.slice(-7).reduce((a, d) => a + d.volumeUsd, 0)), "from fills"],
-                    ["7d fees", money(perps.daily.slice(-7).reduce((a, d) => a + d.feesUsd, 0)), "maker + taker"],
+                    ["7d net inflow", money(perps.daily.slice(-7).reduce((a, d) => a + d.depositedUsd - d.withdrawnUsd, 0)), "deposits − withdrawals"],
                     ["7d liquidations", int(perps.daily.slice(-7).reduce((a, d) => a + d.liquidations, 0)), money(perps.daily.slice(-7).reduce((a, d) => a + d.liquidatedUsd, 0))],
-                    ["Active traders", int(perps.daily.at(-1)?.activeTraders ?? 0), "today"],
+                    ["7d new accounts", int(perps.daily.slice(-7).reduce((a, d) => a + d.newAccounts, 0)), "on Perpl"],
                   ] as [string, string, string][])
                 : []),
             ] as [string, string, string][]).map(([k, v, note]) => (

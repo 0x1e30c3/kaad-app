@@ -5,11 +5,10 @@ import { short } from "@/lib/mock";
 import { PageHeader, card } from "@/components/ui";
 import WalletAvatar from "@/components/WalletAvatar";
 
-export const metadata = { title: "Compare perps traders · Kadd", description: "Perpl traders side by side: margin, leverage, distance to liquidation, win rate, drawdown." };
+export const metadata = { title: "Compare perps traders · Kadd", description: "Perpl traders side by side: margin, leverage, distance to liquidation, all-time PnL, liquidations." };
 
 const money = (n: number) => "$" + n.toLocaleString("en-US", { maximumFractionDigits: n < 100 ? 2 : 0 });
 const signed = (n: number) => `${n >= 0 ? "+" : "-"}$${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: Math.abs(n) < 100 ? 2 : 0 })}`;
-const hold = (s: number) => (s < 3600 ? `${Math.round(s / 60)}m` : s < 86400 ? `${(s / 3600).toFixed(1)}h` : `${(s / 86400).toFixed(1)}d`);
 
 type Row = [label: string, value: (r: WalletRisk) => string, better?: "high" | "low", score?: (r: WalletRisk) => number | null];
 const leverage = (r: WalletRisk) => {
@@ -24,13 +23,10 @@ const ROWS: Row[] = [
   ["Average leverage", (r) => (r.open.length ? `${leverage(r).toFixed(1)}×` : "–"), "low", (r) => (r.open.length ? leverage(r) : null)],
   ["Closest to liquidation", (r) => (Number.isFinite(nearest(r)) ? `${(nearest(r) * 100).toFixed(1)}% away` : "–"), "high", (r) => (Number.isFinite(nearest(r)) ? nearest(r) : null)],
   ["Open PnL", (r) => signed(r.open.reduce((s, p) => s + p.pnl, 0)), "high", (r) => r.open.reduce((s, p) => s + p.pnl, 0)],
-  ["Realized (all time)", (r) => (r.perf ? signed(r.perf.realized) : "–"), "high", (r) => r.perf?.realized ?? null],
-  ["Win rate", (r) => (r.perf?.winRate == null ? "–" : `${Math.round(r.perf.winRate)}% of ${r.perf.trades}`), "high", (r) => r.perf?.winRate ?? null],
-  ["Profit factor", (r) => (r.perf?.profitFactor == null ? "–" : r.perf.profitFactor === Infinity ? "∞" : r.perf.profitFactor.toFixed(2)), "high", (r) => (r.perf?.profitFactor == null ? null : Math.min(r.perf.profitFactor, 1e9))],
-  ["Max drawdown", (r) => (r.perf ? money(r.perf.maxDrawdown) : "–"), "low", (r) => r.perf?.maxDrawdown ?? null],
-  ["Longest losing streak", (r) => (r.perf ? String(r.perf.worstStreak) : "–"), "low", (r) => r.perf?.worstStreak ?? null],
-  ["Average hold", (r) => (r.perf?.avgHoldSec == null ? "–" : hold(r.perf.avgHoldSec))],
-  ["Best market", (r) => (r.perf?.best ? `${r.perf.best.symbol} ${signed(r.perf.best.pnl)}` : "–")],
+  ["All-time PnL", (r) => (r.history ? signed(r.history.allTime) : "–"), "high", (r) => r.history?.allTime ?? null],
+  ["Net deposited", (r) => (r.history ? money(r.history.deposited - r.history.withdrawn) : "–")],
+  ["Liquidations", (r) => (r.history ? String(r.history.liquidations.length) : "–"), "low", (r) => r.history?.liquidations.length ?? null],
+  ["Liquidated (USD)", (r) => (r.history ? money(r.history.liquidatedUsd) : "–"), "low", (r) => r.history?.liquidatedUsd ?? null],
 ];
 
 /** Up to four Perpl traders side by side; the best value in each row is highlighted. */

@@ -8,11 +8,15 @@ import AutoRefresh from "@/components/AutoRefresh";
 import LiqMap from "@/components/LiqMap";
 
 export const revalidate = 60;
-export const metadata = { title: "Perps risk · Kadd", description: "Where Perpl positions get liquidated, who is closest, and how the protocol is doing." };
+export const metadata = { title: "Perps risk · Kadd", description: "Where Perpl positions get liquidated, who is closest, who just got liquidated, and how the protocol is doing." };
 
 const compact = (n: number) => "$" + (n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : n.toFixed(0));
 const px = (n: number) => n.toLocaleString("en-US", { maximumSignificantDigits: 5 });
 const int = (n: number) => n.toLocaleString("en-US");
+const ago = (ts: number) => {
+  const s = Date.now() / 1000 - ts;
+  return s < 3600 ? `${Math.max(1, Math.round(s / 60))}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : `${Math.round(s / 86400)}d ago`;
+};
 
 export default async function PerpsRiskPage() {
   const r = await perpRisk().catch(() => null);
@@ -36,10 +40,14 @@ export default async function PerpsRiskPage() {
     ["Open interest", compact(r.openInterest), "per side"],
     ["24h volume", compact(r.volume24h), `${r.markets.length} markets`],
     ["Near liquidation", int(r.near.count), `positions within 5% · ${compact(r.near.notional)}`],
+    ...(r.volume.length
+      ? ([
+          ["7d volume", compact(r.volume.slice(-7).reduce((s, x) => s + x.usd, 0)), `${int(r.volume.slice(-7).reduce((s, x) => s + x.trades, 0))} trades`],
+        ] as [string, string, string][])
+      : []),
     ...(d.length
       ? ([
-          ["7d fees", compact(sum(last7, (x) => x.feesUsd)), "maker + taker"],
-          ["7d active traders", int(Math.max(0, ...last7.map((x) => x.activeTraders))), "busiest day"],
+          ["7d new accounts", int(sum(last7, (x) => x.newAccounts)), "first deposits"],
           ["7d net inflow", compact(sum(last7, (x) => x.depositedUsd - x.withdrawnUsd)), "deposits − withdrawals"],
           ["7d liquidations", int(sum(last7, (x) => x.liquidations)), compact(sum(last7, (x) => x.liquidatedUsd))],
         ] as [string, string, string][])
@@ -111,24 +119,52 @@ export default async function PerpsRiskPage() {
         )}
       </section>
 
+      {r.liquidations && r.liquidations.length > 0 && (
+        <section className={`${card} overflow-hidden`}>
+          <h2 className="px-4 h-11 flex items-center gap-2 border-b border-line text-[13px] font-semibold">Latest liquidations</h2>
+          <ul className="text-[13px] tabular-nums">
+            {r.liquidations.map((l, i) => (
+              <li key={i} className="relative px-4 h-10 flex items-center gap-3 border-b border-line last:border-0 hover:bg-hover">
+                <span className="w-16 text-[12px] text-faint">{ago(l.timestamp)}</span>
+                {l.address ? (
+                  <Link href={`/wallet/${l.address}#perps`} className="font-mono hover:underline after:absolute after:inset-0">{short(l.address)}</Link>
+                ) : (
+                  <span className="font-mono text-faint">unknown</span>
+                )}
+                <span className="flex-1"><span className={l.side === "long" ? "text-up" : "text-down"}>{l.side === "long" ? "Long" : "Short"}</span> {l.symbol}</span>
+                <span className="hidden sm:inline text-muted">{compact(l.notionalUsd)} at {px(l.price)}</span>
+                <span className={`w-20 text-right font-semibold ${l.pnlUsd >= 0 ? "text-up" : "text-down"}`}>{l.pnlUsd >= 0 ? "+" : "-"}${Math.abs(l.pnlUsd).toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="grid gap-3 md:grid-cols-2">
-        {d.length ? (
-          ([
-            ["Volume per day", series((x) => x.volumeUsd), "usd"],
-            ["Fees per day", series((x) => x.feesUsd), "usd"],
-            ["Active traders per day", series((x) => x.activeTraders), undefined],
-            ["Net deposits, cumulative (30d)", inflow, "pnl"],
-            ["Liquidated per day", series((x) => x.liquidatedUsd), "usd"],
-            ["New accounts per day", series((x) => x.newAccounts), undefined],
-          ] as const).map(([title, data, kind]) => (
-            <article key={title} className={`${card} p-4 gap-2`}>
-              <h3 className="text-[13px] font-semibold">{title}</h3>
-              <AreaChart data={[...data]} height={140} kind={kind} />
-            </article>
-          ))
-        ) : (
+        {([
+          ...(r.volume.length
+            ? ([
+                ["Volume per day", r.volume.map((x) => ({ t: x.day * 86400, v: x.usd })), "usd"],
+                ["Trades per day", r.volume.map((x) => ({ t: x.day * 86400, v: x.trades })), undefined],
+              ] as const)
+            : []),
+          ...(d.length
+            ? ([
+                ["Net deposits, cumulative (30d)", inflow, "pnl"],
+                ["Liquidated per day", series((x) => x.liquidatedUsd), "usd"],
+                ["New accounts per day", series((x) => x.newAccounts), undefined],
+                ["Liquidations per day", series((x) => x.liquidations), undefined],
+              ] as const)
+            : []),
+        ] as readonly (readonly [string, { t: number; v: number }[], "usd" | "pnl" | undefined])[]).map(([title, data, kind]) => (
+          <article key={title} className={`${card} p-4 gap-2`}>
+            <h3 className="text-[13px] font-semibold">{title}</h3>
+            <AreaChart data={[...data]} height={140} kind={kind} />
+          </article>
+        ))}
+        {!d.length && (
           <p className={`${card} p-4 text-[13px] text-muted md:col-span-2`}>
-            Daily history (volume, fees, active traders, deposits and withdrawals, liquidations) comes from Kadd&apos;s Envio indexer and shows here once it has synced Perpl&apos;s history.
+            Deposits, withdrawals and liquidations per day come from Kadd&apos;s Envio indexer and show here when it&apos;s reachable.
           </p>
         )}
       </section>

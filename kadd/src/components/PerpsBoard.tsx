@@ -8,15 +8,13 @@ import { short } from "@/lib/mock";
 import { card } from "./ui";
 import WalletAvatar from "./WalletAvatar";
 
-type SortKey = "total" | "realized" | "unrealized" | "win" | "notional" | "leverage";
+type SortKey = "total" | "equity" | "unrealized" | "notional" | "leverage";
 const signed = (n: number) => `${n >= 0 ? "+" : "-"}$${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: Math.abs(n) < 100 ? 2 : 0 })}`;
 const compact = (n: number) => "$" + (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : n.toFixed(0));
-const winOf = (r: PerpRow) => (r.closes ? (r.wins / r.closes) * 100 : -1);
 const value: Record<SortKey, (r: PerpRow) => number> = {
-  total: (r) => (r.realized ?? 0) + r.unrealized,
-  realized: (r) => r.realized ?? 0,
+  total: (r) => r.allTime ?? r.unrealized,
+  equity: (r) => r.equity,
   unrealized: (r) => r.unrealized,
-  win: winOf,
   notional: (r) => r.notional,
   leverage: (r) => r.leverage,
 };
@@ -98,7 +96,7 @@ export default function PerpsBoard({ board, bot }: { board: PerpBoard | null; bo
           ["Open positions", board.positions.toLocaleString("en-US"), `${board.markets} markets`],
           ["Traders holding", board.holders.toLocaleString("en-US"), "right now"],
           ["Open interest", compact(board.openInterest), `per side · ${compact(board.volume24h)} traded 24h`],
-          ["Ranked by", board.realized ? "30d PnL" : "Open PnL", board.realized ? "realized + open" : "realized history syncing"],
+          ["Ranked by", board.history ? "All-time PnL" : "Open PnL", board.history ? "equity − net deposits" : "deposit history unavailable"],
         ].map(([k, v, note]) => (
           <article key={k} className={`${card} p-4 gap-1`}>
             <div className="text-[12px] text-muted">{k}</div>
@@ -158,10 +156,9 @@ export default function PerpsBoard({ board, bot }: { board: PerpBoard | null; bo
               <tr className="h-9 border-b border-line">
                 <th className="text-left font-medium pl-4 pr-2 w-10">#</th>
                 <th className="text-left font-medium px-2">Trader</th>
-                {th("total", board.realized ? "30d PnL" : "Open PnL")}
-                {board.realized && th("realized", "Realized", "hidden md:table-cell")}
-                {board.realized && th("unrealized", "Open PnL", "hidden sm:table-cell")}
-                {board.realized && th("win", "Win rate", "hidden md:table-cell")}
+                {th("total", board.history ? "All-time PnL" : "Open PnL")}
+                {th("equity", "Equity", "hidden md:table-cell")}
+                {board.history && th("unrealized", "Open PnL", "hidden sm:table-cell")}
                 <th className="text-left font-medium px-3 hidden lg:table-cell">Holding now</th>
                 {th("notional", "Size", "hidden sm:table-cell")}
                 {th("leverage", "Lev.", "pr-4")}
@@ -177,13 +174,12 @@ export default function PerpsBoard({ board, bot }: { board: PerpBoard | null; bo
                       <span className="flex items-center gap-2">
                         <WalletAvatar address={r.address} size={24} />
                         <Link href={`/wallet/${r.address}#perps`} className="font-mono font-semibold hover:underline after:absolute after:inset-0">{short(r.address)}</Link>
-                        {r.liquidations > 0 && <span className="text-[11px] text-down" title="Liquidations in 30 days">{r.liquidations} liq.</span>}
+                        {r.liquidations > 0 && <span className="text-[11px] text-down" title="Times this account has been liquidated">{r.liquidations} liq.</span>}
                       </span>
                     </td>
                     <td className={`px-3 text-right font-semibold tabular-nums ${total >= 0 ? "text-up" : "text-down"}`}>{signed(total)}</td>
-                    {board.realized && <td className={`px-3 text-right tabular-nums hidden md:table-cell ${(r.realized ?? 0) >= 0 ? "text-up" : "text-down"}`}>{signed(r.realized ?? 0)}</td>}
-                    {board.realized && <td className={`px-3 text-right tabular-nums hidden sm:table-cell ${r.unrealized >= 0 ? "text-up" : "text-down"}`}>{r.open.length ? signed(r.unrealized) : "–"}</td>}
-                    {board.realized && <td className="px-3 text-right tabular-nums hidden md:table-cell">{r.closes ? `${Math.round(winOf(r))}% · ${r.closes}` : "–"}</td>}
+                    <td className="px-3 text-right tabular-nums hidden md:table-cell">{compact(r.equity)}</td>
+                    {board.history && <td className={`px-3 text-right tabular-nums hidden sm:table-cell ${r.unrealized >= 0 ? "text-up" : "text-down"}`}>{r.open.length ? signed(r.unrealized) : "–"}</td>}
                     <td className="px-3 hidden lg:table-cell">
                       <span className="flex flex-wrap gap-1">{r.open.slice(0, 3).map((p) => <PositionChip key={p.marketId} p={p} />)}{r.open.length > 3 && <span className="text-[11px] text-faint">+{r.open.length - 3}</span>}</span>
                     </td>
@@ -196,7 +192,7 @@ export default function PerpsBoard({ board, bot }: { board: PerpBoard | null; bo
           </table>
         </div>
         <p className="px-4 py-3 border-t border-line text-[11px] text-faint">
-          Perpetual futures on <a href="https://app.perpl.xyz" target="_blank" rel="noreferrer" className="underline">Perpl</a>, Monad mainnet. Open positions are read from the Perpl contract every minute; realized PnL (price PnL plus funding, before fees) comes from Kadd&apos;s Envio indexer.
+          Perpetual futures on <a href="https://app.perpl.xyz" target="_blank" rel="noreferrer" className="underline">Perpl</a>, Monad mainnet. Open positions are read from the Perpl contract every minute; all-time PnL is equity minus net deposits (fees and funding included), with deposits, withdrawals and liquidations from Kadd&apos;s Envio indexer.
         </p>
       </section>
     </>

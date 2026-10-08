@@ -2,12 +2,10 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { WalletRisk } from "@/lib/perpl";
 import { Panel, PanelEmpty } from "./ui";
-import { AreaChart } from "./charts";
 
 const px = (n: number) => n.toLocaleString("en-US", { maximumSignificantDigits: 5 });
 const signed = (n: number) => `${n >= 0 ? "+" : "-"}$${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: Math.abs(n) < 100 ? 2 : 0 })}`;
 const money = (n: number) => "$" + n.toLocaleString("en-US", { maximumFractionDigits: n < 100 ? 2 : 0 });
-const hold = (s: number) => (s < 3600 ? `${Math.round(s / 60)}m` : s < 86400 ? `${(s / 3600).toFixed(1)}h` : `${(s / 86400).toFixed(1)}d`);
 const ago = (ts: number) => {
   const s = Date.now() / 1000 - ts;
   return s < 3600 ? `${Math.max(1, Math.round(s / 60))}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : `${Math.round(s / 86400)}d ago`;
@@ -23,9 +21,9 @@ function Stat({ k, v, tone }: { k: string; v: React.ReactNode; tone?: "up" | "do
   );
 }
 
-/** A wallet's Perpl risk profile: margin, distance to liquidation, performance, and recent closes. */
+/** A wallet's Perpl risk profile: margin, distance to liquidation, all-time PnL and liquidation history. */
 export default function PerpsProfile({ address, risk }: { address: string; risk: WalletRisk }) {
-  const p = risk.perf;
+  const h = risk.history;
   return (
     <section id="perps" className="scroll-mt-4">
       <Panel
@@ -43,16 +41,12 @@ export default function PerpsProfile({ address, risk }: { address: string; risk:
           <Stat k="Margin in use" v={`${risk.marginUse.toFixed(0)}%`} tone={risk.marginUse > 80 ? "down" : undefined} />
           <Stat k="Free AUSD" v={money(risk.free)} />
           <Stat k="Open PnL" v={signed(risk.open.reduce((s, x) => s + x.pnl, 0))} tone={risk.open.reduce((s, x) => s + x.pnl, 0) >= 0 ? "up" : "down"} />
-          {p && (
+          {h && (
             <>
-              <Stat k="Realized (all time)" v={signed(p.realized)} tone={p.realized >= 0 ? "up" : "down"} />
-              <Stat k="Win rate" v={p.winRate === null ? "–" : `${Math.round(p.winRate)}% · ${p.trades}`} />
-              <Stat k="Profit factor" v={p.profitFactor === null ? "–" : p.profitFactor === Infinity ? "∞" : p.profitFactor.toFixed(2)} />
-              <Stat k="Max drawdown" v={money(p.maxDrawdown)} tone={p.maxDrawdown > 0 ? "down" : undefined} />
-              <Stat k="Streaks" v={`${p.bestStreak}W · ${p.worstStreak}L`} />
-              <Stat k="Avg hold" v={p.avgHoldSec === null ? "–" : hold(p.avgHoldSec)} />
-              <Stat k="Best market" v={p.best ? `${p.best.symbol} ${signed(p.best.pnl)}` : "–"} />
-              <Stat k="Worst market" v={p.worst ? `${p.worst.symbol} ${signed(p.worst.pnl)}` : "–"} />
+              <Stat k="All-time PnL" v={signed(h.allTime)} tone={h.allTime >= 0 ? "up" : "down"} />
+              <Stat k="Deposited" v={money(h.deposited)} />
+              <Stat k="Withdrawn" v={money(h.withdrawn)} />
+              <Stat k="Liquidated" v={h.liquidations.length ? `${h.liquidations.length}× · ${money(h.liquidatedUsd)}` : "Never"} tone={h.liquidations.length ? "down" : "up"} />
             </>
           )}
         </div>
@@ -96,29 +90,24 @@ export default function PerpsProfile({ address, risk }: { address: string; risk:
           </div>
         )}
 
-        {p && p.curve.length > 1 && (
-          <div className="px-4 pt-4 border-t border-line">
-            <div className="text-[12px] text-muted">Cumulative realized PnL</div>
-            <AreaChart data={p.curve} height={140} kind="pnl" color={p.realized >= 0 ? "var(--up)" : "var(--down)"} />
-          </div>
-        )}
-
-        {risk.history.length > 0 && (
+        {h && h.liquidations.length > 0 && (
           <details className="border-t border-line">
-            <summary className="px-4 h-10 flex items-center text-[13px] font-medium cursor-pointer hover:bg-hover">Recent closes ({risk.history.length})</summary>
+            <summary className="px-4 h-10 flex items-center text-[13px] font-medium cursor-pointer hover:bg-hover">Liquidations ({h.liquidations.length})</summary>
             <ul className="text-[13px] tabular-nums">
-              {risk.history.slice(0, 30).map((c, i) => (
+              {h.liquidations.map((l, i) => (
                 <li key={i} className="px-4 h-9 flex items-center gap-3 border-t border-line">
-                  <span className="w-16 text-faint text-[12px]">{ago(c.timestamp)}</span>
-                  <span className="flex-1"><span className={c.side === "long" ? "text-up" : "text-down"}>{c.side === "long" ? "Long" : "Short"}</span> {c.symbol} <span className="text-faint">{c.kind === "close" ? "" : c.kind}</span></span>
-                  <span className="text-faint hidden sm:inline">{c.holdSec ? `held ${hold(c.holdSec)}` : ""}</span>
-                  <span className={`w-20 text-right font-semibold ${c.pnlUsd >= 0 ? "text-up" : "text-down"}`}>{signed(c.pnlUsd)}</span>
+                  <span className="w-16 text-faint text-[12px]">{ago(l.timestamp)}</span>
+                  <span className="flex-1"><span className={l.side === "long" ? "text-up" : "text-down"}>{l.side === "long" ? "Long" : "Short"}</span> {l.symbol} <span className="text-faint">{l.full ? "" : "partial"}</span></span>
+                  <span className="text-faint hidden sm:inline">{money(l.notionalUsd)} at {px(l.price)}</span>
+                  <span className={`w-20 text-right font-semibold ${l.pnlUsd >= 0 ? "text-up" : "text-down"}`}>{signed(l.pnlUsd)}</span>
                 </li>
               ))}
             </ul>
           </details>
         )}
-        {!p && <p className="px-4 py-3 border-t border-line text-[11px] text-faint">Win rate, drawdown and trade history appear once Kadd&apos;s indexer has synced Perpl&apos;s history.</p>}
+        <p className="px-4 py-3 border-t border-line text-[11px] text-faint">
+          {h ? "All-time PnL is equity minus what went in net of withdrawals, so fees and funding are included." : "All-time PnL and liquidation history appear when Kadd's indexer is reachable."}
+        </p>
       </Panel>
     </section>
   );
