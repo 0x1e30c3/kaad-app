@@ -1,12 +1,16 @@
 "use client";
 import { useState } from "react";
 import { Check, Share2 } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { REFERRALS_READY, inviteLink } from "@/lib/referral";
 import { btnSm } from "./ui";
 
-/** Share a Kadd page: native share sheet where there is one, else copy the link; plus a prefilled post on X. */
+/** Share a Kadd page: native share sheet where there is one, else copy the link; plus a prefilled post on X. Signed
+ * in, the link carries ?ref= so whoever signs up through it counts as your invite. */
 export default function ShareButton({ path, text }: { path: string; text: string }) {
+  const { user } = useStore();
   const [copied, setCopied] = useState(false);
-  const url = () => new URL(path, location.origin).toString();
+  const url = () => (user && REFERRALS_READY ? inviteLink(user.address, path) : new URL(path, location.origin).toString());
   return (
     <span className="inline-flex gap-1.5">
       <button

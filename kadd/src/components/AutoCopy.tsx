@@ -63,7 +63,7 @@ export function AutoCopyForm({ leader }: { leader: string }) {
             {busy && <Loader2 className="size-3.5 animate-spin" />} Start auto copy
           </button>
           <p className="flex gap-1.5 text-[11px] text-faint">
-            <ShieldCheck className="size-3.5 shrink-0" /> Limits are enforced by the contract. Stop anytime to get your tUSDC and tokens back.
+            <ShieldCheck className="size-3.5 shrink-0" /> Limits are enforced by the contract, and buys of tokens Kadd rates very dangerous are skipped. Stop anytime to get your tUSDC and tokens back.
           </p>
         </form>
       )}

@@ -20,7 +20,7 @@ type Swap {
   id: ID! # chainId_block_logIndex
   pool: String!
   trader: String!
-  kind: String! # wallet | club | strategy | copy
+  kind: String! # wallet | club | strategy | copy | copyclub
   isBuy: Boolean!
   usd: Float!
   tokens: Float!
@@ -106,13 +106,40 @@ type CopyVault {
 
 type CopyTrade {
   id: ID!
-  vault: String! @index
+  vault: String! @index # KaddCopy vault id, or "club:<id>" for a copy club
   leaderTx: String!
   pool: String!
   isBuy: Boolean!
   usd: Float!
   timestamp: Int!
   txHash: String!
+}
+
+# A copy club (KaddCopyClubs): many members, one vault that auto-copies `leader`. Rules are a share of the club's cash.
+type CopyClub {
+  id: ID! # club id
+  name: String!
+  creator: String! @index
+  leader: String! @index
+  perTradeBps: Int!
+  dailyCapBps: Int!
+  copySells: Boolean!
+  members: Int! # wallets holding shares now
+  totalShares: BigInt!
+  deposits: Int!
+  depositedUsd: Float!
+  redemptions: Int!
+  redeemedCashUsd: Float! # cash paid out on redeem (tokens are paid out in kind on top)
+  copies: Int!
+  createdAt: Int!
+}
+
+type CopyClubMember {
+  id: ID! # clubId_member
+  club: String! @index
+  member: String! @index
+  shares: BigInt!
+  depositedUsd: Float!
 }
 
 # Lookup from a transaction to the swap it contained, so the strategy / copy event that follows the swap in the

@@ -3,7 +3,7 @@
   "chainId": 10143,
   "rpc": "https://testnet-rpc.monad.xyz",
   "explorer": "https://testnet.monadexplorer.com",
-  "generatedAt": "2026-10-08T04:47:32.501Z",
+  "generatedAt": "2026-10-08T06:35:17.480Z",
   "usedByApp": {
     "KaddVenue": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
     "KaddClubFactory (venue)": "0x4e24ba0762624eaa63e02f3834105efa423a624c",
@@ -88,6 +88,17 @@
       "time": "2026-10-08T04:45:56.730Z",
       "verified": "exact_match",
       "explorer": "https://testnet.monadexplorer.com/address/0x67a974949d2918e07763c86cfe8bbc3e817930d2"
+    },
+    {
+      "name": "KaddReferrals",
+      "contract": "KaddReferrals",
+      "address": "0xfe2fd41200af425a441261d1c6d6fc5f703b782d",
+      "deployTx": "0x7c203f4da1b208cb8651f27f58f5e2b18d37989826c542409a5bd1c8afef3ac2",
+      "block": 69185098,
+      "deployer": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "time": "2026-10-08T06:33:26.124Z",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0xfe2fd41200af425a441261d1c6d6fc5f703b782d"
     },
     {
       "name": "KaddCore",
@@ -445,11 +456,29 @@
       "gitCommit": "b3b7292",
       "explorer": "https://testnet.monadexplorer.com/tx/0xb4418ecdbd985927f4e3b28a236b8c76a9458c8a28482ff939bf923ddd4611ef",
       "logCount": 0
+    },
+    {
+      "script": "DeployReferrals.s.sol",
+      "type": "CREATE",
+      "contract": "KaddReferrals",
+      "function": null,
+      "arguments": null,
+      "address": "0xfe2fd41200af425a441261d1c6d6fc5f703b782d",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0x7c203f4da1b208cb8651f27f58f5e2b18d37989826c542409a5bd1c8afef3ac2",
+      "block": 69185098,
+      "status": "success",
+      "gasUsed": 189681,
+      "feeMon": 0.01953714300018968,
+      "time": "2026-10-08T06:33:26.124Z",
+      "gitCommit": "185b8c2",
+      "explorer": "https://testnet.monadexplorer.com/tx/0x7c203f4da1b208cb8651f27f58f5e2b18d37989826c542409a5bd1c8afef3ac2",
+      "logCount": 0
     }
   ],
   "totals": {
-    "transactions": 13,
-    "gasUsed": 30055746,
-    "feeMon": 3.1018023600270253
+    "transactions": 14,
+    "gasUsed": 30245427,
+    "feeMon": 3.121339503027215
   }
 }

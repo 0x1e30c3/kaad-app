@@ -8,11 +8,18 @@ import { kaddCopyAbi, kaddCopyClubsAbi, kaddPoolAbi, kaddVenueAbi } from "./abi"
 import { COPY, COPY_CLUBS, VENUE } from "./addresses";
 import { chain, publicClient, transport } from "./chain";
 import { recentTrades, type WalletTrade } from "./wallets";
+import { tokenDetail } from "./market";
+import type { RiskAnalysis } from "./risk";
 
 const MAX_PER_RUN = 20; // ponytail: bounded run; a backlog drains over the next runs
 const SLIPPAGE_BPS = 300n; // the keeper's own guard on top of the contract's limits
 
 export type Kind = "copy" | "club";
+
+/** Why a copied buy of a token with this risk analysis is refused, or null to allow it. Only "critical" (honeypot or
+ * stacked red flags) blocks: copying means following someone else's call, not second-guessing every memecoin. */
+export const riskBlock = (a: RiskAnalysis | null | undefined) =>
+  a?.level === "critical" ? `risky token (${a.factors[0]?.title.toLowerCase() ?? "critical"}, score ${a.score})` : null;
 type Follow = { kind: Kind; id: bigint; leader: string; since: number; copySells: boolean };
 export type Plan = { kind: Kind; id: bigint; isBuy: boolean; source: Address; tx: Hex; at: number };
 
@@ -89,6 +96,10 @@ export async function keep(getTrades: () => Promise<{ trades: WalletTrade[] }> =
   });
   const fresh = todo.filter((_, i) => !done[i]).slice(0, MAX_PER_RUN);
 
+  // ponytail: fails open when market data is unavailable (rate limits) so copies don't stall; one lookup per token per run.
+  const risk = new Map<string, Promise<string | null>>();
+  const riskOf = (source: string) => risk.get(source) ?? risk.set(source, tokenDetail(source).then((d) => riskBlock(d?.analysis), () => null)).get(source)!;
+
   let copied = 0;
   let skipped = todo.length - fresh.length;
   const errors: string[] = [];
@@ -98,6 +109,12 @@ export async function keep(getTrades: () => Promise<{ trades: WalletTrade[] }> =
     // A vault with no cash left can't buy: skip before spending any RPC request on it.
     if (p.isBuy && v.buy(v.cash) === 0n) {
       skipped++;
+      continue;
+    }
+    const blocked = p.isBuy ? await riskOf(p.source) : null;
+    if (blocked) {
+      skipped++;
+      errors.push(`${p.kind === "club" ? "club " : ""}#${p.id} buy ${p.source.slice(0, 8)}: skipped, ${blocked}`);
       continue;
     }
     try {

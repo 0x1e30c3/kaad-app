@@ -73,6 +73,13 @@ must raise the vault's own token balance by the quoted minimum, a sell approves 
 live on testnet (Groups & Clubs); the mainnet vault is **not deployed yet** and the app shows it once
 `NEXT_PUBLIC_COPY_MAINNET` is set.
 
+The keeper also runs a **risk guard**: a copied buy is skipped when Kadd's risk engine rates the mainnet token
+critical (honeypot or stacked red flags). The leaderboard ranks every live vault and copy club by return.
+
+**Growth loop.** Shared links carry `?ref=`; once the new account has gas it records its inviter in `KaddReferrals`
+(once, onchain), and Stats counts invites and which invitees went on to trade. **Telegram alerts** (bot + Upstash
+KV, setup in [`docs/telegram-setup.md`](docs/telegram-setup.md)) send followed-wallet trades and copies with Kadd closed, on the keeper's cron tick.
+
 ## Contracts (Monad testnet, all Sourcify verified)
 
 | Contract | Address |
@@ -83,6 +90,7 @@ live on testnet (Groups & Clubs); the mainnet vault is **not deployed yet** and 
 | KaddClubFactory (clubs on Kuru Spot V2) | [`0xcF7e…b647`](https://testnet.monadexplorer.com/address/0xcF7e32d79553aA97259724bb780b951115F5b647) |
 | KaddStrategies (limit / TP / SL / DCA) | [`0xC126…cEA`](https://testnet.monadexplorer.com/address/0xC12684b7063e3C749f0227539601a7b370073cEA) |
 | KaddCopyClubs (pooled auto copy) | [`0x67A9…30D2`](https://testnet.monadexplorer.com/address/0x67A974949d2918e07763C86cfe8bbc3E817930D2) |
+| KaddReferrals (onchain invites) | [`0xFe2F…782d`](https://testnet.monadexplorer.com/address/0xFe2FD41200AF425A441261d1c6d6fC5f703B782d) |
 | KaddCore · tUSDC | `0x3F86…DA70` · `0x9173…80CB` |
 
 Every deployment, deploy transaction and seeded pool: [`contracts/deployment.json`](contracts/deployment.json).
@@ -105,7 +113,7 @@ Every deployment, deploy transaction and seeded pool: [`contracts/deployment.jso
 | Path | What |
 |---|---|
 | [`kadd/`](kadd/) | Next.js 16 app (App Router, React 19, Tailwind 4, viem) |
-| [`contracts/`](contracts/) | Foundry: KaddVenue, KaddClub(+Factory), KaddStrategies, KaddCopy, KaddCopyClubs, KaddCopyKuru, tests, deploy scripts |
+| [`contracts/`](contracts/) | Foundry: KaddVenue, KaddClub(+Factory), KaddStrategies, KaddCopy, KaddCopyClubs, KaddReferrals, KaddCopyKuru, tests, deploy scripts |
 | [`indexer/`](indexer/) | Envio HyperIndex indexer for the Kadd contracts |
 | [`skills/`](skills/) | Agent skills (`npx skills add maulana-tech/kaad-app`) |
 

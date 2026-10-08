@@ -1,6 +1,6 @@
 // Self-check for the copy keeper's planning: npx tsx --conditions=react-server src/lib/keeper.check.ts
 import assert from "node:assert/strict";
-import { copyKey, plan } from "./keeper";
+import { copyKey, plan, riskBlock } from "./keeper";
 import type { WalletTrade } from "./wallets";
 
 const token = { address: "0x00000000000000000000000000000000000000aa", symbol: "T", image: null, price: 1 };
@@ -17,4 +17,9 @@ assert.deepEqual(buysOnly.map((p) => [p.tx, p.kind]), [["0x01", "club"], ["0x02"
 const k = copyKey(`0x${"11".repeat(32)}`, token.address as `0x${string}`);
 assert.match(k, /^0x[0-9a-f]{64}$/);
 assert.notEqual(k, copyKey(`0x${"11".repeat(32)}`, "0x00000000000000000000000000000000000000bb"));
+// Risk guard: only a critical analysis blocks a copied buy; missing data never does.
+const analysis = (level: "low" | "critical") => ({ score: level === "critical" ? 80 : 5, level, factors: [{ id: "honeypot", severity: "critical" as const, points: 70, title: "Looks like a honeypot", detail: "" }], summary: "", advice: [] });
+assert.match(riskBlock(analysis("critical"))!, /honeypot.*score 80/);
+assert.equal(riskBlock(analysis("low")), null);
+assert.equal(riskBlock(null), null);
 console.log("keeper ok");

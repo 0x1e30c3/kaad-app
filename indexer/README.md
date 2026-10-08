@@ -11,10 +11,11 @@ leaderboard read one GraphQL endpoint instead of scanning raw logs.
 | `DailyStat` | Network activity per UTC day: trades, volume, new traders, club deposits, copies, strategies |
 | `Club`, `ClubDeposit` | Clubs (registered dynamically from `KaddClubFactory.ClubCreated`) and every deposit |
 | `Strategy` | Limit / TP / SL / DCA orders and their executions |
-| `CopyVault`, `CopyTrade` | Auto-copy vaults, their limits, and every copied trade |
+| `CopyVault`, `CopyTrade` | Auto-copy vaults, their limits, and every copied trade (copy club trades too, `vault = "club:<id>"`) |
+| `CopyClub`, `CopyClubMember` | Copy clubs (`KaddCopyClubs`): rules, members, shares, deposits, redemptions, copies; each member's shares |
 
-`KaddStrategies` and `KaddCopy` swap first and emit their own event after, in the same transaction. The `Swap` is
-recorded on the pool event and re-attributed to the vault or strategy owner when that event arrives (`TxSwap` links
+`KaddStrategies`, `KaddCopy` and `KaddCopyClubs` swap first and emit their own event after, in the same transaction. The `Swap` is
+recorded on the pool event and re-attributed to the vault or strategy owner (or to the Trader `copyclub:<id>`, kind `club`, for a copy club) when that event arrives (`TxSwap` links
 the two).
 
 Code: [`config.yaml`](config.yaml) · [`schema.graphql`](schema.graphql) · [`src/handlers/kadd.ts`](src/handlers/kadd.ts)

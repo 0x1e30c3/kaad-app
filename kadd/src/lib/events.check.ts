@@ -1,6 +1,6 @@
 // Self-check for timestamp interpolation: npx tsx --conditions=react-server src/lib/events.check.ts
 import assert from "node:assert/strict";
-import { copyStatsFrom, interpolate } from "./events";
+import { copyStatsFrom, interpolate, referralsFrom } from "./events";
 
 const anchors = [[100, 1000], [200, 1030]] as const; // 0.3 s per block
 assert.equal(interpolate(anchors, 150), 1015); // between anchors
@@ -17,4 +17,14 @@ const stats = copyStatsFrom({
 });
 assert.deepEqual(stats.get("0xa"), { copiers: 1, depositedUsd: 25, copies: 3 }); // a closed vault's copies still happened
 assert.deepEqual(stats.get("0xb"), { copiers: 1, depositedUsd: 5, copies: 1 });
+// referralsFrom: A invited B (traded) and C (did nothing); D invited E (joined a copy club).
+const refs = referralsFrom({
+  referred: [ev({ user: "0xB", referrer: "0xA" }), ev({ user: "0xC", referrer: "0xA" }), ev({ user: "0xE", referrer: "0xD" })],
+  swaps: [ev({ trader: "0xb" })],
+  deposits: [],
+  followed: [],
+  clubDeposits: [ev({ member: "0xE" })],
+});
+assert.deepEqual(refs.get("0xa"), { invited: ["0xb", "0xc"], active: ["0xb"] });
+assert.deepEqual(refs.get("0xd"), { invited: ["0xe"], active: ["0xe"] });
 console.log("events ok");
