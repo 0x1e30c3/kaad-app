@@ -87,6 +87,11 @@ export default function PerpsBoard({ board, bot }: { board: PerpBoard | null; bo
 
   return (
     <>
+      <div className="flex flex-wrap gap-3 text-[12px] font-medium">
+        <Link href="/perps/risk" className="text-muted hover:text-fg underline-offset-4 hover:underline">Liquidation map & protocol risk →</Link>
+        <Link href="/perps/compare" className="text-muted hover:text-fg underline-offset-4 hover:underline">Compare traders →</Link>
+        <Link href="/perps" className="text-muted hover:text-fg underline-offset-4 hover:underline">Trade perps →</Link>
+      </div>
       {bot && <BotCard bot={bot} />}
       <section className="grid gap-3 grid-cols-2 md:grid-cols-4">
         {[

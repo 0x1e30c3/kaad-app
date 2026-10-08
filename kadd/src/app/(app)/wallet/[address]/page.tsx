@@ -16,7 +16,8 @@ import CopyButton from "@/components/CopyButton";
 import { AutoCopyForm } from "@/components/AutoCopy";
 import AutoRefresh from "@/components/AutoRefresh";
 import ShareButton from "@/components/ShareButton";
-import { perpBoard } from "@/lib/perpl";
+import { walletRisk } from "@/lib/perpl";
+import PerpsProfile from "@/components/PerpsProfile";
 
 export const revalidate = 60;
 
@@ -26,7 +27,6 @@ export async function generateMetadata(props: PageProps<"/wallet/[address]">) {
 }
 
 const SCAN = "https://monadscan.com";
-const px = (n: number) => n.toLocaleString("en-US", { maximumSignificantDigits: 5 });
 const signed = (n: number) => `${n >= 0 ? "+" : "-"}$${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: Math.abs(n) < 100 ? 2 : 0 })}`;
 const hoursSince = (ms: number) => Math.max(1, Math.round((Date.now() - ms) / 36e5));
 const ago = (ms: number) => {
@@ -37,8 +37,7 @@ const ago = (ms: number) => {
 export default async function WalletPage(props: PageProps<"/wallet/[address]">) {
   const { address } = await props.params;
   if (!isAddress(address, { strict: false })) notFound();
-  const [w, smart, copy, perps] = await Promise.all([getWallet(address), smartWallet(address), copyStats(), perpBoard().catch(() => null)]);
-  const perp = perps?.rows.find((r) => r.address === address.toLowerCase());
+  const [w, smart, copy, perp] = await Promise.all([getWallet(address), smartWallet(address), copyStats(), walletRisk(address).catch(() => null)]);
   const copying = copy.get(address.toLowerCase());
   const row = aggregate(w.trades)[0] ?? null;
   const bt = backtest(w.trades);
@@ -126,40 +125,7 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
         </section>
       )}
 
-      {perp && (
-        <section id="perps" className="scroll-mt-4">
-          <Panel title="Perps on Perpl" count={perp.open.length || undefined} actions={<a href="https://app.perpl.xyz" target="_blank" rel="noreferrer" className="text-[12px] text-muted hover:text-fg inline-flex items-center gap-0.5">Perpl <ArrowUpRight className="size-3" /></a>}>
-            <div className="px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-[13px] tabular-nums border-b border-line">
-              {perp.realized !== null && <span>30d realized <b className={perp.realized >= 0 ? "text-up" : "text-down"}>{signed(perp.realized)}</b></span>}
-              {perp.closes > 0 && <span>Win rate <b>{Math.round((perp.wins / perp.closes) * 100)}%</b> of {perp.closes} closes</span>}
-              {perp.liquidations > 0 && <span className="text-down">{perp.liquidations} liquidated</span>}
-              {perp.open.length > 0 && <span>Open PnL <b className={perp.unrealized >= 0 ? "text-up" : "text-down"}>{signed(perp.unrealized)}</b> · {perp.leverage.toFixed(1)}× overall</span>}
-            </div>
-            {perp.open.length === 0 ? (
-              <PanelEmpty>No open perps positions right now.</PanelEmpty>
-            ) : (
-              <table className="w-full text-[13px] tabular-nums">
-                <thead className="text-[11px] text-muted"><tr className="h-8 border-b border-line"><th className="text-left font-medium pl-4">Market</th><th className="text-right font-medium px-3">Size</th><th className="text-right font-medium px-3 hidden sm:table-cell">Entry → mark</th><th className="text-right font-medium px-3">Lev.</th><th className="text-right font-medium px-3 hidden sm:table-cell">Liq. ≈</th><th className="text-right font-medium px-3">PnL</th><th className="pr-4"><span className="sr-only">Trade</span></th></tr></thead>
-                <tbody>
-                  {perp.open.map((p) => (
-                    <tr key={p.marketId} className="h-10 border-b border-line last:border-0">
-                      <td className="pl-4"><span className={`font-semibold ${p.side === "long" ? "text-up" : "text-down"}`}>{p.side === "long" ? "Long" : "Short"}</span> {p.market}</td>
-                      <td className="px-3 text-right">{usd(p.notional)}</td>
-                      <td className="px-3 text-right hidden sm:table-cell">{px(p.entry)} → {px(p.mark)}</td>
-                      <td className="px-3 text-right">{p.leverage.toFixed(1)}×</td>
-                      <td className="px-3 text-right hidden sm:table-cell">{p.liquidation ? px(p.liquidation) : "–"}</td>
-                      <td className={`px-3 text-right font-semibold ${p.pnl >= 0 ? "text-up" : "text-down"}`}>{signed(p.pnl)}</td>
-                      <td className="pr-4 text-right">
-                        <Link href={`/perps?market=${p.market}&side=${p.side}&lev=${Math.max(1, Math.min(10, Math.round(p.leverage)))}`} className="h-7 px-2 inline-flex items-center rounded-md border border-line-strong text-[12px] font-semibold hover:bg-hover whitespace-nowrap">Trade like this</Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </Panel>
-        </section>
-      )}
+      {perp && <PerpsProfile address={w.address} risk={perp} />}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] items-start">
         <Panel title="Recent trades" count={w.trades.length || undefined}>
