@@ -92,7 +92,7 @@ export default function PerpsBoard({ board, bot }: { board: PerpBoard | null; bo
         {[
           ["Open positions", board.positions.toLocaleString("en-US"), `${board.markets} markets`],
           ["Traders holding", board.holders.toLocaleString("en-US"), "right now"],
-          ["Open interest", compact(board.openInterest), "per side"],
+          ["Open interest", compact(board.openInterest), `per side · ${compact(board.volume24h)} traded 24h`],
           ["Ranked by", board.realized ? "30d PnL" : "Open PnL", board.realized ? "realized + open" : "realized history syncing"],
         ].map(([k, v, note]) => (
           <article key={k} className={`${card} p-4 gap-1`}>
@@ -102,6 +102,49 @@ export default function PerpsBoard({ board, bot }: { board: PerpBoard | null; bo
           </article>
         ))}
       </section>
+
+      {board.marketStats.length > 0 && (
+        <section className={`${card} overflow-hidden`}>
+          <h2 className="px-4 h-11 flex items-center border-b border-line text-[13px] font-semibold">Markets</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px] tabular-nums">
+              <thead className="text-[11px] text-muted">
+                <tr className="h-9 border-b border-line">
+                  <th className="text-left font-medium pl-4">Market</th>
+                  <th className="text-right font-medium px-3">Price</th>
+                  <th className="text-right font-medium px-3 hidden sm:table-cell">24h volume</th>
+                  <th className="text-right font-medium px-3">Open interest</th>
+                  <th className="text-left font-medium px-3 hidden md:table-cell">Long / short traders</th>
+                  <th className="text-right font-medium px-3 hidden md:table-cell">Avg lev.</th>
+                  <th className="text-right font-medium px-3 hidden lg:table-cell" title="Latest funding rate, % per hour; positive means longs pay shorts">Funding /h</th>
+                  <th className="text-right font-medium pr-4" title="Open positions within 5% of their liquidation price">Near liq.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {board.marketStats.map((m) => (
+                  <tr key={m.id} className="h-11 border-b border-line last:border-0">
+                    <td className="pl-4 font-semibold">{m.name}</td>
+                    <td className="px-3 text-right">
+                      {m.mark.toLocaleString("en-US", { maximumSignificantDigits: 6 })} <span className={`text-[11px] ${m.change24h >= 0 ? "text-up" : "text-down"}`}>{m.change24h >= 0 ? "+" : ""}{m.change24h.toFixed(1)}%</span>
+                    </td>
+                    <td className="px-3 text-right hidden sm:table-cell">{compact(m.volume24h)}</td>
+                    <td className="px-3 text-right">{compact(m.openInterest)}</td>
+                    <td className="px-3 hidden md:table-cell">
+                      <span className="flex items-center gap-2">
+                        <span className="h-1.5 w-24 rounded-full bg-down/40 overflow-hidden"><span className="block h-full bg-up" style={{ width: `${m.longShare}%` }} /></span>
+                        <span className="text-[11px] text-muted">{Math.round(m.longShare)}% long · {m.positions}</span>
+                      </span>
+                    </td>
+                    <td className="px-3 text-right hidden md:table-cell">{m.avgLeverage ? `${m.avgLeverage.toFixed(1)}×` : "–"}</td>
+                    <td className="px-3 text-right hidden lg:table-cell">{m.fundingHourly === null ? "–" : `${m.fundingHourly.toFixed(4)}%`}</td>
+                    <td className={`pr-4 text-right ${m.atRisk ? "text-warn font-semibold" : "text-muted"}`}>{m.atRisk}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section className={`${card} overflow-hidden`}>
         <div className="overflow-x-auto">

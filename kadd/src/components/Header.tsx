@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Bot, Flame, Layers, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
+import { BarChart3, Bot, CandlestickChart, Flame, Layers, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import Search from "./Search";
 import Account from "./Account";
@@ -11,14 +11,16 @@ import { Logo } from "./ui";
 // [href, label, icon, keyboard shortcut, shows a live dot]
 const NAV: [string, string, LucideIcon, string, boolean?][] = [
   ["/trenches", "Trenches", Layers, "1", true],
-  ["/trending", "Trending", Flame, "2"],
-  ["/groups", "Groups & Clubs", Users, "3"],
-  ["/leaderboard", "Leaderboard", Trophy, "4"],
-  ["/portfolio", "Portfolio", Wallet, "5"],
-  ["/stats", "Stats", BarChart3, "6"],
-  ["/agents", "AI Agents", Bot, "7"],
+  ["/perps", "Perps", CandlestickChart, "2"],
+  ["/trending", "Trending", Flame, "3"],
+  ["/groups", "Groups & Clubs", Users, "4"],
+  ["/leaderboard", "Leaderboard", Trophy, "5"],
+  ["/portfolio", "Portfolio", Wallet, "6"],
+  ["/stats", "Stats", BarChart3, "7"],
+  ["/agents", "AI Agents", Bot, "8"],
 ];
-const MOBILE = NAV.slice(0, 5); // Stats and AI Agents are reachable from Leaderboard on phones
+// Trending, Stats and AI Agents are reachable from other pages on phones.
+const MOBILE = NAV.filter((n) => ["/trenches", "/perps", "/groups", "/leaderboard", "/portfolio"].includes(n[0]));
 const SHORT: Record<string, string> = { "/groups": "Groups" }; // label where space is tight
 
 const isActive = (path: string, href: string) =>

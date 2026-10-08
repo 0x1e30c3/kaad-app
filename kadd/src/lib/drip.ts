@@ -1,7 +1,7 @@
 // Gas drip: sends a little testnet MON to brand-new passkey accounts so their first transaction just works (judges
 // and first-time users have 0 MON). Server-only: DRIP_PRIVATE_KEY is a dedicated, testnet-only hot wallet.
 import "server-only";
-import { createWalletClient, formatEther, isAddress, parseEther } from "viem";
+import { createWalletClient, erc20Abi, formatEther, isAddress, parseEther, type Address } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { chain, publicClient, transport } from "./chain";
 
@@ -47,6 +47,7 @@ export async function drip(address: string, ip: string, now = Date.now()): Promi
     const hash = await wallet.sendTransaction({ to: address, value: DRIP_AMOUNT });
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     if (receipt.status !== "success") throw new Error("reverted");
+    await dripAusd(wallet, address as Address);
     return { ok: true, hash, amount: formatEther(DRIP_AMOUNT) };
   } catch (e) {
     lastByAddress.delete(a);
@@ -54,5 +55,24 @@ export async function drip(address: string, ip: string, now = Date.now()): Promi
     recent.pop();
     console.error("[drip] send failed", e);
     return { ok: false, status: 502, error: "Couldn't send gas right now. Try again." };
+  }
+}
+
+// Perpl testnet collateral. When the drip wallet holds some, a new account also gets enough to open a Perpl account
+// (Perpl's testnet minimum is 100 AUSD), so /perps works without leaving Kadd. Best effort: gas is what matters.
+const TEST_AUSD: Address = "0xa9012a055bd4e0edff8ce09f960291c09d5322dc";
+const AUSD_DRIP = 150_000_000n; // 150 AUSD (6 decimals)
+
+async function dripAusd(wallet: ReturnType<typeof createWalletClient>, to: Address) {
+  try {
+    const [mine, theirs] = await Promise.all([
+      publicClient.readContract({ address: TEST_AUSD, abi: erc20Abi, functionName: "balanceOf", args: [wallet.account!.address] }),
+      publicClient.readContract({ address: TEST_AUSD, abi: erc20Abi, functionName: "balanceOf", args: [to] }),
+    ]);
+    if (mine < AUSD_DRIP || theirs > 0n) return;
+    const hash = await wallet.writeContract({ address: TEST_AUSD, abi: erc20Abi, functionName: "transfer", args: [to, AUSD_DRIP], account: wallet.account!, chain });
+    await publicClient.waitForTransactionReceipt({ hash });
+  } catch (e) {
+    console.error("[drip] AUSD send failed", e);
   }
 }
