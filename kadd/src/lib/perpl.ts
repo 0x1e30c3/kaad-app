@@ -5,6 +5,7 @@ import "server-only";
 import { createPublicClient, http, parseAbi, type Address } from "viem";
 import { monad, monadTestnet } from "viem/chains";
 import { swr } from "./cache";
+import type { PerpTerms } from "./perplOrder";
 import { indexedPerplDays, indexerUrl } from "./indexer";
 
 const CNS = 1e6; // AUSD collateral, 6 decimals
@@ -36,7 +37,7 @@ export const perplAbi = parseAbi([
   "function getAccountByAddr(address accountAddress) view returns (AccountInfo accountInfo)",
 ]);
 
-export type PerpMarket = { id: number; name: string; priceDecimals: number; sizeDecimals: number; open: boolean; ttlBlocks: number };
+export type PerpMarket = PerpTerms & { open: boolean };
 export type PerpPosition = {
   marketId: number;
   market: string;
@@ -50,18 +51,30 @@ export type PerpPosition = {
   deposit: number; // margin, USD
   leverage: number; // notional / margin
   pnl: number; // unrealized, incl. funding, USD
+  liquidation: number; // approximate liquidation price (Perpl SDK formula, before accrued funding)
 };
 
 /** Markets from Perpl's public context (decimals per market). Changes rarely: cached an hour. */
 export const perpMarkets = (net: Net = "mainnet") =>
   swr(`perpl:markets:${net}`, 60 * 60_000, async (): Promise<PerpMarket[]> => {
     const j = (await fetch(`${PERPL[net].api}/v1/pub/context`).then((r) => r.json())) as {
-      markets: { id: number; name: string; symbol: string; order_ttl_blocks: number; config: { is_open: boolean; price_decimals: number; size_decimals: number } }[];
+      markets: { id: number; name: string; symbol: string; order_ttl_blocks: number; config: { is_open: boolean; price_decimals: number; size_decimals: number; initial_margin: number; maintenance_margin: number; taker_fee: number } }[];
     };
-    return j.markets.map((m) => ({ id: m.id, name: m.symbol || m.name, priceDecimals: m.config.price_decimals, sizeDecimals: m.config.size_decimals, open: m.config.is_open, ttlBlocks: m.order_ttl_blocks }));
+    return j.markets.map((m) => ({
+      id: m.id,
+      name: m.symbol || m.name,
+      priceDecimals: m.config.price_decimals,
+      sizeDecimals: m.config.size_decimals,
+      maxLeverage: m.config.initial_margin / 100,
+      maintLeverage: m.config.maintenance_margin / 100,
+      takerFee: m.config.taker_fee,
+      ttlBlocks: m.order_ttl_blocks,
+      open: m.config.is_open,
+    }));
   });
 
 const PAGE = 200n;
+const entryOf = (p: { pricePNS: bigint }, m: PerpMarket) => Number(p.pricePNS) / 10 ** m.priceDecimals;
 
 /** Every open position in one market, walking the contract's linked list a page at a time. */
 async function marketPositions(net: Net, m: PerpMarket): Promise<Omit<PerpPosition, "address">[]> {
@@ -85,12 +98,14 @@ async function marketPositions(net: Net, m: PerpMarket): Promise<Omit<PerpPositi
         account: Number(p.accountId),
         side: p.positionType === 0 ? "long" : "short",
         size,
-        entry: Number(p.pricePNS) / 10 ** m.priceDecimals,
+        entry: entryOf(p, m),
         mark,
         notional,
         deposit,
         leverage: deposit > 0 ? notional / deposit : 0,
         pnl: Number(p.pnlCNS) / CNS,
+        // SDK: liq = entry ± (maintenance requirement − deposit) / size, requirement = entry × size / maintLeverage.
+        liquidation: size > 0 ? Math.max(0, entryOf(p, m) + (p.positionType === 0 ? 1 : -1) * ((entryOf(p, m) * size) / m.maintLeverage - deposit) / size) : 0,
       });
     }
     const last = rows.at(-1);
@@ -126,6 +141,26 @@ export const perpPositions = (net: Net = "mainnet") =>
     return all.map((p) => ({ ...p, address: addr.get(p.account) ?? "" }));
   });
 
+export type PerpTicker = { mark: number; prev: number; volume24h: number; openInterest: number };
+
+/** Per-market mark, 24h-ago price, 24h volume and open interest (USD) from Perpl's public ticker. Cached 15 s. */
+export const perpTickers = (net: Net) =>
+  swr(`perpl:ticker:${net}`, 15_000, async (): Promise<Record<number, PerpTicker>> => {
+    const [j, markets] = await Promise.all([
+      fetch(`${PERPL[net].api}/v1/market-data/ticker`, { cache: "no-store" }).then((r) => r.json() as Promise<{ d: Record<string, { mrk: number; prv: number; dva: string; oi: number }> }>),
+      perpMarkets(net),
+    ]);
+    const out: Record<number, PerpTicker> = {};
+    for (const m of markets) {
+      const t = j.d[String(m.id)];
+      if (!t) continue;
+      const mark = t.mrk / 10 ** m.priceDecimals;
+      // dva: 24h volume in AUSD atoms (6 decimals); oi: open interest in lots.
+      out[m.id] = { mark, prev: t.prv / 10 ** m.priceDecimals, volume24h: Number(t.dva) / 1e6, openInterest: (t.oi / 10 ** m.sizeDecimals) * mark };
+    }
+    return out;
+  });
+
 export type PerpTrader = { address: string; positions: PerpPosition[]; notional: number; pnl: number; deposit: number };
 
 /** Open positions grouped per wallet, biggest book first. */
@@ -154,13 +189,20 @@ export type PerpRow = {
   notional: number;
   leverage: number; // open notional / open margin
 };
-export type PerpBoard = { rows: PerpRow[]; realized: boolean; markets: number; positions: number; holders: number; openInterest: number };
+export type PerpBoard = { rows: PerpRow[]; realized: boolean; markets: number; positions: number; holders: number; openInterest: number; volume24h: number; marketStats: PerpMarketStat[] };
 
 /** Perpl traders: realized PnL over 30 days (indexer) joined with what they hold right now (contract). Cached 2 min. */
 export const perpBoard = () =>
   swr("perpl:board", 2 * 60_000, async (): Promise<PerpBoard> => {
     const since = Math.floor(Date.now() / 86_400_000) - 30;
-    const [positions, days] = await Promise.all([perpPositions(), indexerUrl() ? indexedPerplDays(since).catch(() => null) : Promise.resolve(null)]);
+    const [positions, days, markets, tickers, funding] = await Promise.all([
+      perpPositions(),
+      indexerUrl() ? indexedPerplDays(since).catch(() => null) : Promise.resolve(null),
+      perpMarkets("mainnet"),
+      perpTickers("mainnet").catch(() => ({}) as Record<number, PerpTicker>),
+      perpFunding("mainnet").catch(() => ({}) as Record<number, number>),
+    ]);
+    const stats = marketStats(markets, positions, tickers, funding);
     const rows = new Map<string, PerpRow>();
     const row = (a: string) => rows.get(a) ?? rows.set(a, { address: a, realized: days ? 0 : null, closes: 0, wins: 0, liquidations: 0, open: [], unrealized: 0, notional: 0, leverage: 0 }).get(a)!;
     for (const d of days ?? []) {
@@ -186,5 +228,63 @@ export const perpBoard = () =>
       positions: positions.length,
       holders: new Set(positions.map((p) => p.address)).size,
       openInterest: positions.filter((p) => p.side === "long").reduce((s, p) => s + p.notional, 0),
+      volume24h: stats.reduce((s, m) => s + m.volume24h, 0),
+      marketStats: stats,
     };
   });
+
+/** Latest funding rate per market, as % per hour (positive: longs pay shorts). Cached 5 min. */
+export const perpFunding = (net: Net) =>
+  swr(`perpl:funding:${net}`, 5 * 60_000, async (): Promise<Record<number, number>> => {
+    const now = Date.now();
+    const j = (await fetch(`${PERPL[net].api}/v1/market-data/funding/${now - 3 * 3600_000}-${now}`, { cache: "no-store" }).then((r) => r.json())) as { d: Record<string, { at: { t: number }; rate: number }[]> };
+    const out: Record<number, number> = {};
+    for (const [id, events] of Object.entries(j.d ?? {})) {
+      const last = events.at(-1);
+      const prev = events.at(-2);
+      if (!last) continue;
+      const intervalH = prev ? (last.at.t - prev.at.t) / 3600_000 : 2580 / 3600; // Perpl's interval is 43 min
+      out[Number(id)] = (last.rate / 1e6) * 100 / (intervalH || 1);
+    }
+    return out;
+  });
+
+export type PerpMarketStat = {
+  id: number;
+  name: string;
+  mark: number;
+  change24h: number;
+  volume24h: number;
+  openInterest: number; // USD per side
+  longShare: number; // % of open positions that are long (notional is equal per side, so count shows sentiment)
+  avgLeverage: number; // notional-weighted
+  fundingHourly: number | null; // % per hour
+  atRisk: number; // positions within 5% of their liquidation price
+  positions: number;
+};
+
+/** Protocol view per market: price, volume, OI, who is long vs short, leverage and positions close to liquidation. */
+export function marketStats(markets: PerpMarket[], positions: PerpPosition[], tickers: Record<number, PerpTicker>, funding: Record<number, number>): PerpMarketStat[] {
+  return markets
+    .filter((m) => m.open)
+    .map((m) => {
+      const ps = positions.filter((p) => p.marketId === m.id);
+      const t = tickers[m.id];
+      const notional = ps.reduce((s, p) => s + p.notional, 0);
+      const longs = ps.filter((p) => p.side === "long").length;
+      return {
+        id: m.id,
+        name: m.name,
+        mark: t?.mark ?? ps[0]?.mark ?? 0,
+        change24h: t && t.prev ? ((t.mark - t.prev) / t.prev) * 100 : 0,
+        volume24h: t?.volume24h ?? 0,
+        openInterest: t?.openInterest ?? notional / 2,
+        longShare: ps.length ? (longs / ps.length) * 100 : 50,
+        avgLeverage: notional ? ps.reduce((s, p) => s + p.leverage * p.notional, 0) / notional : 0,
+        fundingHourly: funding[m.id] ?? null,
+        atRisk: ps.filter((p) => p.liquidation > 0 && Math.abs(p.mark - p.liquidation) / p.mark < 0.05).length,
+        positions: ps.length,
+      };
+    })
+    .sort((a, b) => b.volume24h - a.volume24h);
+}
