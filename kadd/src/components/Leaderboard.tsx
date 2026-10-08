@@ -6,6 +6,9 @@ import type { Board, BoardRow, Period } from "@/lib/leaderboard";
 import type { MainnetBoard as Mainnet } from "@/lib/wallets";
 import MainnetBoard from "./MainnetBoard";
 import SmartMoneyBoard from "./SmartMoneyBoard";
+import PerpsBoard from "./PerpsBoard";
+import type { PerpBoard } from "@/lib/perpl";
+import type { BotView } from "@/lib/perplBot";
 import type { SmartMoney } from "@/lib/nansen";
 import { short, usd } from "@/lib/mock";
 import { useStore } from "@/lib/store";
@@ -13,7 +16,7 @@ import { Monogram, card, hueOf } from "./ui";
 import WalletAvatar from "./WalletAvatar";
 import { AreaChart, agoLabel } from "./charts";
 
-const TABS = [["mainnet", "Monad mainnet"], ["smart", "Smart Money"], ["traders", "Kadd traders"], ["clubs", "Kadd clubs"]] as const;
+const TABS = [["mainnet", "Monad mainnet"], ["smart", "Smart Money"], ["perps", "Perps · Perpl"], ["traders", "Kadd traders"], ["clubs", "Kadd clubs"]] as const;
 const PERIODS: [Period, string][] = [["1", "24h"], ["7", "7d"], ["30", "30d"]];
 const DAYS = { "1": 1, "7": 7, "30": 30 } as const;
 type SortKey = "pnl" | "roi" | "win" | "volume" | "trades";
@@ -41,7 +44,7 @@ const Trend = ({ series, days, height = 32 }: { series: number[]; days: number; 
   </div>
 );
 
-export default function Leaderboard({ board, mainnet, smart, copiers }: { board: Board; mainnet: Mainnet; smart: SmartMoney; copiers: Record<string, number> }) {
+export default function Leaderboard({ board, mainnet, smart, perps, bot, copiers }: { board: Board; mainnet: Mainnet; smart: SmartMoney; perps: PerpBoard | null; bot: BotView | null; copiers: Record<string, number> }) {
   const { user } = useStore();
   const [tab, setTab] = useState<(typeof TABS)[number][0]>("mainnet");
   const [period, setPeriod] = useState<Period>("7");
@@ -50,7 +53,7 @@ export default function Leaderboard({ board, mainnet, smart, copiers }: { board:
   const days = DAYS[period];
 
   // Rank is always by PnL (the server sorts that way); other columns only reorder rows, like CMC.
-  const ranked = (tab === "mainnet" || tab === "smart" ? [] : board[tab][period]).map((r, i) => ({ ...r, rank: i + 1 }));
+  const ranked = (tab === "mainnet" || tab === "smart" || tab === "perps" ? [] : board[tab][period]).map((r, i) => ({ ...r, rank: i + 1 }));
   const rows = [...ranked].sort((a, b) => ((b[sort.key] ?? -1) - (a[sort.key] ?? -1)) * (sort.desc ? 1 : -1));
   const nameOf = (r: BoardRow) => r.name ?? (r.address === me ? "You" : r.nns ?? short(r.address));
   const avatar = (r: BoardRow, size: number) =>
@@ -90,8 +93,8 @@ export default function Leaderboard({ board, mainnet, smart, copiers }: { board:
         <div role="tablist" aria-label="Leaderboard" className="flex p-0.5 rounded-lg bg-raised">
           {TABS.map(([v, l]) => <button key={v} role="tab" aria-selected={tab === v} onClick={() => setTab(v)} className={seg(tab === v)}>{l}</button>)}
         </div>
-        <span className="text-[11px] text-muted hidden sm:inline">{tab === "mainnet" ? "Real wallets trading on Monad" : tab === "smart" ? "Nansen-labelled smart money" : "Swaps on the Kadd testnet venue"}</span>
-        {tab !== "mainnet" && tab !== "smart" && (
+        <span className="text-[11px] text-muted hidden sm:inline">{tab === "mainnet" ? "Real wallets trading on Monad" : tab === "smart" ? "Nansen-labelled smart money" : tab === "perps" ? "Perpetual futures traders on Monad" : "Swaps on the Kadd testnet venue"}</span>
+        {tab !== "mainnet" && tab !== "smart" && tab !== "perps" && (
           <div role="tablist" aria-label="Period" className="ml-auto flex p-0.5 rounded-lg bg-raised">
             {PERIODS.map(([v, l]) => <button key={v} role="tab" aria-selected={period === v} onClick={() => setPeriod(v)} className={seg(period === v)}>{l}</button>)}
           </div>
@@ -100,6 +103,8 @@ export default function Leaderboard({ board, mainnet, smart, copiers }: { board:
 
       {tab === "mainnet" ? (
         <MainnetBoard board={mainnet} />
+      ) : tab === "perps" ? (
+        <PerpsBoard board={perps} bot={bot} />
       ) : tab === "smart" ? (
         <SmartMoneyBoard data={smart} active={mainnet.rows.filter((r) => r.smart !== null)} copiers={copiers} />
       ) : (
