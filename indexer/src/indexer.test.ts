@@ -32,31 +32,29 @@ describe("Kadd indexer", () => {
     t.expect(sets(copy, "DailyStat").at(-1)).toMatchObject({ trades: 1, volumeUsd: 5, copies: 1, newTraders: 1 });
   });
 
-  it("credits Perpl realized PnL to the account that closed (Monad mainnet)", async (t) => {
+  it("indexes Perpl markets, accounts, deposits and liquidations (Monad mainnet)", async (t) => {
     const indexer = createTestIndexer();
-    // Perpl's first markets, with the decimals that value fills and liquidations in USD.
+    // Perpl's first markets, with the decimals that value liquidations in USD.
     const added = await indexer.process({ chains: { 143: { startBlock: 54_773_025, endBlock: 54_773_029 } } });
-    t.expect(sets(added, "PerplMarket").map((m) => m.symbol).length).toBe(2);
-    t.expect(sets(added, "PerplMarket")[0]).toMatchObject({ id: "1" });
+    t.expect(sets(added, "PerplMarket").map((m) => m.id)).toEqual(["1", "10"]);
 
     // Perpl's very first account.
     const created = await indexer.process({ chains: { 143: { startBlock: 54_972_991, endBlock: 54_972_991 } } });
-    t.expect(sets(created, "PerplTrader")[0]).toMatchObject({ id: "1", realizedPnlUsd: 0 });
-    t.expect(sets(created, "PerplTrader")[0]!.address).toMatch(/^0x[0-9a-f]{40}$/);
+    t.expect(sets(created, "PerplAccount")[0]).toMatchObject({ id: "1" });
+    t.expect(sets(created, "PerplAccount")[0]!.address).toMatch(/^0x[0-9a-f]{40}$/);
 
-    // Two closes in one block: account 2118 lost $0.004338, account 2192 lost $0.000021 (price PnL, no funding).
-    const closes = await indexer.process({ chains: { 143: { startBlock: 111_500_041, endBlock: 111_500_041 } } });
-    const last = (id: string) => sets(closes, "PerplTrader").filter((x) => x.id === id).at(-1);
-    t.expect(last("2118")).toMatchObject({ closes: 1, wins: 0 });
-    t.expect(last("2118")!.realizedPnlUsd).toBeCloseTo(-0.004338, 6);
-    t.expect(last("2192")!.realizedPnlUsd).toBeCloseTo(-0.000021, 6);
-    t.expect(sets(closes, "PerplTraderDay").some((d) => d.account === "2118")).toBe(true);
-    // Each close is a row of the wallet's history, and the day's protocol totals move with it.
-    const history = sets(closes, "PerplClose").filter((c) => c.account === "2118");
-    t.expect(history.at(-1)).toMatchObject({ kind: "close", side: "long" });
-    t.expect(history.at(-1)!.pnlUsd as number).toBeCloseTo(-0.004338, 6);
-    const day = sets(closes, "PerplDaily").at(-1)!;
-    t.expect(day.activeTraders as number).toBeGreaterThanOrEqual(2);
-    t.expect(day.fills as number).toBeGreaterThan(0);
+    // A full liquidation: account 1922's MON long, 4,157 MON at $0.027636 (≈ $114.88), −$6.62 realized.
+    const liq = await indexer.process({ chains: { 143: { startBlock: 111_195_974, endBlock: 111_195_974 } } });
+    const [l] = sets(liq, "PerplLiquidation");
+    t.expect(l).toMatchObject({ account: "1922", perpId: 10, side: "long", full: true });
+    t.expect(l!.notionalUsd as number).toBeCloseTo(114.88, 2);
+    t.expect(l!.pnlUsd as number).toBeCloseTo(-6.623056, 6);
+    t.expect(sets(liq, "PerplAccount").find((a) => a.id === "1922")).toMatchObject({ liquidations: 1 });
+    t.expect(sets(liq, "PerplDaily").at(-1)).toMatchObject({ liquidations: 1 });
+
+    // A deposit: 11 AUSD into account 5424.
+    const deposit = await indexer.process({ chains: { 143: { startBlock: 111_533_181, endBlock: 111_533_181 } } });
+    t.expect(sets(deposit, "PerplAccount").find((a) => a.id === "5424")).toMatchObject({ deposits: 1, depositedUsd: 11 });
+    t.expect(sets(deposit, "PerplDaily").at(-1)).toMatchObject({ deposits: 1, depositedUsd: 11 });
   });
 });

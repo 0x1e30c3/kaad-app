@@ -73,6 +73,19 @@ On `/perps` below the ticket, and per wallet:
 Checks: `perplRisk.check.ts` (liquidation buckets and cumulative sums, wallet performance), indexer replay test
 (markets, closes, daily totals on real mainnet blocks).
 
+## F8c. Fitting Envio's free plan (revision)
+
+Indexing every Perpl close and fill (70M+ events) exceeded Envio Cloud's free plan (100k events per deployment) and
+would have been shut down before judging. The indexer now keeps only Perpl's low-volume events: markets, accounts,
+deposits / withdrawals and liquidations (~36k for the whole history, ~150 a day). What changed in the app:
+
+- Realized PnL, win rate, profit factor, drawdown, streaks, hold time and per-wallet close history are gone (they need
+  every close).
+- **All-time PnL = live equity − (deposited − withdrawn)** replaces them, per trader and per wallet: exact for money in
+  and out, fees and funding included.
+- Liquidation history per wallet and a live liquidation feed on `/perps/risk`.
+- Volume and trades per day come from Perpl's official daily candles instead of fills.
+
 ## F9. Mera: one passkey, many keys (blocked on Perpl)
 
 Derive the Perpl API key (Ed25519) from the passkey PRF with a `perpl-api-v1` salt: nothing stored, the same key on
