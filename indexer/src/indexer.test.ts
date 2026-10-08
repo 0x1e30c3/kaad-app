@@ -31,4 +31,20 @@ describe("Kadd indexer", () => {
     t.expect(sets(copy, "CopyVault").at(-1)).toMatchObject({ id: "1", copies: 1 });
     t.expect(sets(copy, "DailyStat").at(-1)).toMatchObject({ trades: 1, volumeUsd: 5, copies: 1, newTraders: 1 });
   });
+
+  it("credits Perpl realized PnL to the account that closed (Monad mainnet)", async (t) => {
+    const indexer = createTestIndexer();
+    // Perpl's very first account.
+    const created = await indexer.process({ chains: { 143: { startBlock: 54_972_991, endBlock: 54_972_991 } } });
+    t.expect(sets(created, "PerplTrader")[0]).toMatchObject({ id: "1", realizedPnlUsd: 0 });
+    t.expect(sets(created, "PerplTrader")[0].address).toMatch(/^0x[0-9a-f]{40}$/);
+
+    // Two closes in one block: account 2118 lost $0.004338, account 2192 lost $0.000021 (price PnL, no funding).
+    const closes = await indexer.process({ chains: { 143: { startBlock: 111_500_041, endBlock: 111_500_041 } } });
+    const last = (id: string) => sets(closes, "PerplTrader").filter((x) => x.id === id).at(-1);
+    t.expect(last("2118")).toMatchObject({ closes: 1, wins: 0 });
+    t.expect(last("2118")!.realizedPnlUsd).toBeCloseTo(-0.004338, 6);
+    t.expect(last("2192")!.realizedPnlUsd).toBeCloseTo(-0.000021, 6);
+    t.expect(sets(closes, "PerplTraderDay").some((d) => d.account === "2118")).toBe(true);
+  });
 });

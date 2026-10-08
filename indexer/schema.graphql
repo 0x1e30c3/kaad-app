@@ -148,3 +148,30 @@ type TxSwap {
   id: ID! # transaction hash
   swap: String!
 }
+
+# Perpl (perps on Monad mainnet): realized PnL per exchange account, for the Kadd perps leaderboard. PnL is price PnL
+# plus funding, in USD (AUSD collateral), before trading fees.
+type PerplTrader {
+  id: ID! # Perpl account id
+  address: String! @index
+  realizedPnlUsd: Float!
+  fundingUsd: Float!
+  closes: Int! # full closes and liquidations
+  wins: Int! # closes with positive PnL
+  liquidations: Int!
+  partials: Int! # partial closes and flips
+  firstAt: Int!
+  lastAt: Int!
+}
+
+# The same per UTC day, so the app can rank the last 7 / 30 days.
+type PerplTraderDay {
+  id: ID! # accountId_day
+  account: String! @index
+  address: String!
+  day: Int! @index
+  pnlUsd: Float!
+  closes: Int!
+  wins: Int!
+  liquidations: Int!
+}
