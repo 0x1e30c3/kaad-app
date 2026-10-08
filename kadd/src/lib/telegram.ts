@@ -6,6 +6,8 @@ import { kv, KV_READY } from "./kv";
 import { copyActivity } from "./share";
 import { getFeed } from "./wallets";
 import { short, usd } from "./mock";
+import { perpPositions, type Net } from "./perpl";
+import { liqDistance } from "./perplRisk";
 
 const BOT = process.env.TELEGRAM_BOT_TOKEN;
 export const TELEGRAM_READY = !!BOT && KV_READY;
@@ -47,6 +49,8 @@ export async function dispatchTelegram(): Promise<{ sent: number } | null> {
   if (!TELEGRAM_READY || Date.now() - lastRun < 50_000) return null;
   lastRun = Date.now();
   let sent = 0;
+  // Every open Perpl position on both networks, read once per pass (cached a minute) for liquidation alerts.
+  const perps = (await Promise.all((["mainnet", "testnet"] as Net[]).map((net) => perpPositions(net).then((ps) => ps.map((p) => ({ ...p, net })), () => [])))).flat();
   // ponytail: sequential over all subs; batch or shard past a few hundred subscribers.
   for (const token of await kv<string[]>("SMEMBERS", SUBS)) {
     const s = await getSub(token);
@@ -55,6 +59,12 @@ export async function dispatchTelegram(): Promise<{ sent: number } | null> {
     const items = [
       ...feed.map((t) => ({ tx: t.tx, text: `👀 ${t.nns ?? short(t.trader)} ${t.side === "buy" ? "bought" : "sold"} ${usd(t.usd)} of ${t.token.symbol}\n${SITE}/wallet/${t.trader}` })),
       ...copies.map((c) => ({ tx: c.tx, text: `🤖 ${c.label} copied a ${c.isBuy ? "buy" : "sell"}: ${usd(c.usd)} of ${c.symbol}` })),
+      // One alert per position when it comes within 5%, and again within 2%, of its liquidation price.
+      ...perps.flatMap((p) => {
+        const d = p.address === s.owner ? liqDistance(p.side, p.mark, p.liquidation) : Infinity;
+        const band = d < 0.02 ? "2" : d < 0.05 ? "5" : null;
+        return band ? [{ tx: `liq:${p.net}:${p.marketId}:${p.side}:${band}`, text: `⚠️ Your ${p.side} ${p.market} on Perpl ${p.net} is ${(d * 100).toFixed(1)}% from liquidation (${p.leverage.toFixed(1)}×).\n${SITE}/perps${p.net === "mainnet" ? "?net=mainnet" : ""}` }] : [];
+      }),
     ];
     const f = fresh(items, s.seen);
     for (const text of lines(f.send.map((x) => x.text))) {
