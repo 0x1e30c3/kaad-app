@@ -12,5 +12,7 @@ export const STRATEGIES = env(process.env.NEXT_PUBLIC_STRATEGIES, "0xC12684b7063
 export const COPY = env(process.env.NEXT_PUBLIC_COPY, "0x27bB7D06AF7BA8Ea359CFe00A628145ED0Bf1661");
 /** Copy clubs: pooled auto copy vaults (KaddCopyClubs). Zero until deployed; the UI then hides clubs. */
 export const COPY_CLUBS = env(process.env.NEXT_PUBLIC_COPY_CLUBS, "0x0000000000000000000000000000000000000000");
+/** Mainnet auto copy through Kuru (KaddCopyKuru, Monad mainnet). Not deployed: empty shows "coming soon". */
+export const COPY_MAINNET = env(process.env.NEXT_PUBLIC_COPY_MAINNET, "0x0000000000000000000000000000000000000000");
 /** False only if env explicitly blanks an address; onchain features then say so instead of failing. */
 export const VENUE_READY = VENUE !== zeroAddress && TUSDC !== zeroAddress && CLUB_FACTORY !== zeroAddress;
