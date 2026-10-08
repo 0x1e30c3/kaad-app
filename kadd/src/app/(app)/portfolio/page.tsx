@@ -10,6 +10,7 @@ import { EXPLORER } from "@/lib/venue";
 import { PageHeader, Panel, PanelEmpty, Pct, StatusPill, TokenIcon, card, hueOf } from "@/components/ui";
 import LoginGate from "@/components/LoginGate";
 import SecurityPanel from "@/components/SecurityPanel";
+import InviteCard from "@/components/InviteCard";
 import StrategiesList from "@/components/StrategiesList";
 import { CopyVaults } from "@/components/AutoCopy";
 
@@ -232,6 +233,7 @@ export default function PortfolioPage() {
       </Panel>
       </section>
 
+      <InviteCard />
       <SecurityPanel />
       </div>
       </div>

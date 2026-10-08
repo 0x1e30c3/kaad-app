@@ -12,6 +12,8 @@ export const STRATEGIES = env(process.env.NEXT_PUBLIC_STRATEGIES, "0xC12684b7063
 export const COPY = env(process.env.NEXT_PUBLIC_COPY, "0x27bB7D06AF7BA8Ea359CFe00A628145ED0Bf1661");
 /** Copy clubs: pooled auto copy vaults (KaddCopyClubs). Keeper: the gas drip wallet. */
 export const COPY_CLUBS = env(process.env.NEXT_PUBLIC_COPY_CLUBS, "0x67A974949d2918e07763C86cfe8bbc3E817930D2");
+/** Onchain invite attribution (KaddReferrals). Not deployed yet: empty hides invites. */
+export const REFERRALS = env(process.env.NEXT_PUBLIC_REFERRALS, "0x0000000000000000000000000000000000000000");
 /** Mainnet auto copy through Kuru (KaddCopyKuru, Monad mainnet). Not deployed: empty shows "coming soon". */
 export const COPY_MAINNET = env(process.env.NEXT_PUBLIC_COPY_MAINNET, "0x0000000000000000000000000000000000000000");
 /** False only if env explicitly blanks an address; onchain features then say so instead of failing. */

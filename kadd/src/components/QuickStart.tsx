@@ -9,6 +9,7 @@ import { EXPLORER } from "@/lib/venue";
 import { short, usd } from "@/lib/mock";
 import { TokenIcon, card } from "./ui";
 import WalletAvatar from "./WalletAvatar";
+import InviteCard from "./InviteCard";
 
 const STARTED = "kadd:start:at";
 const BEST = "kadd:start:best";
@@ -189,6 +190,7 @@ export default function QuickStart({ candidates }: { candidates: Candidate[] }) 
           </div>
         </Step>
       </ol>
+      {done && <InviteCard />}
     </div>
   );
 }
