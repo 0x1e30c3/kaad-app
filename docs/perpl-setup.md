@@ -1,6 +1,13 @@
 # Perpl in Kadd: setup
 
-Kadd uses [Perpl](https://app.perpl.xyz) (perpetual futures on Monad) in two ways:
+Kadd uses [Perpl](https://app.perpl.xyz) (perpetual futures on Monad) in three ways:
+
+0. **Perps from your passkey** (`/perps`): open a Perpl account with AUSD, go long or short, close, withdraw, all
+   signed by the Kadd passkey account straight on the Exchange contract (`createAccount`, `execOrder`). No API key,
+   no whitelist (Perpl's `whitelistingEnabled()` is false). Testnet for practice, mainnet with real AUSD (Get AUSD
+   swaps MON → AUSD on Kuru). Nothing to set up. Optional: put testnet AUSD in the gas-drip wallet and new accounts
+   get 150 AUSD with their gas, so the testnet flow never leaves Kadd. Fork-tested:
+   [`scripts/perpl-fork.mts`](../kadd/scripts/perpl-fork.mts).
 
 1. **Perps leaderboard** (Leaderboard → Perps · Perpl, and a "Perps on Perpl" panel on wallet pages): every open
    position on Perpl mainnet, read straight from the Exchange contract (`getPositionsV2`), plus 30-day realized PnL
