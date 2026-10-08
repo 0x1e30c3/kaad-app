@@ -137,7 +137,8 @@ export function AreaChart({
       {axes && data.length > 1 && (
         <div className="absolute inset-x-0 bottom-0 flex justify-between text-[11px] text-muted tabular-nums pointer-events-none" style={{ right: padR / (W / 100) + "%" }}>
           {[0, 0.25, 0.5, 0.75, 1].map((f) => (
-            <span key={f}>{timeLabel(data[Math.round(f * (data.length - 1))].t, tspan)}</span>
+            // Local time: the server (UTC) and the browser format it differently, so let the client text win.
+            <span key={f} suppressHydrationWarning>{timeLabel(data[Math.round(f * (data.length - 1))].t, tspan)}</span>
           ))}
         </div>
       )}

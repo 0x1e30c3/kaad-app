@@ -38,27 +38,42 @@ skills already cover "copy trading with limits" with `cast`), Mera "One Passkey,
 
 ## Demo video (≤ 3 min, live product)
 
+The story in one line: **find a trader → check their risk → follow them with limits** (spot copy vault or perps), all
+from one passkey. Record on a phone-width window for the first and the perps parts (Agora asks for mobile), desktop
+for the rest.
+
+**Before recording**
+- An account with gas, tUSDC and some testnet AUSD in Perpl (deposit once on `/perps` so the trade step is one tap).
+- An active copy vault that has copied at least once (vault #0 or #1), so its page shows live copies.
+- Pick the trader for scene 4 on Leaderboard → Perps · Perpl: an open position at moderate leverage in BTC or ETH.
+- Open every page once so the data is warm, and turn on notifications.
+
 | Time | Show | Say |
 |------|------|-----|
-| 0:00 | Landing → **Try it in 60 seconds** → passkey → copy a trader | "No wallet, no seed phrase. One passkey, gas sent for you, first real trade in under a minute." Show the timer. |
-| 0:20 | Leaderboard → **Smart Money** | "Nansen tells us who's actually profitable on Monad, 30-day PnL." |
-| 0:40 | Click **Backtest** on a wallet | "What would copying them have returned? Real trades, real prices." |
-| 1:00 | **Copy $10** on one of their trades | "One tap: same token, on Kadd testnet with free test USDC." |
-| 1:20 | **Start auto copy**: $5 per buy, $20 a day | "A vault, not a bot with my keys: the contract enforces these limits, I can withdraw anytime." Show the live copy tx. |
-| 1:50 | Token page: chart timeframes, risk score | "Every trade shows the minimum you get and why a token is risky." |
-| 2:10 | Switch to **Live · Kuru**, quote, review | "When you're ready, the same account trades on mainnet, routed through Kuru's order books." |
-| 2:30 | **Create club** | "Or do it together: pooled funds, captain capped by the contract, anyone can exit." |
-| 2:45 | Stats + AI Agents page | "All onchain, indexed with Envio, and usable by AI agents." |
+| 0:00 | Phone width. Landing → **Try it in 60 seconds** → passkey → gas arrives → **Copy** a trader's latest buy | "No wallet app, no seed phrase. One passkey, gas sent for you, and my first real trade confirms in under a minute." Show the timer. |
+| 0:25 | Leaderboard → **Smart Money** → open a wallet → **Copy backtest** | "Nansen shows who is actually profitable on Monad. Before I follow anyone, I replay their real trades: what would copying them have returned?" |
+| 0:45 | **Start auto copy**: $5 per buy, $20 a day → the vault page with its copied trades | "Not a bot with my keys: a vault whose limits the contract enforces. The keeper only decides *when*. I can withdraw everything anytime." |
+| 1:05 | Leaderboard → **Perps · Perpl**: the markets table, then a trader's row → their wallet's **Perps on Perpl** panel | "Same idea for perps. Every Perpl position on Monad, read from the contract: size, leverage, open PnL, and how far each one is from liquidation." Point at **Away**, win rate, max drawdown. |
+| 1:25 | **Trade like this** → `/perps` ticket prefilled (market, side, leverage) → the liquidation price and warning → **Long** → filled → **Your positions** | "One tap copies their setup. Before I sign I see my margin, fee and liquidation price, and Kadd warns me if the leverage is too tight. My passkey signs straight on Perpl: AUSD in, position open, no API key." |
+| 1:55 | `/perps/risk`: the **liquidation map** for BTC, hover a bar; **Closest to liquidation** | "Where would the cascade start? A 5% drop in BTC liquidates this much in longs. These are the traders closest to the edge right now." |
+| 2:15 | Token page → **Live · Kuru** quote and review (or `/perps` mainnet → **Get AUSD**) | "Ready for real money? The same account trades mainnet through Kuru, and swaps MON into AUSD for Perpl, with the guaranteed minimum shown first." |
+| 2:30 | Groups → **Copy clubs** / Share card / Invite link | "Do it with friends: a copy club pools money into one vault with the same limits. Every invite is recorded onchain." |
+| 2:45 | **Stats** (Kadd + Perps on Perpl) → AI Agents | "Everything here is onchain and indexed with Envio across two chains, and AI agents can use it too. Kadd: see who's winning, follow them safely." |
 
 ## Pitch video (≤ 2 min)
 
-1. **Problem (20 s)** — ✍️ your first user: people copy traders by screenshot, late, with no limits, or hand their
-   keys to a bot.
-2. **Insight (20 s)** — On Monad, settlement is fast enough that copying can happen onchain with enforced rules.
-3. **Product (40 s)** — See who's winning (Nansen), test it (backtest + practice), follow it safely (copy vault,
-   clubs), go live (Kuru).
-4. **Traction (20 s)** — ✍️ numbers from Stats.
-5. **Team & next (20 s)** — ✍️ team; next: deploy the mainnet copy vault on Kuru (built and fork-tested), referrer-fee revenue, mobile.
+1. **Problem (20 s)** — ✍️ your first user. People copy traders by screenshot: late, unsized, on trust, or they hand
+   their keys to a bot. On perps it's worse: you copy someone's 15× without seeing they're 2% from liquidation.
+2. **Insight (15 s)** — Monad is fast enough for following to happen onchain, with the rules in a contract instead of
+   a promise, and every position is public, so risk can be shown before you copy.
+3. **Product (45 s)** — **Find** who's winning (Nansen smart money, every Monad wallet, every Perpl trader).
+   **Check** their risk (copy backtest, drawdown, distance to liquidation, the liquidation map). **Follow** with limits:
+   a spot copy vault or copy club the contract caps, or a perps position from your passkey with its liquidation price
+   shown first. One passkey from testnet practice to mainnet (Kuru, Perpl, AUSD).
+4. **Traction (20 s)** — ✍️ numbers from Stats (trades, wallets, copies, invites joined and traded) and anything
+   outside the app (community, users you talked to).
+5. **Team & next (20 s)** — ✍️ team. Next: the mainnet copy vault on Kuru (built and fork-tested), copy-perps for every
+   user with a delegated trade-only key, revenue from Kuru referrer and Perpl builder fees.
 
 ## Judge access
 

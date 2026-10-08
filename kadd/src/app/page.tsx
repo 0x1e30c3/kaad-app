@@ -48,10 +48,10 @@ const FEATURES = [
 ];
 
 const INSIDE: [string, string[]][] = [
-  ["Trading", ["Trenches feed", "Trending markets", "Token safety checks", "One-tap quick buy"]],
-  ["Social", ["Groups & invite codes", "Friends' trade feed", "Weekly leaderboards", "Follow-the-leader buys"]],
-  ["Clubs", ["Pooled USDC", "Captain trading", "Per-trade limits", "Withdraw any time"]],
-  ["Accounts", ["Passkey sign-in", "Cross-device recovery", "Session signing", "Monad testnet"]],
+  ["Follow", ["Nansen smart money", "Copy backtests", "Auto copy vaults", "Copy clubs"]],
+  ["Perps", ["Trade Perpl from a passkey", "Liquidation map", "Trader risk profiles", "Liquidation alerts"]],
+  ["Trading", ["Trenches feed", "Token safety checks", "Live on Kuru (mainnet)", "Limit, TP / SL, DCA"]],
+  ["Accounts", ["Passkey sign-in", "Cross-device recovery", "Session signing", "Gas sent for you"]],
 ];
 
 const STATS: [string, number | null, string, string][] = [

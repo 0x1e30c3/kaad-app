@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Bot, Coins, Copy, Droplets, Layers, Target, UserPlus, Users, Wallet } from "lucide-react";
 import { copyStatsFrom, kaddLogs, referralsFrom } from "@/lib/events";
 import { getStats } from "@/lib/stats";
+import { perpRisk } from "@/lib/perpl";
 import { CLUB_FACTORY, COPY, COPY_CLUBS, REFERRALS, STRATEGIES, TUSDC, VENUE } from "@/lib/addresses";
 import { EXPLORER } from "@/lib/venue";
 import { PageHeader, Pct, TokenIcon, card } from "@/components/ui";
@@ -18,7 +19,7 @@ const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
 const pressureLabel = (v: number) => (v < 20 ? "Strong selling" : v < 45 ? "Selling" : v <= 55 ? "Balanced" : v <= 80 ? "Buying" : "Strong buying");
 
 export default async function StatsPage() {
-  const [s, logs] = await Promise.all([getStats(), kaddLogs().catch(() => null)]);
+  const [s, logs, perps] = await Promise.all([getStats(), kaddLogs().catch(() => null), perpRisk().catch(() => null)]);
   const vaults = [...(logs ? copyStatsFrom(logs) : new Map()).values()].reduce((a, c) => ({ n: a.n + c.copiers, copies: a.copies + c.copies, usd: a.usd + c.depositedUsd }), { n: 0, copies: 0, usd: 0 });
   const a = s.activity;
   const buys = sum(s.pools.map((p) => p.buys24h));
@@ -105,6 +106,38 @@ export default async function StatsPage() {
           )}
         </article>
       </div>
+
+      {perps && (
+        <section className={`${card} p-4 md:p-5 gap-4`}>
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h2 className="text-[16px] font-semibold">Perps on Perpl</h2>
+            <span className="text-[12px] text-muted">Monad mainnet, read from the Perpl Exchange contract and Kadd&apos;s indexer. Trade them on Kadd at /perps.</span>
+            <Link href="/perps/risk" className="ml-auto text-[12px] font-medium text-muted hover:text-fg underline-offset-4 hover:underline">Liquidation map →</Link>
+          </div>
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            {([
+              ["Collateral (TVL)", money(perps.tvl), "AUSD in the Exchange"],
+              ["Open interest", money(perps.openInterest), "per side"],
+              ["24h volume", money(perps.volume24h), `${perps.markets.length} markets`],
+              ["Near liquidation", int(perps.near.count), "positions within 5%"],
+              ...(perps.daily?.length
+                ? ([
+                    ["7d volume", money(perps.daily.slice(-7).reduce((a, d) => a + d.volumeUsd, 0)), "from fills"],
+                    ["7d fees", money(perps.daily.slice(-7).reduce((a, d) => a + d.feesUsd, 0)), "maker + taker"],
+                    ["7d liquidations", int(perps.daily.slice(-7).reduce((a, d) => a + d.liquidations, 0)), money(perps.daily.slice(-7).reduce((a, d) => a + d.liquidatedUsd, 0))],
+                    ["Active traders", int(perps.daily.at(-1)?.activeTraders ?? 0), "today"],
+                  ] as [string, string, string][])
+                : []),
+            ] as [string, string, string][]).map(([k, v, note]) => (
+              <div key={k} className="rounded-lg bg-raised/60 p-3">
+                <div className="text-[12px] text-muted">{k}</div>
+                <div className="text-[18px] font-semibold tabular-nums">{v}</div>
+                <div className="text-[11px] text-faint">{note}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className={`${card} overflow-hidden`}>
         <div className="flex items-baseline gap-2 px-4 pt-4 pb-3">

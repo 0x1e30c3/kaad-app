@@ -24,7 +24,6 @@ export default async function PerpsRiskPage() {
       </div>
     );
   }
-  const near = r.atRisk.filter((p) => p.distance < 0.05);
   const d = r.daily ?? [];
   const series = (f: (x: (typeof d)[number]) => number) => d.map((x) => ({ t: x.day * 86400, v: f(x) }));
   let net = 0;
@@ -36,7 +35,7 @@ export default async function PerpsRiskPage() {
     ["Collateral (TVL)", compact(r.tvl), "AUSD held by the Perpl Exchange"],
     ["Open interest", compact(r.openInterest), "per side"],
     ["24h volume", compact(r.volume24h), `${r.markets.length} markets`],
-    ["Near liquidation", int(near.length), `positions within 5% · ${compact(near.reduce((s, p) => s + p.notional, 0))}`],
+    ["Near liquidation", int(r.near.count), `positions within 5% · ${compact(r.near.notional)}`],
     ...(d.length
       ? ([
           ["7d fees", compact(sum(last7, (x) => x.feesUsd)), "maker + taker"],

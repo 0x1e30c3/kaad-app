@@ -21,7 +21,7 @@ const NAV: [string, string, LucideIcon, string, boolean?][] = [
 ];
 // Trending, Stats and AI Agents are reachable from other pages on phones.
 const MOBILE = NAV.filter((n) => ["/trenches", "/perps", "/groups", "/leaderboard", "/portfolio"].includes(n[0]));
-const SHORT: Record<string, string> = { "/groups": "Groups" }; // label where space is tight
+const SHORT: Record<string, string> = { "/groups": "Groups", "/agents": "Agents" }; // label where space is tight
 
 const isActive = (path: string, href: string) =>
   href === "/trenches" ? path.startsWith("/trenches") || path.startsWith("/token") : href === "/groups" ? path.startsWith("/groups") || path.startsWith("/clubs") : path.startsWith(href);
@@ -64,8 +64,8 @@ export default function Header() {
               >
                 <span className={`absolute inset-x-0.5 inset-y-2 rounded-md transition-colors ${on ? "" : "group-hover:bg-hover"}`} />
                 <Icon className="relative size-4" />
-                <span className="relative hidden lg:inline xl:hidden">{SHORT[href] ?? label}</span>
-                <span className="relative hidden xl:inline">{label}</span>
+                <span className="relative hidden lg:inline 2xl:hidden whitespace-nowrap">{SHORT[href] ?? label}</span>
+                <span className="relative hidden 2xl:inline whitespace-nowrap">{label}</span>
                 {live && <span className="relative size-1.5 rounded-full bg-up animate-pulse" title="Live data" />}
                 {on && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-fg" />}
               </Link>
@@ -77,7 +77,7 @@ export default function Header() {
           <Search />
           <span
             title="Your account and Clubs run on Monad testnet. Token prices and charts are live Monad mainnet data."
-            className="hidden xl:flex items-center gap-1.5 h-8 px-2 text-[12px] text-muted cursor-help"
+            className="hidden 2xl:flex items-center gap-1.5 h-8 px-2 text-[12px] text-muted cursor-help whitespace-nowrap"
           >
             <span className="size-1.5 rounded-full bg-[#836ef9]" />
             Monad testnet

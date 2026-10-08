@@ -9,7 +9,6 @@ import { useGSAP } from "@gsap/react";
 import Cta from "./Cta";
 import Chart from "../Chart";
 import { Logo } from "../ui";
-import { CLUB_FACTORY } from "@/lib/addresses";
 import { GROUPS, TOKENS, candles, groupFeed, num, pct, usd, type Risk } from "@/lib/mock";
 
 gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP);
@@ -52,13 +51,11 @@ export default function Hero() {
       <div className="mx-auto flex max-w-[860px] flex-col items-center text-center">
         <a
           data-chip
-          href={`https://testnet.monadexplorer.com/address/${CLUB_FACTORY}`}
-          target="_blank"
-          rel="noreferrer"
+          href="/perps"
           className="group inline-flex items-center gap-2 rounded-full bg-raised py-1 pl-1 pr-3 text-[13px] ring-1 ring-line hover:bg-hover"
         >
           <span className="rounded-full bg-brand-fill px-2 py-0.5 text-[11px] font-semibold text-[#0a0a0a]">New</span>
-          Onchain clubs are live on Monad testnet
+          Perps on Perpl, from your passkey
           <ArrowUpRight className="size-3.5 text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </a>
         <h1 data-title className="mt-7 text-[clamp(40px,6.4vw,84px)] font-medium leading-[1.04] tracking-[-0.035em]">
@@ -66,7 +63,7 @@ export default function Hero() {
         </h1>
         <div data-sub className="flex flex-col items-center">
           <p className="mt-6 max-w-[52ch] text-[17px] leading-[1.5] text-muted md:text-[18px]">
-            Find new Monad tokens, see what your group is buying, and pool USDC in clubs with rules enforced onchain. Sign in with a passkey — no seed phrase.
+            See who&apos;s actually winning on Monad, check their risk, and follow them with limits a contract enforces: spot or perps, alone or with friends. Sign in with a passkey — no seed phrase.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Cta href="/start">Try it in 60 seconds</Cta>
