@@ -4,7 +4,7 @@
 // Testnet uses free test AUSD; mainnet uses real AUSD (Get AUSD swaps MON → AUSD through Kuru).
 import { BaseError, ContractFunctionRevertedError, erc20Abi, parseAbi, parseEventLogs, parseUnits, type Abi, type Address } from "viem";
 import { mainnetPublic, MON, quoteKuru } from "./mainnet";
-import { lotFor, marketOrder, perplError, type PerpSide, type PerpTerms } from "./perplOrder";
+import { liquidationPrice, lotFor, marketOrder, perplError, type PerpSide, type PerpTerms } from "./perplOrder";
 import { refreshChain, requireAccount, toast } from "./store";
 import { txError } from "./venue";
 import { mainnetWalletClient, publicClient, walletClient } from "./wallet";
@@ -57,7 +57,8 @@ export const fetchPerpMarkets = (net: PerpNet): Promise<PerpMarketView[]> =>
     return j;
   });
 
-export type PerpAccount = { accountId: bigint; wallet: number; balance: number; locked: number; minOpen: number };
+/** `balance` is AUSD in the Perpl account outside positions; `locked` is the part resting orders reserve; `free` is the rest. */
+export type PerpAccount = { accountId: bigint; wallet: number; balance: number; locked: number; free: number; minOpen: number };
 
 /** AUSD in the wallet and in the Perpl account (accountId 0 = no account yet). */
 export async function perpAccount(net: PerpNet, me: Address): Promise<PerpAccount> {
@@ -67,10 +68,12 @@ export async function perpAccount(net: PerpNet, me: Address): Promise<PerpAccoun
     n.pub().readContract({ address: n.exchange, abi: exchangeAbi, functionName: "getAccountByAddr", args: [me] }).catch(() => null), // reverts when there's no account
     n.pub().readContract({ address: n.exchange, abi: exchangeAbi, functionName: "getMinAccountOpenCNS" }),
   ]);
-  return { accountId: info?.accountId ?? 0n, wallet: Number(wallet) / CNS, balance: Number(info?.balanceCNS ?? 0n) / CNS, locked: Number(info?.lockedBalanceCNS ?? 0n) / CNS, minOpen: Number(minOpen) / CNS };
+  const balance = Number(info?.balanceCNS ?? 0n) / CNS;
+  const locked = Number(info?.lockedBalanceCNS ?? 0n) / CNS;
+  return { accountId: info?.accountId ?? 0n, wallet: Number(wallet) / CNS, balance, locked, free: Math.max(0, balance - locked), minOpen: Number(minOpen) / CNS };
 }
 
-export type MyPosition = { market: PerpTerms; side: PerpSide; lot: bigint; size: number; entry: number; mark: number; deposit: number; leverage: number; pnl: number };
+export type MyPosition = { market: PerpTerms; side: PerpSide; lot: bigint; size: number; entry: number; mark: number; deposit: number; leverage: number; pnl: number; liquidation: number };
 
 /** The account's open positions, read straight from the contract (fresh after every trade). */
 export async function myPositions(net: PerpNet, accountId: bigint, markets: PerpTerms[]): Promise<MyPosition[]> {
@@ -84,7 +87,11 @@ export async function myPositions(net: PerpNet, accountId: bigint, markets: Perp
     const size = Number(p.lotLNS) / 10 ** m.sizeDecimals;
     const mark = Number(markPNS) / 10 ** m.priceDecimals;
     const deposit = Number(p.depositCNS) / CNS;
-    return [{ market: m, side: p.positionType === 0 ? "long" : "short", lot: p.lotLNS, size, entry: Number(p.pricePNS) / 10 ** m.priceDecimals, mark, deposit, leverage: deposit > 0 ? (size * mark) / deposit : 0, pnl: Number(p.pnlCNS) / CNS }] as MyPosition[];
+    const entry = Number(p.pricePNS) / 10 ** m.priceDecimals;
+    const side: PerpSide = p.positionType === 0 ? "long" : "short";
+    // Liquidation from the margin actually posted (leverage at entry), not today's mark.
+    const liquidation = deposit > 0 ? liquidationPrice(side, entry, (size * entry) / deposit, m.maintLeverage) : 0;
+    return [{ market: m, side, lot: p.lotLNS, size, entry, mark, deposit, leverage: deposit > 0 ? (size * mark) / deposit : 0, pnl: Number(p.pnlCNS) / CNS, liquidation }];
   });
 }
 
@@ -160,7 +167,7 @@ export async function openPerp(net: PerpNet, m: PerpTerms, side: PerpSide, usd: 
     const acct = await perpAccount(net, a);
     if (!acct.accountId) throw new Error("Deposit AUSD first: your first deposit opens your Perpl account.");
     const margin = usd / leverage;
-    if (margin > acct.balance) throw new Error(`This needs ${margin.toFixed(2)} AUSD of margin; you have ${acct.balance.toFixed(2)} free in Perpl.`);
+    if (margin > acct.free) throw new Error(`This needs ${margin.toFixed(2)} AUSD of margin; you have ${acct.free.toFixed(2)} free in Perpl.`);
     const n = NET[net];
     const [mark, head] = await Promise.all([markOf(net, m, acct.accountId), n.pub().getBlockNumber()]);
     const lot = lotFor(usd, mark, m);

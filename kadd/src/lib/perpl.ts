@@ -2,11 +2,12 @@
 // getPositionsV2 pages through each market's position list with unrealized PnL, so live "who holds what" needs no
 // indexer; realized PnL history comes from the Kadd indexer (indexer/, Perpl Exchange on chain 143).
 import "server-only";
-import { createPublicClient, http, parseAbi, type Address } from "viem";
+import { createPublicClient, erc20Abi, http, parseAbi, type Address } from "viem";
 import { monad, monadTestnet } from "viem/chains";
 import { swr } from "./cache";
 import type { PerpTerms } from "./perplOrder";
-import { indexedPerplDays, indexerUrl } from "./indexer";
+import { indexedPerplCloses, indexedPerplDaily, indexedPerplDays, indexerUrl, type IndexedPerplClose, type IndexedPerplDaily } from "./indexer";
+import { liqDistance, liquidationMap, walletPerf, type LiqBucket, type WalletPerf } from "./perplRisk";
 
 const CNS = 1e6; // AUSD collateral, 6 decimals
 
@@ -287,4 +288,83 @@ export function marketStats(markets: PerpMarket[], positions: PerpPosition[], ti
       };
     })
     .sort((a, b) => b.volume24h - a.volume24h);
+}
+
+const AUSD_MAINNET: Address = "0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a";
+
+export type AtRisk = PerpPosition & { distance: number };
+export type PerpRisk = {
+  tvl: number; // AUSD held by the Exchange contract
+  openInterest: number;
+  volume24h: number;
+  markets: (PerpMarketStat & { liqMap: LiqBucket[] })[];
+  atRisk: AtRisk[]; // closest to liquidation first
+  daily: IndexedPerplDaily[] | null; // last 30 days, null without the indexer
+};
+
+/** Perpl risk dashboard: liquidation map per market, positions closest to liquidation, protocol health. Cached 1 min. */
+export const perpRisk = () =>
+  swr("perpl:risk", 60_000, async (): Promise<PerpRisk> => {
+    const today = Math.floor(Date.now() / 86_400_000);
+    const [positions, markets, tickers, funding, tvl, daily] = await Promise.all([
+      perpPositions("mainnet"),
+      perpMarkets("mainnet"),
+      perpTickers("mainnet").catch(() => ({}) as Record<number, PerpTicker>),
+      perpFunding("mainnet").catch(() => ({}) as Record<number, number>),
+      PERPL.mainnet.client.readContract({ address: AUSD_MAINNET, abi: erc20Abi, functionName: "balanceOf", args: [PERPL.mainnet.exchange] }),
+      indexerUrl() ? indexedPerplDaily(today - 30).catch(() => null) : Promise.resolve(null),
+    ]);
+    const stats = marketStats(markets, positions, tickers, funding);
+    return {
+      tvl: Number(tvl) / 1e6,
+      openInterest: stats.reduce((s, m) => s + m.openInterest, 0),
+      volume24h: stats.reduce((s, m) => s + m.volume24h, 0),
+      markets: stats.map((m) => ({ ...m, liqMap: liquidationMap(positions.filter((p) => p.marketId === m.id), m.mark) })),
+      atRisk: positions
+        .map((p) => ({ ...p, distance: liqDistance(p.side, p.mark, p.liquidation) }))
+        .filter((p) => p.distance < 0.1 && p.address)
+        .sort((a, b) => a.distance - b.distance || b.notional - a.notional)
+        .slice(0, 25),
+      daily,
+    };
+  });
+
+export type WalletRisk = {
+  account: number | null;
+  free: number; // AUSD available for new margin (balance minus what resting orders lock)
+  locked: number; // AUSD reserved by resting orders (part of the balance)
+  margin: number; // AUSD in open positions
+  equity: number; // balance + margin + open PnL
+  marginUse: number; // margin / equity, %
+  open: (PerpPosition & { distance: number })[];
+  perf: WalletPerf | null; // null without the indexer
+  history: IndexedPerplClose[];
+};
+
+/** One wallet's Perpl risk profile: margin, distance to liquidation per position, and how it has traded. */
+export async function walletRisk(address: string): Promise<WalletRisk | null> {
+  const a = address.toLowerCase();
+  const [positions, info, closes] = await Promise.all([
+    perpPositions("mainnet"),
+    PERPL.mainnet.client.readContract({ address: PERPL.mainnet.exchange, abi: perplAbi, functionName: "getAccountByAddr", args: [a as Address] }).catch(() => null),
+    indexerUrl() ? indexedPerplCloses(a).catch(() => null) : Promise.resolve(null),
+  ]);
+  if (!info && !closes?.length) return null;
+  const open = positions.filter((p) => p.address === a).map((p) => ({ ...p, distance: liqDistance(p.side, p.mark, p.liquidation) }));
+  const balance = Number(info?.balanceCNS ?? 0n) / 1e6;
+  const locked = Number(info?.lockedBalanceCNS ?? 0n) / 1e6;
+  const free = Math.max(0, balance - locked);
+  const margin = open.reduce((s, p) => s + p.deposit, 0);
+  const equity = balance + margin + open.reduce((s, p) => s + p.pnl, 0);
+  return {
+    account: info ? Number(info.accountId) : null,
+    free,
+    locked,
+    margin,
+    equity,
+    marginUse: equity > 0 ? (margin / equity) * 100 : 0,
+    open: open.sort((x, y) => x.distance - y.distance),
+    perf: closes ? walletPerf(closes) : null,
+    history: closes?.slice(0, 50) ?? [],
+  };
 }

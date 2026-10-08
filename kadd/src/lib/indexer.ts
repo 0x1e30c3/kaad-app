@@ -65,3 +65,33 @@ export async function indexedPerplDays(sinceDay: number): Promise<IndexedPerplDa
   }
   return out;
 }
+
+export type IndexedPerplDaily = { day: number; volumeUsd: number; feesUsd: number; activeTraders: number; newAccounts: number; depositedUsd: number; withdrawnUsd: number; liquidations: number; liquidatedUsd: number };
+
+/** Perpl protocol health per UTC day since `sinceDay`, oldest first. */
+export async function indexedPerplDaily(sinceDay: number): Promise<IndexedPerplDaily[]> {
+  const { PerplDaily } = await gql<{ PerplDaily: IndexedPerplDaily[] }>(
+    `query($since: Int!) {
+      PerplDaily(where: { day: { _gte: $since } }, order_by: { day: asc }, limit: 1000) {
+        day volumeUsd feesUsd activeTraders newAccounts depositedUsd withdrawnUsd liquidations liquidatedUsd
+      }
+    }`,
+    { since: sinceDay },
+  );
+  return PerplDaily.map((d) => ({ ...d, volumeUsd: Number(d.volumeUsd), feesUsd: Number(d.feesUsd), depositedUsd: Number(d.depositedUsd), withdrawnUsd: Number(d.withdrawnUsd), liquidatedUsd: Number(d.liquidatedUsd) }));
+}
+
+export type IndexedPerplClose = { symbol: string; side: string; kind: string; pnlUsd: number; holdSec: number; timestamp: number };
+
+/** A wallet's Perpl realized events (trade history), newest first. */
+export async function indexedPerplCloses(address: string, limit = 1000): Promise<IndexedPerplClose[]> {
+  const { PerplClose } = await gql<{ PerplClose: IndexedPerplClose[] }>(
+    `query($address: String!, $limit: Int!) {
+      PerplClose(where: { address: { _eq: $address } }, order_by: { timestamp: desc }, limit: $limit) {
+        symbol side kind pnlUsd holdSec timestamp
+      }
+    }`,
+    { address: address.toLowerCase(), limit },
+  );
+  return PerplClose.map((c) => ({ ...c, pnlUsd: Number(c.pnlUsd) }));
+}
