@@ -69,8 +69,9 @@ keeper can't move funds anywhere else. 16 Foundry tests plus an end-to-end fork 
 deposits only while the club holds no tokens (so nobody joins at a manipulated price), and every member can redeem
 their share in kind at any time. **Mainnet** (`KaddCopyKuru`): MON vaults trading through the Kuru Flow router; a buy
 must raise the vault's own token balance by the quoted minimum, a sell approves exactly the position. Both are tested
-(16 and 15 Foundry tests, plus a keeper fork run and a mainnet fork test on a real Kuru Flow route) and **not deployed
-yet**: the app shows them once `NEXT_PUBLIC_COPY_CLUBS` / `NEXT_PUBLIC_COPY_MAINNET` are set.
+(16 and 15 Foundry tests, plus a keeper fork run and a mainnet fork test on a real Kuru Flow route). Copy clubs are
+live on testnet (Groups & Clubs); the mainnet vault is **not deployed yet** and the app shows it once
+`NEXT_PUBLIC_COPY_MAINNET` is set.
 
 ## Contracts (Monad testnet, all Sourcify verified)
 
@@ -81,7 +82,7 @@ yet**: the app shows them once `NEXT_PUBLIC_COPY_CLUBS` / `NEXT_PUBLIC_COPY_MAIN
 | KaddClubFactory (clubs on the venue) | [`0x4E24…624c`](https://testnet.monadexplorer.com/address/0x4E24bA0762624EAa63E02f3834105efa423A624c) |
 | KaddClubFactory (clubs on Kuru Spot V2) | [`0xcF7e…b647`](https://testnet.monadexplorer.com/address/0xcF7e32d79553aA97259724bb780b951115F5b647) |
 | KaddStrategies (limit / TP / SL / DCA) | [`0xC126…cEA`](https://testnet.monadexplorer.com/address/0xC12684b7063e3C749f0227539601a7b370073cEA) |
-| KaddCopyClubs (pooled auto copy) | not deployed yet ([`script/DeployCopyClubs.s.sol`](contracts/script/DeployCopyClubs.s.sol)) |
+| KaddCopyClubs (pooled auto copy) | [`0x67A9…30D2`](https://testnet.monadexplorer.com/address/0x67A974949d2918e07763C86cfe8bbc3E817930D2) |
 | KaddCore · tUSDC | `0x3F86…DA70` · `0x9173…80CB` |
 
 Every deployment, deploy transaction and seeded pool: [`contracts/deployment.json`](contracts/deployment.json).
