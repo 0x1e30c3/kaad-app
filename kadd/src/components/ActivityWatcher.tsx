@@ -4,6 +4,7 @@ import type { FeedItem } from "@/lib/wallets";
 import type { CopyActivity } from "@/lib/share";
 import { short, usd } from "@/lib/mock";
 import { toast, useStore } from "@/lib/store";
+import { linkTelegram, tgToken } from "@/lib/telegramLink";
 
 const SEEN = "kadd:seen:"; // + stream: tx hashes already announced, shared by every open tab
 const seen = (k: string): string[] | null => {
@@ -45,6 +46,10 @@ export default function ActivityWatcher() {
   const { following, user } = useStore();
   const key = following.join(",");
   const owner = user?.address;
+  // Linked to Telegram? Keep its followed wallets and owner in sync with this browser.
+  useEffect(() => {
+    if (tgToken()) linkTelegram(owner, key ? key.split(",") : []).catch(() => {});
+  }, [key, owner]);
   useEffect(() => {
     const poll = async () => {
       if (key) {
@@ -53,7 +58,7 @@ export default function ActivityWatcher() {
       }
       if (owner) {
         const copies: CopyActivity[] = await fetch(`/api/copy/activity?owner=${owner}`).then((r) => (r.ok ? r.json() : []), () => []);
-        announce(`copy:${owner.toLowerCase()}`, copies, (c) => `Vault #${c.id} copied a ${c.isBuy ? "buy" : "sell"}: ${usd(c.usd)} of ${c.symbol}`, "Auto copy");
+        announce(`copy:${owner.toLowerCase()}`, copies, (c) => `${c.label} copied a ${c.isBuy ? "buy" : "sell"}: ${usd(c.usd)} of ${c.symbol}`, "Auto copy");
       }
     };
     poll();

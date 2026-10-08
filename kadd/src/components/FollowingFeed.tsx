@@ -10,6 +10,7 @@ import { PanelEmpty, TokenIcon, card } from "./ui";
 import WalletAvatar from "./WalletAvatar";
 import CopyButton from "./CopyButton";
 import NotifyToggle from "./NotifyToggle";
+import TelegramConnect from "./TelegramConnect";
 
 const SIZES = [10, 25, 50, 100];
 const ago = (ms: number) => {
@@ -38,6 +39,7 @@ export default function FollowingFeed() {
         <span className="text-[12px] text-muted hidden sm:inline">· live Monad mainnet trades, copy them on testnet</span>
         <div className="ml-auto flex items-center gap-1.5">
           {following.length > 0 && <NotifyToggle />}
+          {following.length > 0 && <TelegramConnect />}
           <span className="text-[12px] text-muted">Copy size</span>
           <div role="radiogroup" aria-label="Copy size" className="flex p-0.5 rounded-md bg-raised text-[12px] font-medium">
             {SIZES.map((n) => (
