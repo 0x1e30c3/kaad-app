@@ -139,7 +139,7 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
               <PanelEmpty>No open perps positions right now.</PanelEmpty>
             ) : (
               <table className="w-full text-[13px] tabular-nums">
-                <thead className="text-[11px] text-muted"><tr className="h-8 border-b border-line"><th className="text-left font-medium pl-4">Market</th><th className="text-right font-medium px-3">Size</th><th className="text-right font-medium px-3 hidden sm:table-cell">Entry → mark</th><th className="text-right font-medium px-3">Lev.</th><th className="text-right font-medium pr-4">PnL</th></tr></thead>
+                <thead className="text-[11px] text-muted"><tr className="h-8 border-b border-line"><th className="text-left font-medium pl-4">Market</th><th className="text-right font-medium px-3">Size</th><th className="text-right font-medium px-3 hidden sm:table-cell">Entry → mark</th><th className="text-right font-medium px-3">Lev.</th><th className="text-right font-medium px-3 hidden sm:table-cell">Liq. ≈</th><th className="text-right font-medium px-3">PnL</th><th className="pr-4"><span className="sr-only">Trade</span></th></tr></thead>
                 <tbody>
                   {perp.open.map((p) => (
                     <tr key={p.marketId} className="h-10 border-b border-line last:border-0">
@@ -147,7 +147,11 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
                       <td className="px-3 text-right">{usd(p.notional)}</td>
                       <td className="px-3 text-right hidden sm:table-cell">{px(p.entry)} → {px(p.mark)}</td>
                       <td className="px-3 text-right">{p.leverage.toFixed(1)}×</td>
-                      <td className={`pr-4 text-right font-semibold ${p.pnl >= 0 ? "text-up" : "text-down"}`}>{signed(p.pnl)}</td>
+                      <td className="px-3 text-right hidden sm:table-cell">{p.liquidation ? px(p.liquidation) : "–"}</td>
+                      <td className={`px-3 text-right font-semibold ${p.pnl >= 0 ? "text-up" : "text-down"}`}>{signed(p.pnl)}</td>
+                      <td className="pr-4 text-right">
+                        <Link href={`/perps?market=${p.market}&side=${p.side}&lev=${Math.max(1, Math.min(10, Math.round(p.leverage)))}`} className="h-7 px-2 inline-flex items-center rounded-md border border-line-strong text-[12px] font-semibold hover:bg-hover whitespace-nowrap">Trade like this</Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
