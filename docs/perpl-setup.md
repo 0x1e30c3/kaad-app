@@ -10,7 +10,7 @@ Kadd uses [Perpl](https://app.perpl.xyz) (perpetual futures on Monad) in three w
    [`scripts/perpl-fork.mts`](../kadd/scripts/perpl-fork.mts).
 
 1. **Perps leaderboard** (Leaderboard → Perps · Perpl, and a "Perps on Perpl" panel on wallet pages): every open
-   position on Perpl mainnet, read straight from the Exchange contract (`getPositionsV2`), plus 30-day realized PnL
+   position on Perpl mainnet, read straight from the Exchange contract (`getPositionsV2`), plus all-time PnL (live equity minus net deposits)
    per trader from Kadd's Envio indexer (`PerplExchange` on chain 143). Nothing to set up except redeploying the
    indexer (step 5).
 2. **Kadd copy bot**: one Perpl testnet account that mirrors a chosen mainnet trader every keeper tick, with a fixed
@@ -137,11 +137,13 @@ bot's book on testnet. Every order is a real testnet transaction, visible on the
   leader (closing what the new leader doesn't hold).
 - **Revoke**: delete the key at testnet.perpl.xyz/apikeys. The bot stops at once; funds stay in the account.
 
-## Indexer (realized PnL)
+## Indexer (deposits, withdrawals, liquidations)
 
-The Kadd indexer now also indexes Perpl on Monad mainnet (`PerplTrader`, `PerplTraderDay`). After this change reaches
-`dev`, Envio Cloud builds a **new deployment with a new GraphQL URL**: once it has synced, put that URL in
-`ENVIO_INDEXER_URL` on Vercel and redeploy. Until then the Perps tab ranks by open PnL and says the history is syncing.
+The Kadd indexer also indexes Perpl on Monad mainnet, but only its low-volume events (`PerplMarket`, `PerplAccount`,
+`PerplLiquidation`, `PerplDaily`): about 36k events for the whole history, inside Envio Cloud's free plan (100k).
+Indexing closes and fills too (~50k a day, 70M+ in total) exceeds that plan, so Kadd derives PnL as equity minus net
+deposits instead. Each indexer change gives a new Envio deployment URL: once it has synced, put it in
+`ENVIO_INDEXER_URL` on Vercel and redeploy. Without it the Perps tab ranks by open PnL.
 
 ## Questions for Perpl (Discord)
 
