@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowUpRight, Coins, Droplets, Layers, Target, Users, Wallet } from "lucide-react";
+import { ArrowUpRight, Coins, Copy, Droplets, Layers, Target, Users, Wallet } from "lucide-react";
+import { copyStats } from "@/lib/events";
 import { getStats } from "@/lib/stats";
 import { CLUB_FACTORY, STRATEGIES, TUSDC, VENUE } from "@/lib/addresses";
 import { EXPLORER } from "@/lib/venue";
@@ -17,7 +18,8 @@ const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
 const pressureLabel = (v: number) => (v < 20 ? "Strong selling" : v < 45 ? "Selling" : v <= 55 ? "Balanced" : v <= 80 ? "Buying" : "Strong buying");
 
 export default async function StatsPage() {
-  const s = await getStats();
+  const [s, copy] = await Promise.all([getStats(), copyStats()]);
+  const vaults = [...copy.values()].reduce((a, c) => ({ n: a.n + c.copiers, copies: a.copies + c.copies, usd: a.usd + c.depositedUsd }), { n: 0, copies: 0, usd: 0 });
   const a = s.activity;
   const buys = sum(s.pools.map((p) => p.buys24h));
   const sells = sum(s.pools.map((p) => p.sells24h));
@@ -28,6 +30,7 @@ export default async function StatsPage() {
     [<Droplets key="d" />, "Pool liquidity", money(s.poolLiquidity), `${s.pools.length} markets`],
     [<Layers key="l" />, "Clubs", int(s.clubs), a ? `${int(a.deposits)} deposits` : "pooled trading"],
     [<Wallet key="w" />, "tUSDC in clubs", money(s.clubTvl), "held by club contracts"],
+    [<Copy key="cp" />, "Copy vaults", int(vaults.n), `${int(vaults.copies)} trades copied · ${money(vaults.usd)} in`],
     [<Target key="t" />, "Strategies", s.strategies === null ? "–" : int(s.strategies), "limit · TP / SL · DCA"],
     [<Coins key="c" />, "Faucet claims", int(s.faucetClaims), "1,000 tUSDC each"],
   ];

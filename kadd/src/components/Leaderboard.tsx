@@ -41,7 +41,7 @@ const Trend = ({ series, days, height = 32 }: { series: number[]; days: number; 
   </div>
 );
 
-export default function Leaderboard({ board, mainnet, smart }: { board: Board; mainnet: Mainnet; smart: SmartMoney }) {
+export default function Leaderboard({ board, mainnet, smart, copiers }: { board: Board; mainnet: Mainnet; smart: SmartMoney; copiers: Record<string, number> }) {
   const { user } = useStore();
   const [tab, setTab] = useState<(typeof TABS)[number][0]>("mainnet");
   const [period, setPeriod] = useState<Period>("7");
@@ -101,7 +101,7 @@ export default function Leaderboard({ board, mainnet, smart }: { board: Board; m
       {tab === "mainnet" ? (
         <MainnetBoard board={mainnet} />
       ) : tab === "smart" ? (
-        <SmartMoneyBoard data={smart} active={mainnet.rows.filter((r) => r.smart !== null)} />
+        <SmartMoneyBoard data={smart} active={mainnet.rows.filter((r) => r.smart !== null)} copiers={copiers} />
       ) : (
       <>
 

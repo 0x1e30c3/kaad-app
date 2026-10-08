@@ -11,6 +11,7 @@ import { hot, newPairs, orEmpty, quotes, searchTokens, tokenDetail, topVolume, t
 import { getStats } from "./stats";
 import { aggregate, backtest, getMainnetBoard, getWallet } from "./wallets";
 import { smartMoney, smartWallet } from "./nansen";
+import { copyStats } from "./events";
 
 export class BadRequest extends Error {}
 
@@ -91,12 +92,14 @@ export async function token(address: string) {
 
 export async function wallet(address: string) {
   if (!isAddress(address, { strict: false })) throw new BadRequest("wallet address must be 0x + 40 hex chars");
-  const [w, smart] = await Promise.all([getWallet(getAddress(address)), smartWallet(address)]);
+  const [w, smart, copy] = await Promise.all([getWallet(getAddress(address)), smartWallet(address), copyStats()]);
+  const copying = copy.get(address.toLowerCase());
   const summary = aggregate(w.trades)[0] ?? null;
   const bt = backtest(w.trades);
   return {
     address: w.address,
     nadName: w.nns,
+    kaddCopiers: copying ? { activeVaults: copying.copiers, depositedUsd: round(copying.depositedUsd), tradesCopied: copying.copies } : null,
     nansenSmartMoney: smart && { label: smart.label, pnl30dUsd: round(smart.totalPnlUsd), realizedUsd: round(smart.realizedPnlUsd), winRatePct: Math.round(smart.winRatePct), trades: smart.trades },
     windowHours: w.since ? round((Date.now() - w.since) / 36e5, 1) : null,
     note: "Trades cover the latest ~300 per pool of the tokens Kadd lists, so the window is hours, not days.",
@@ -165,6 +168,7 @@ export async function leaderboard(q: URLSearchParams) {
       address: r.address,
       nadName: r.nns,
       nansenSmartMoney: r.smart !== null,
+      kaddCopiers: r.copiers,
       volumeUsd: round(r.volume),
       trades: r.trades,
       buys: r.buys,

@@ -6,7 +6,7 @@ import type { SmartMoney, SmartWallet } from "@/lib/nansen";
 import type { MainnetRow } from "@/lib/wallets";
 import { short } from "@/lib/mock";
 import { toggleFollow, useStore } from "@/lib/store";
-import { card } from "./ui";
+import { card, CopyChip } from "./ui";
 import WalletAvatar from "./WalletAvatar";
 
 type SortKey = "totalPnlUsd" | "realizedPnlUsd" | "winRatePct" | "trades";
@@ -16,7 +16,7 @@ const signed = (n: number) => `${n >= 0 ? "+" : "-"}$${Math.abs(n).toLocaleStrin
  * Nansen's labelled Monad smart-money wallets by 30-day PnL, made actionable: the ones trading Kadd-listed tokens
  * right now come first with a copy backtest, and every wallet can be backtested or auto-copied in one click.
  */
-export default function SmartMoneyBoard({ data, active }: { data: SmartMoney; active: MainnetRow[] }) {
+export default function SmartMoneyBoard({ data, active, copiers }: { data: SmartMoney; active: MainnetRow[]; copiers: Record<string, number> }) {
   const { following } = useStore();
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: "totalPnlUsd", desc: true });
   const now = new Map(active.map((r) => [r.address, r]));
@@ -116,6 +116,7 @@ export default function SmartMoneyBoard({ data, active }: { data: SmartMoney; ac
                             <Link href={`/wallet/${w.address}`} className="font-mono font-semibold hover:underline after:absolute after:inset-0">{short(w.address)}</Link>
                             {w.label && <div className="text-[11px] text-muted truncate max-w-[220px]" title={w.label}>{w.label}</div>}
                             {now.has(w.address) && <div className="text-[10px] font-semibold text-up">● trading now</div>}
+                            <CopyChip n={copiers[w.address] ?? 0} className="mt-0.5" />
                           </div>
                         </div>
                       </td>

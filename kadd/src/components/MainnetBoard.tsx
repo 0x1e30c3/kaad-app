@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp, ShoppingCart, Star, Trophy, Zap } from "lucide-
 import type { MainnetBoard as Board, MainnetRow } from "@/lib/wallets";
 import { short, usd } from "@/lib/mock";
 import { toggleFollow, useStore } from "@/lib/store";
-import { TokenIcon, card } from "./ui";
+import { TokenIcon, card, CopyChip } from "./ui";
 import WalletAvatar from "./WalletAvatar";
 import { AreaChart } from "./charts";
 
@@ -134,6 +134,7 @@ export default function MainnetBoard({ board }: { board: Board }) {
                           {avatar(r, 26)}
                           <div className="leading-tight">
                             <Link href={`/wallet/${r.address}`} className={`font-semibold hover:underline after:absolute after:inset-0 ${r.nns ? "" : "font-mono"}`}>{nameOf(r)}</Link>
+                            <CopyChip n={r.copiers} className="ml-1.5 align-middle" />
                             {r.smart !== null && (
                               <span title={`Nansen smart money${r.smart ? `: ${r.smart}` : ""}`} className="ml-1.5 align-middle h-4 px-1 rounded bg-up/12 text-up text-[10px] font-semibold inline-flex items-center">SMART</span>
                             )}

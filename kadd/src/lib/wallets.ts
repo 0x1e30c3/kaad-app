@@ -10,6 +10,7 @@ import { poolTrades, quotes, type PoolTrade } from "./market";
 import { swr } from "./cache";
 import { mainnet, profiles, type Profile } from "./nns";
 import { smartMoney } from "./nansen";
+import { copyStats } from "./events";
 
 export type TokenMini = { address: string; symbol: string; image: string | null; price: number };
 export type WalletTrade = PoolTrade & { token: TokenMini };
@@ -27,6 +28,9 @@ export type MainnetRow = Profile & {
   copyRoi: number;
   /** Nansen smart-money label when Nansen tracks this wallet as smart money ("" = smart money, no label). */
   smart: string | null;
+  /** Kadd copy vaults following this wallet (testnet): active vaults and trades copied. */
+  copiers: number;
+  copies: number;
 };
 export type MainnetBoard = { rows: MainnetRow[]; since: number | null; failed: boolean };
 export type WalletView = Profile & {
@@ -114,7 +118,7 @@ export function aggregate(trades: WalletTrade[], now = Date.now()): MainnetRow[]
       });
       const buys = ts.filter((t) => t.side === "buy").length;
       const bt = backtest(ts, 10, now);
-      return { address, nns: null, avatar: null, smart: null, copyPnl: bt.pnl, copyRoi: bt.roi, volume, trades: ts.length, buys, sells: ts.length - buys, net: volume - 2 * bought, tokens, lastAt: Math.max(...ts.map((t) => t.at)), series };
+      return { address, nns: null, avatar: null, smart: null, copiers: 0, copies: 0, copyPnl: bt.pnl, copyRoi: bt.roi, volume, trades: ts.length, buys, sells: ts.length - buys, net: volume - 2 * bought, tokens, lastAt: Math.max(...ts.map((t) => t.at)), series };
     })
     .sort((a, b) => b.volume - a.volume);
 }
@@ -123,10 +127,10 @@ export const getMainnetBoard = (): Promise<MainnetBoard> =>
   swr("mainnetBoard", 60_000, async () => {
     const { trades, failed } = await recentTrades();
     const rows = aggregate(trades).slice(0, 100);
-    const [names, sm] = await Promise.all([profiles(rows.map((r) => r.address)), smartMoney()]);
+    const [names, sm, copy] = await Promise.all([profiles(rows.map((r) => r.address)), smartMoney(), copyStats()]);
     const smart = new Map(sm?.wallets.map((w) => [w.address, w.label ?? ""]));
     return {
-      rows: rows.map((r) => ({ ...r, ...names.get(r.address), smart: smart.get(r.address) ?? null })),
+      rows: rows.map((r) => ({ ...r, ...names.get(r.address), smart: smart.get(r.address) ?? null, copiers: copy.get(r.address)?.copiers ?? 0, copies: copy.get(r.address)?.copies ?? 0 })),
       since: trades.length ? trades[trades.length - 1].at : null,
       failed,
     };

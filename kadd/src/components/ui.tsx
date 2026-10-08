@@ -119,6 +119,17 @@ export function Monogram({ name, size = 40, hue = hueOf(name) }: { name: string;
   );
 }
 
+/** "N copying": how many Kadd copy vaults follow a wallet. Renders nothing at 0. */
+export function CopyChip({ n, className = "" }: { n: number; className?: string }) {
+  if (!n) return null;
+  return (
+    <span title={`${n} Kadd copy ${n === 1 ? "vault follows" : "vaults follow"} this wallet`} className={`inline-flex items-center gap-1 h-4 px-1 rounded bg-brand/15 text-[10px] font-semibold text-fg tabular-nums ${className}`}>
+      <svg viewBox="0 0 16 16" className="size-2.5" aria-hidden><path fill="currentColor" d="M6 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM0 14c0-2.8 2.7-5 6-5s6 2.2 6 5v1H0v-1Zm13 1v-1c0-1.5-.6-2.9-1.6-3.9 2.3.3 4.6 1.6 4.6 3.9v1h-3Z" /></svg>
+      {n} copying
+    </span>
+  );
+}
+
 export function StatusPill({ tone, children }: { tone: "up" | "warn" | "down" | "muted"; children: React.ReactNode }) {
   const cls = { up: "text-up bg-up/10", warn: "text-warn bg-warn/10", down: "text-down bg-down/10", muted: "text-muted bg-raised" }[tone];
   return <span className={`inline-flex items-center gap-1 h-5 px-1.5 rounded-md text-[11px] font-medium whitespace-nowrap ${cls}`}>{children}</span>;

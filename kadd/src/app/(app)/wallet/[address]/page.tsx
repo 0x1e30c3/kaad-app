@@ -5,7 +5,8 @@ import { ArrowUpRight } from "lucide-react";
 import { getWallet, aggregate, backtest } from "@/lib/wallets";
 import { smartWallet } from "@/lib/nansen";
 import { num, short, usd } from "@/lib/mock";
-import { PageHeader, Panel, PanelEmpty, TokenIcon, card } from "@/components/ui";
+import { CopyChip, PageHeader, Panel, PanelEmpty, TokenIcon, card } from "@/components/ui";
+import { copyStats } from "@/lib/events";
 import WalletAvatar from "@/components/WalletAvatar";
 import { AreaChart } from "@/components/charts";
 import CopyAddress from "@/components/CopyAddress";
@@ -31,7 +32,8 @@ const ago = (ms: number) => {
 export default async function WalletPage(props: PageProps<"/wallet/[address]">) {
   const { address } = await props.params;
   if (!isAddress(address, { strict: false })) notFound();
-  const [w, smart] = await Promise.all([getWallet(address), smartWallet(address)]);
+  const [w, smart, copy] = await Promise.all([getWallet(address), smartWallet(address), copyStats()]);
+  const copying = copy.get(address.toLowerCase());
   const row = aggregate(w.trades)[0] ?? null;
   const bt = backtest(w.trades);
   const held = w.holdings?.reduce((s, h) => s + h.usd, 0) ?? null;
@@ -59,6 +61,12 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
           <div>
             <div className={`text-[16px] font-semibold ${w.nns ? "" : "font-mono"}`}>{w.nns ?? short(w.address)}</div>
             <CopyAddress address={w.address} />
+            {copying && (copying.copiers > 0 || copying.copies > 0) && (
+              <p className="mt-1 flex items-center gap-1.5 text-[12px] text-muted tabular-nums">
+                <CopyChip n={copying.copiers} />
+                {usd(copying.depositedUsd)} in Kadd copy vaults · {copying.copies} {copying.copies === 1 ? "trade" : "trades"} copied
+              </p>
+            )}
           </div>
         </div>
         <dl className="grid grid-cols-2 lg:grid-cols-4 gap-3">
