@@ -46,7 +46,7 @@ export async function indexedDepositors(): Promise<{ member: string }[]> {
   return (await gql<{ ClubDeposit: { member: string }[] }>(`{ ClubDeposit(limit: 10000) { member } }`)).ClubDeposit;
 }
 
-export type IndexedPerplAccount = { id: string; address: string; depositedUsd: number; withdrawnUsd: number; liquidations: number; liquidatedUsd: number };
+export type IndexedPerplAccount = { id: string; address: string; depositedUsd: number; withdrawnUsd: number; fromProtocolUsd: number; toProtocolUsd: number; liquidations: number; liquidatedUsd: number };
 
 /** Every Perpl account with money it put in and took out, and its liquidations (Perpl on Monad mainnet). */
 export async function indexedPerplAccounts(): Promise<IndexedPerplAccount[]> {
@@ -54,11 +54,11 @@ export async function indexedPerplAccounts(): Promise<IndexedPerplAccount[]> {
   for (let offset = 0; offset < MAX; offset += PAGE) {
     const { PerplAccount } = await gql<{ PerplAccount: IndexedPerplAccount[] }>(
       `query($limit: Int!, $offset: Int!) {
-        PerplAccount(order_by: { id: asc }, limit: $limit, offset: $offset) { id address depositedUsd withdrawnUsd liquidations liquidatedUsd }
+        PerplAccount(order_by: { id: asc }, limit: $limit, offset: $offset) { id address depositedUsd withdrawnUsd fromProtocolUsd toProtocolUsd liquidations liquidatedUsd }
       }`,
       { limit: PAGE, offset },
     );
-    out.push(...PerplAccount.map((a) => ({ ...a, depositedUsd: Number(a.depositedUsd), withdrawnUsd: Number(a.withdrawnUsd), liquidatedUsd: Number(a.liquidatedUsd) })));
+    out.push(...PerplAccount.map((a) => ({ ...a, depositedUsd: Number(a.depositedUsd), withdrawnUsd: Number(a.withdrawnUsd), fromProtocolUsd: Number(a.fromProtocolUsd), toProtocolUsd: Number(a.toProtocolUsd), liquidatedUsd: Number(a.liquidatedUsd) })));
     if (PerplAccount.length < PAGE) break;
   }
   return out;

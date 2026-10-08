@@ -39,7 +39,7 @@ contracts:
       - event: Redeemed(uint256 indexed id, address indexed member, uint256 shares, uint256 cash)
       - event: Copied(uint256 indexed id, bytes32 indexed leaderTx, address indexed pool, bool isBuy, uint256 amountIn, uint256 amountOut)
   # Perpl perpetual futures (Monad mainnet): low-volume events only, so the whole history fits Envio's free plan
-  # (100k events): markets, accounts, deposits / withdrawals and every liquidation. Closes and fills (~50k a day)
+  # (100k events): markets, accounts, deposits / withdrawals, protocol transfers and every liquidation. Closes and fills (~50k a day)
   # stay out; the app reads open positions from the contract and PnL as equity minus net deposits.
   - name: PerplExchange
     events:
@@ -49,6 +49,8 @@ contracts:
       - event: ContractAddedV2(uint256 perpId, string name, string symbol, uint8 status, uint256 basePricePNS, uint256 priceDecimals, uint256 lotDecimals, uint256 initMarginFracHdths, uint256 maintMarginFracHdths, uint256 maxOpenInterestLNS, uint256 unityDescentThreshHdths, uint256 overColDescentThreshHdths, uint256 dcpBorrowThreshHdths, uint256 priceTolPer100K, uint256 marginTol, uint256 marginTolDecimals, uint256 refPriceMaxAgeSec, uint256 absFundingClampPctPer100K, uint256 permCancelMinOrders, uint256 permCancelSegment, uint256 insAmtPer100K, uint256 liqInsAmtPer100K, uint256 liqUserAmtPer100K, bool btlRestrictBuyers, uint256 btlPriceThreshPer100K, uint256 btlInsAmtPer100K, uint256 btlUserAmtPer100K, uint256 btlBuyerAmtPer100K, uint256 numPerpetuals, uint256 perpFeeSchedId)
       - event: CollateralDeposit(uint256 accountId, uint256 amountCNS, uint256 balanceCNS)
       - event: CollateralWithdrawal(uint256 accountId, uint256 amountCNS, uint256 balanceCNS)
+      - event: TransferProtocolToAccount(uint256 accountId, uint256 amountCNS, uint256 balanceCNS)
+      - event: TransferAccountToProtocol(uint256 accountId, uint256 amountCNS, uint256 balanceCNS)
 chains:
   - id: 10143 # Monad testnet
     start_block: 67481453 # KaddVenue deployment
