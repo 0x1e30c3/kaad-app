@@ -31,6 +31,13 @@ contracts:
       - event: Funded(uint256 indexed id, uint256 amount)
       - event: Copied(uint256 indexed id, bytes32 indexed leaderTx, address indexed pool, bool isBuy, uint256 amountIn, uint256 amountOut)
       - event: Closed(uint256 indexed id, uint256 cash)
+  # Copy clubs: friends pool tUSDC into one vault that auto-copies a mainnet wallet.
+  - name: KaddCopyClubs
+    events:
+      - event: ClubCreated(uint256 indexed id, address indexed creator, address indexed leader, string name, uint256 perTradeBps, uint256 dailyCapBps, bool copySells)
+      - event: Deposited(uint256 indexed id, address indexed member, uint256 amount, uint256 shares)
+      - event: Redeemed(uint256 indexed id, address indexed member, uint256 shares, uint256 cash)
+      - event: Copied(uint256 indexed id, bytes32 indexed leaderTx, address indexed pool, bool isBuy, uint256 amountIn, uint256 amountOut)
 chains:
   - id: 10143 # Monad testnet
     start_block: 67481453 # KaddVenue deployment
@@ -43,3 +50,5 @@ chains:
         address: 0xC12684b7063e3C749f0227539601a7b370073cEA
       - name: KaddCopy
         address: 0x27bB7D06AF7BA8Ea359CFe00A628145ED0Bf1661
+      - name: KaddCopyClubs
+        address: 0x67A974949d2918e07763C86cfe8bbc3E817930D2

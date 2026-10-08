@@ -7,6 +7,7 @@ import { indexer, type EvmOnEventContext } from "envio";
 
 const STRATEGIES = "0xc12684b7063e3c749f0227539601a7b370073cea";
 const COPY = "0x27bb7d06af7ba8ea359cfe00a628145ed0bf1661";
+const COPY_CLUBS = "0x67a974949d2918e07763c86cfe8bbc3e817930d2";
 
 const usd = (v: bigint) => Number(v) / 1e6; // tUSDC has 6 decimals
 const tokens = (v: bigint) => Number(v) / 1e18; // mirror tokens have 18
@@ -48,13 +49,13 @@ async function credit(context: Ctx, who: string, kind: "wallet" | "club", t: { i
   });
 }
 
-/** Re-attributes the swap in this transaction to `owner` (strategy / copy) and credits them. */
-async function attribute(context: Ctx, txHash: string, owner: string, via: "strategy" | "copy", ts: number) {
+/** Re-attributes the swap in this transaction to `owner` (strategy / copy / copy club) and credits them. */
+async function attribute(context: Ctx, txHash: string, owner: string, via: "strategy" | "copy", ts: number, kind: "wallet" | "club" = "wallet") {
   const link = await context.TxSwap.get(txHash);
   const swap = link && (await context.Swap.get(link.swap));
   if (!swap) return;
   context.Swap.set({ ...swap, trader: owner });
-  await credit(context, owner, "wallet", { isBuy: swap.isBuy, usd: swap.usd, ts, via });
+  await credit(context, owner, kind, { isBuy: swap.isBuy, usd: swap.usd, ts, via });
 }
 
 // ---------------------------------------------------------------- pools
@@ -85,7 +86,7 @@ indexer.onEvent({ contract: "KaddPool", event: "Swap" }, async ({ event, context
   const value = isBuy ? usd(amountIn) : usd(amountOut);
   const amount = isBuy ? tokens(amountOut) : tokens(amountIn);
   const club = await context.Club.get(trader);
-  const kind = trader === STRATEGIES ? "strategy" : trader === COPY ? "copy" : club ? "club" : "wallet";
+  const kind = trader === STRATEGIES ? "strategy" : trader === COPY ? "copy" : trader === COPY_CLUBS ? "copyclub" : club ? "club" : "wallet";
   const id = `${event.chainId}_${event.block.number}_${event.logIndex}`;
   const pool = event.srcAddress.toLowerCase();
 
@@ -98,7 +99,7 @@ indexer.onEvent({ contract: "KaddPool", event: "Swap" }, async ({ event, context
 
   if (club) context.Club.set({ ...club, trades: club.trades + 1, volumeUsd: club.volumeUsd + value });
   if (kind === "wallet" || kind === "club") await credit(context, trader, kind, { isBuy, usd: value, ts });
-  // strategy / copy swaps are credited to their owner by the Executed / Copied handler right after.
+  // strategy / copy / copy club swaps are credited to their owner by the Executed / Copied handler right after.
 });
 
 // ---------------------------------------------------------------- clubs
@@ -192,4 +193,63 @@ indexer.onEvent({ contract: "KaddCopy", event: "Copied" }, async ({ event, conte
 indexer.onEvent({ contract: "KaddCopy", event: "Closed" }, async ({ event, context }) => {
   const v = await context.CopyVault.get(event.params.id.toString());
   if (v) context.CopyVault.set({ ...v, active: false });
+});
+
+// ---------------------------------------------------------------- copy clubs
+// A club's swaps are credited to the Trader "copyclub:<id>" (kind "club"), so clubs rank next to wallets.
+
+const memberId = (club: bigint, member: string) => `${club}_${member.toLowerCase()}`;
+
+indexer.onEvent({ contract: "KaddCopyClubs", event: "ClubCreated" }, async ({ event, context }) => {
+  const p = event.params;
+  context.CopyClub.set({
+    id: p.id.toString(),
+    name: p.name,
+    creator: p.creator.toLowerCase(),
+    leader: p.leader.toLowerCase(),
+    perTradeBps: Number(p.perTradeBps),
+    dailyCapBps: Number(p.dailyCapBps),
+    copySells: p.copySells,
+    members: 0,
+    totalShares: 0n,
+    deposits: 0,
+    depositedUsd: 0,
+    redemptions: 0,
+    redeemedCashUsd: 0,
+    copies: 0,
+    createdAt: event.block.timestamp,
+  });
+});
+
+indexer.onEvent({ contract: "KaddCopyClubs", event: "Deposited" }, async ({ event, context }) => {
+  const p = event.params;
+  const c = await context.CopyClub.get(p.id.toString());
+  if (!c) return;
+  const value = usd(p.amount);
+  const id = memberId(p.id, p.member);
+  const m = (await context.CopyClubMember.get(id)) ?? { id, club: c.id, member: p.member.toLowerCase(), shares: 0n, depositedUsd: 0 };
+  context.CopyClubMember.set({ ...m, shares: m.shares + p.shares, depositedUsd: m.depositedUsd + value });
+  context.CopyClub.set({ ...c, members: c.members + (m.shares === 0n ? 1 : 0), totalShares: c.totalShares + p.shares, deposits: c.deposits + 1, depositedUsd: c.depositedUsd + value });
+  await daily(context, event.block.timestamp, { clubDeposits: 1, depositedUsd: value });
+});
+
+indexer.onEvent({ contract: "KaddCopyClubs", event: "Redeemed" }, async ({ event, context }) => {
+  const p = event.params;
+  const c = await context.CopyClub.get(p.id.toString());
+  const m = await context.CopyClubMember.get(memberId(p.id, p.member));
+  if (!c || !m) return;
+  const shares = m.shares - p.shares;
+  context.CopyClubMember.set({ ...m, shares });
+  context.CopyClub.set({ ...c, members: c.members - (shares === 0n ? 1 : 0), totalShares: c.totalShares - p.shares, redemptions: c.redemptions + 1, redeemedCashUsd: c.redeemedCashUsd + usd(p.cash) });
+});
+
+indexer.onEvent({ contract: "KaddCopyClubs", event: "Copied" }, async ({ event, context }) => {
+  const p = event.params;
+  const c = await context.CopyClub.get(p.id.toString());
+  if (!c) return;
+  const value = p.isBuy ? usd(p.amountIn) : usd(p.amountOut);
+  context.CopyTrade.set({ id: `${event.chainId}_${event.block.number}_${event.logIndex}`, vault: `club:${c.id}`, leaderTx: p.leaderTx, pool: p.pool.toLowerCase(), isBuy: p.isBuy, usd: value, timestamp: event.block.timestamp, txHash: event.transaction.hash });
+  context.CopyClub.set({ ...c, copies: c.copies + 1 });
+  await daily(context, event.block.timestamp, { copies: 1 });
+  await attribute(context, event.transaction.hash, `copyclub:${c.id}`, "copy", event.block.timestamp, "club");
 });
