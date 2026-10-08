@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { isAddress } from "viem";
-import { ArrowUpRight } from "lucide-react";
+import { isAddress, zeroAddress } from "viem";
+import { COPY_CLUBS } from "@/lib/addresses";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { getWallet, aggregate, backtest } from "@/lib/wallets";
 import { smartWallet } from "@/lib/nansen";
 import { num, short, usd } from "@/lib/mock";
@@ -183,6 +184,11 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
           )}
           <div id="auto-copy" className="scroll-mt-4">
             <AutoCopyForm leader={w.address} />
+            {COPY_CLUBS !== zeroAddress && (
+              <Link href={`/groups?leader=${w.address}#copy-clubs`} className="mt-2 inline-flex items-center gap-1 text-[12px] text-muted hover:text-fg">
+                Or start a copy club for this wallet with friends <ArrowRight className="size-3" />
+              </Link>
+            )}
           </div>
           <Panel title="Holdings" count={w.holdings?.length || undefined}>
             {w.holdings === null ? (

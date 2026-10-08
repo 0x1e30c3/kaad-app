@@ -9,6 +9,7 @@ import { Monogram, PageHeader, PanelEmpty, StatusPill, TraderAvatar, card, hueOf
 import { AreaChart, agoLabel } from "@/components/charts";
 import ClubsSection from "@/components/ClubsSection";
 import FollowingFeed from "@/components/FollowingFeed";
+import CopyClubs from "@/components/CopyClubs";
 
 /** A labelled fact row: icon, label, then the value on the right. */
 const Fact = ({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) => (
@@ -139,6 +140,7 @@ export default function GroupsPage() {
 
       <div className="flex flex-col gap-8">
         <FollowingFeed />
+        <CopyClubs />
         <ClubsSection />
 
         <section>
