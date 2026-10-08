@@ -3,7 +3,7 @@
 import "server-only";
 import { type Address } from "viem";
 import { kaddClubAbi, kaddPoolAbi, kaddVenueAbi } from "./abi";
-import { COPY, STRATEGIES, VENUE } from "./addresses";
+import { COPY, COPY_CLUBS, STRATEGIES, VENUE } from "./addresses";
 import { publicClient } from "./chain";
 import { swr } from "./cache";
 import { profiles } from "./nns";
@@ -98,12 +98,14 @@ async function readBoard(): Promise<Board> {
   const copyTx = new Map(logs.copied.map((l) => [l.transactionHash, followOwner.get(l.args.id!)]));
   const copyAddr = COPY.toLowerCase();
   const strategies = STRATEGIES.toLowerCase();
+  const copyClubs = COPY_CLUBS.toLowerCase();
   const clubName = new Map(clubs.map((a, i) => [a.toLowerCase(), clubNames[i] as string]));
 
   const now = Date.now() / 1000;
   const byWho = new Map<string, Trade[]>();
   for (const l of logs.swaps) {
     let who = l.args.trader!.toLowerCase();
+    if (who === copyClubs) continue; // copy clubs are ranked on their own board (CopyBoard)
     if (who === strategies) who = strategyTx.get(l.transactionHash) ?? who;
     else if (who === copyAddr) who = copyTx.get(l.transactionHash) ?? who;
     const isBuy = l.args.isBuy!;
@@ -153,6 +155,7 @@ async function readBoardIndexed(): Promise<Board> {
   const now = Date.now() / 1000;
   const byWho = new Map<string, Trade[]>();
   for (const x of swaps) {
+    if (x.kind === "copyclub") continue; // ranked on CopyBoard; the trader is "copyclub:<id>", not a wallet
     const t: Trade = { who: x.trader, pool: x.pool, isBuy: x.isBuy, quote: x.usd, base: x.tokens, ago: now - x.timestamp };
     byWho.set(x.trader, [...(byWho.get(x.trader) ?? []), t]);
   }
