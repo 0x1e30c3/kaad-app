@@ -1,14 +1,14 @@
-// Real leaderboard from KaddVenue Swap events (via Envio HyperRPC). A Swap's `trader` is whoever called the pool:
+// Real leaderboard from KaddVenue Swap events (Kadd indexer, else Envio HyperRPC). A Swap's `trader` is whoever called the pool:
 // a wallet, a club contract (club trades), or KaddStrategies (attributed back to the strategy owner by tx hash).
 import "server-only";
-import { getAbiItem, type Address } from "viem";
-import { kaddClubAbi, kaddClubFactoryAbi, kaddCopyAbi, kaddPoolAbi, kaddStrategiesAbi, kaddVenueAbi } from "./abi";
-import { CLUB_FACTORY, COPY, STRATEGIES, VENUE } from "./addresses";
+import { type Address } from "viem";
+import { kaddClubAbi, kaddPoolAbi, kaddVenueAbi } from "./abi";
+import { COPY, STRATEGIES, VENUE } from "./addresses";
 import { publicClient } from "./chain";
-import { DEPLOY_BLOCK, hyperClient } from "./stats";
 import { swr } from "./cache";
 import { profiles } from "./nns";
 import { indexedClubs, indexedSwaps, indexerUrl } from "./indexer";
+import { kaddLogs } from "./events";
 
 export type Period = "1" | "7" | "30";
 export type BoardRow = {
@@ -81,46 +81,28 @@ async function readBoard(): Promise<Board> {
       console.error("indexer leaderboard failed, falling back to HyperRPC", e);
     }
   }
-  const token = process.env.ENVIO_API_TOKEN;
-  if (!token) return { ready: false, traders: empty(), clubs: empty() };
-  const hyper = hyperClient(token);
-  const fromBlock = BigInt(DEPLOY_BLOCK);
-
-  const [pools, clubCount] = await Promise.all([
-    publicClient.readContract({ address: VENUE, abi: kaddVenueAbi, functionName: "allPools" }),
-    publicClient.readContract({ address: CLUB_FACTORY, abi: kaddClubFactoryAbi, functionName: "clubCount" }),
-  ]);
+  const logs = await kaddLogs();
+  if (!logs) return { ready: false, traders: empty(), clubs: empty() };
+  const { pools, clubs } = logs;
   if (!pools.length) return { ready: true, traders: empty(), clubs: empty() };
-  const clubAddrs = clubCount
-    ? await publicClient.multicall({
-        allowFailure: false,
-        contracts: Array.from({ length: Number(clubCount) }, (_, i) => ({ address: CLUB_FACTORY, abi: kaddClubFactoryAbi, functionName: "clubs", args: [BigInt(i)] }) as const),
-      })
-    : [];
-  const copyOn = !/^0x0+$/.test(COPY);
-  const [prices, clubNames, head, swaps, created, executed, followed, copiedLogs] = await Promise.all([
+  const [prices, clubNames] = await Promise.all([
     publicClient.multicall({ allowFailure: false, contracts: pools.map((p) => ({ address: p, abi: kaddPoolAbi, functionName: "price" }) as const) }),
-    clubAddrs.length ? publicClient.multicall({ allowFailure: false, contracts: clubAddrs.map((a) => ({ address: a, abi: kaddClubAbi, functionName: "name" }) as const) }) : [],
-    publicClient.getBlockNumber(),
-    hyper.getLogs({ address: [...pools], event: getAbiItem({ abi: kaddPoolAbi, name: "Swap" }), fromBlock }),
-    hyper.getLogs({ address: STRATEGIES, event: getAbiItem({ abi: kaddStrategiesAbi, name: "Created" }), fromBlock }),
-    hyper.getLogs({ address: STRATEGIES, event: getAbiItem({ abi: kaddStrategiesAbi, name: "Executed" }), fromBlock }),
-    copyOn ? hyper.getLogs({ address: COPY, event: getAbiItem({ abi: kaddCopyAbi, name: "Followed" }), fromBlock }) : [],
-    copyOn ? hyper.getLogs({ address: COPY, event: getAbiItem({ abi: kaddCopyAbi, name: "Copied" }), fromBlock }) : [],
+    clubs.length ? publicClient.multicall({ allowFailure: false, contracts: clubs.map((a) => ({ address: a, abi: kaddClubAbi, functionName: "name" }) as const) }) : [],
   ]);
 
   const price = new Map(pools.map((p, i) => [p.toLowerCase(), Number(prices[i]) / 1e6]));
-  const ownerOf = new Map(created.map((l) => [l.args.id!, l.args.owner!.toLowerCase()]));
   // Swaps made by KaddStrategies or KaddCopy count for the person whose funds they were.
-  const strategyTx = new Map(executed.map((l) => [l.transactionHash, ownerOf.get(l.args.id!)]));
-  const followOwner = new Map(followed.map((l) => [l.args.id!, l.args.owner!.toLowerCase()]));
-  const copyTx = new Map(copiedLogs.map((l) => [l.transactionHash, followOwner.get(l.args.id!)]));
+  const ownerOf = new Map(logs.created.map((l) => [l.args.id!, l.args.owner!.toLowerCase()]));
+  const strategyTx = new Map(logs.executed.map((l) => [l.transactionHash, ownerOf.get(l.args.id!)]));
+  const followOwner = new Map(logs.followed.map((l) => [l.args.id!, l.args.owner!.toLowerCase()]));
+  const copyTx = new Map(logs.copied.map((l) => [l.transactionHash, followOwner.get(l.args.id!)]));
   const copyAddr = COPY.toLowerCase();
-  const clubName = new Map(clubAddrs.map((a, i) => [a.toLowerCase(), clubNames[i] as string]));
   const strategies = STRATEGIES.toLowerCase();
+  const clubName = new Map(clubs.map((a, i) => [a.toLowerCase(), clubNames[i] as string]));
 
+  const now = Date.now() / 1000;
   const byWho = new Map<string, Trade[]>();
-  for (const l of swaps) {
+  for (const l of logs.swaps) {
     let who = l.args.trader!.toLowerCase();
     if (who === strategies) who = strategyTx.get(l.transactionHash) ?? who;
     else if (who === copyAddr) who = copyTx.get(l.transactionHash) ?? who;
@@ -131,7 +113,7 @@ async function readBoard(): Promise<Board> {
       isBuy,
       quote: Number(isBuy ? l.args.amountIn! : l.args.amountOut!) / 1e6,
       base: Number(isBuy ? l.args.amountOut! : l.args.amountIn!) / 1e18,
-      ago: Number(head - l.blockNumber!) * 0.4, // ~0.4s Monad blocks
+      ago: now - l.timestamp,
     };
     byWho.set(who, [...(byWho.get(who) ?? []), t]);
   }
