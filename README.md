@@ -73,6 +73,13 @@ must raise the vault's own token balance by the quoted minimum, a sell approves 
 live on testnet (Groups & Clubs); the mainnet vault is **not deployed yet** and the app shows it once
 `NEXT_PUBLIC_COPY_MAINNET` is set.
 
+The keeper also runs a **risk guard**: a copied buy is skipped when Kadd's risk engine rates the mainnet token
+critical (honeypot or stacked red flags). The leaderboard ranks every live vault and copy club by return.
+
+**Growth loop.** Shared links carry `?ref=`; once the new account has gas it records its inviter in `KaddReferrals`
+(once, onchain), and Stats counts invites and which invitees went on to trade. **Telegram alerts** (bot + Upstash
+KV, see `kadd/.env.example`) send followed-wallet trades and copies with Kadd closed, on the keeper's cron tick.
+
 ## Contracts (Monad testnet, all Sourcify verified)
 
 | Contract | Address |
