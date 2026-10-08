@@ -16,6 +16,8 @@ const EVENTS = [
   getAbiItem({ abi: kaddStrategiesAbi, name: "Executed" }),
   getAbiItem({ abi: kaddCopyAbi, name: "Followed" }),
   getAbiItem({ abi: kaddCopyAbi, name: "Copied" }),
+  getAbiItem({ abi: kaddCopyAbi, name: "Funded" }),
+  getAbiItem({ abi: kaddCopyAbi, name: "Closed" }),
 ];
 
 type Raw = { address: Address; topics: [Hex, ...Hex[]]; data: Hex; blockNumber: Hex; blockTimestamp?: Hex; transactionHash: Hex; logIndex: Hex; blockHash: Hex; transactionIndex: Hex; removed: boolean };
@@ -62,6 +64,8 @@ async function read() {
     executed: at("Executed", from([STRATEGIES])) as Extract<(typeof logs)[number], { eventName: "Executed" }>[],
     followed: at("Followed", from([COPY])) as Extract<(typeof logs)[number], { eventName: "Followed" }>[],
     copied: at("Copied", from([COPY])) as Extract<(typeof logs)[number], { eventName: "Copied" }>[],
+    funded: at("Funded", from([COPY])) as Extract<(typeof logs)[number], { eventName: "Funded" }>[],
+    closed: at("Closed", from([COPY])) as Extract<(typeof logs)[number], { eventName: "Closed" }>[],
   };
 }
 
@@ -84,3 +88,34 @@ export type KaddLogs = NonNullable<Awaited<ReturnType<typeof read>>>;
 
 /** Every Kadd event since the venue deploy, each with its real block timestamp. Null without an Envio token. */
 export const kaddLogs = () => swr("kaddLogs", 5 * 60_000, read);
+
+export type CopyStat = { copiers: number; depositedUsd: number; copies: number };
+
+/** Who is being copied: per leader, active vaults, tUSDC put into them, and trades copied. From the cached logs. */
+export function copyStatsFrom(logs: Pick<KaddLogs, "followed" | "funded" | "closed" | "copied">): Map<string, CopyStat> {
+  const closed = new Set(logs.closed.map((l) => l.args.id!));
+  const vault = new Map(logs.followed.map((l) => [l.args.id!, { leader: l.args.leader!.toLowerCase(), deposit: Number(l.args.deposit!) / 1e6 }]));
+  for (const f of logs.funded) {
+    const v = vault.get(f.args.id!);
+    if (v) v.deposit += Number(f.args.amount!) / 1e6;
+  }
+  const out = new Map<string, CopyStat>();
+  const get = (leader: string) => out.get(leader) ?? out.set(leader, { copiers: 0, depositedUsd: 0, copies: 0 }).get(leader)!;
+  for (const [id, v] of vault) {
+    if (closed.has(id)) continue;
+    const s = get(v.leader);
+    s.copiers += 1;
+    s.depositedUsd += v.deposit;
+  }
+  for (const c of logs.copied) {
+    const v = vault.get(c.args.id!);
+    if (v) get(v.leader).copies += 1;
+  }
+  return out;
+}
+
+/** Copy stats per leader (lowercase address), or an empty map when history isn't available. */
+export async function copyStats(): Promise<Map<string, CopyStat>> {
+  const logs = await kaddLogs().catch(() => null);
+  return logs ? copyStatsFrom(logs) : new Map();
+}

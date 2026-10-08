@@ -3,7 +3,7 @@
   "chainId": 10143,
   "rpc": "https://testnet-rpc.monad.xyz",
   "explorer": "https://testnet.monadexplorer.com",
-  "generatedAt": "2026-10-05T03:43:33.260Z",
+  "generatedAt": "2026-10-08T04:47:32.501Z",
   "usedByApp": {
     "KaddVenue": "0xe4c0c88a4b2e5b150d3bb8d3d391e6a87b3d5379",
     "KaddClubFactory (venue)": "0x4e24ba0762624eaa63e02f3834105efa423a624c",
@@ -77,6 +77,17 @@
       "time": "2026-10-05T03:42:41.046Z",
       "verified": "exact_match",
       "explorer": "https://testnet.monadexplorer.com/address/0x27bb7d06af7ba8ea359cfe00a628145ed0bf1661"
+    },
+    {
+      "name": "KaddCopyClubs",
+      "contract": "KaddCopyClubs",
+      "address": "0x67a974949d2918e07763c86cfe8bbc3e817930d2",
+      "deployTx": "0xb4418ecdbd985927f4e3b28a236b8c76a9458c8a28482ff939bf923ddd4611ef",
+      "block": 69163961,
+      "deployer": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "time": "2026-10-08T04:45:56.730Z",
+      "verified": "exact_match",
+      "explorer": "https://testnet.monadexplorer.com/address/0x67a974949d2918e07763c86cfe8bbc3e817930d2"
     },
     {
       "name": "KaddCore",
@@ -413,11 +424,32 @@
       "gitCommit": "919b441",
       "explorer": "https://testnet.monadexplorer.com/tx/0xfbe53d2de49cbd463f2138e2355dc6b91e57a7242507fbd4a1faa580ec72c614",
       "logCount": 0
+    },
+    {
+      "script": "DeployCopyClubs.s.sol",
+      "type": "CREATE",
+      "contract": "KaddCopyClubs",
+      "function": null,
+      "arguments": [
+        "0xe4c0c88a4b2e5b150D3bB8D3d391E6A87b3d5379",
+        "0x4FF54485854bE63824EFBBBA9eEB3EB0396cd17B"
+      ],
+      "address": "0x67a974949d2918e07763c86cfe8bbc3e817930d2",
+      "from": "0xc36ab7e1be6a4ff4e81d5717c4c68a494a1247a0",
+      "hash": "0xb4418ecdbd985927f4e3b28a236b8c76a9458c8a28482ff939bf923ddd4611ef",
+      "block": 69163961,
+      "status": "success",
+      "gasUsed": 2545264,
+      "feeMon": 0.26216219200254526,
+      "time": "2026-10-08T04:45:56.730Z",
+      "gitCommit": "b3b7292",
+      "explorer": "https://testnet.monadexplorer.com/tx/0xb4418ecdbd985927f4e3b28a236b8c76a9458c8a28482ff939bf923ddd4611ef",
+      "logCount": 0
     }
   ],
   "totals": {
-    "transactions": 12,
-    "gasUsed": 27510482,
-    "feeMon": 2.83964016802448
+    "transactions": 13,
+    "gasUsed": 30055746,
+    "feeMon": 3.1018023600270253
   }
 }

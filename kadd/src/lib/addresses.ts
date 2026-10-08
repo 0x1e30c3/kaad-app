@@ -10,5 +10,9 @@ export const CLUB_FACTORY = env(process.env.NEXT_PUBLIC_CLUB_FACTORY, "0x4E24bA0
 export const STRATEGIES = env(process.env.NEXT_PUBLIC_STRATEGIES, "0xC12684b7063e3C749f0227539601a7b370073cEA");
 /** Auto copy trading vaults (KaddCopy). Keeper and admin: the gas drip wallet. */
 export const COPY = env(process.env.NEXT_PUBLIC_COPY, "0x27bB7D06AF7BA8Ea359CFe00A628145ED0Bf1661");
+/** Copy clubs: pooled auto copy vaults (KaddCopyClubs). Keeper: the gas drip wallet. */
+export const COPY_CLUBS = env(process.env.NEXT_PUBLIC_COPY_CLUBS, "0x67A974949d2918e07763C86cfe8bbc3E817930D2");
+/** Mainnet auto copy through Kuru (KaddCopyKuru, Monad mainnet). Not deployed: empty shows "coming soon". */
+export const COPY_MAINNET = env(process.env.NEXT_PUBLIC_COPY_MAINNET, "0x0000000000000000000000000000000000000000");
 /** False only if env explicitly blanks an address; onchain features then say so instead of failing. */
 export const VENUE_READY = VENUE !== zeroAddress && TUSDC !== zeroAddress && CLUB_FACTORY !== zeroAddress;

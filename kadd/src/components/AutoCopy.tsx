@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bot, Loader2, ShieldCheck } from "lucide-react";
+import { zeroAddress } from "viem";
 import { COPY_READY, copiesOf, startCopy, stopCopy } from "@/lib/copy";
+import { COPY_MAINNET } from "@/lib/addresses";
 import { short, usd } from "@/lib/mock";
 import { useStore } from "@/lib/store";
 import { useAsync } from "@/lib/useAsync";
@@ -65,6 +67,13 @@ export function AutoCopyForm({ leader }: { leader: string }) {
           </p>
         </form>
       )}
+      <p className="pt-2.5 border-t border-line text-[11px] text-faint">
+        {COPY_MAINNET === zeroAddress ? (
+          <>On Monad mainnet with real MON, routed through Kuru: <span className="text-muted">coming soon</span>. The vault contract is built and fork-tested.</>
+        ) : (
+          <>Mainnet vault (real MON via Kuru): <a href={`https://monadscan.com/address/${COPY_MAINNET}`} target="_blank" rel="noreferrer" className="text-muted underline font-mono">{short(COPY_MAINNET)}</a></>
+        )}
+      </p>
     </article>
   );
 }
@@ -119,6 +128,9 @@ export function CopyVaults() {
                   <div className="text-[14px] font-semibold">{usd(c.value)}</div>
                   <div className="text-[11px] text-muted">{usd(c.cash)} cash</div>
                 </div>
+                <Link href={`/vault/${c.id}`} className="h-8 px-3 inline-flex items-center rounded-lg border border-line-strong text-[12px] font-semibold hover:bg-hover">
+                  View &amp; share
+                </Link>
                 <button
                   onClick={async () => {
                     setBusy(c.id);

@@ -7,8 +7,11 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  // Absolute base for og:image and share links (Vercel sets VERCEL_PROJECT_PRODUCTION_URL).
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000")),
   title: "Kadd — Social trading on Monad",
   description: "Social trading terminal on Monad.",
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

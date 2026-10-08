@@ -10,6 +10,7 @@ import { poolTrades, quotes, type PoolTrade } from "./market";
 import { swr } from "./cache";
 import { mainnet, profiles, type Profile } from "./nns";
 import { smartMoney } from "./nansen";
+import { copyStats } from "./events";
 
 export type TokenMini = { address: string; symbol: string; image: string | null; price: number };
 export type WalletTrade = PoolTrade & { token: TokenMini };
@@ -27,6 +28,9 @@ export type MainnetRow = Profile & {
   copyRoi: number;
   /** Nansen smart-money label when Nansen tracks this wallet as smart money ("" = smart money, no label). */
   smart: string | null;
+  /** Kadd copy vaults following this wallet (testnet): active vaults and trades copied. */
+  copiers: number;
+  copies: number;
 };
 export type MainnetBoard = { rows: MainnetRow[]; since: number | null; failed: boolean };
 export type WalletView = Profile & {
@@ -114,7 +118,7 @@ export function aggregate(trades: WalletTrade[], now = Date.now()): MainnetRow[]
       });
       const buys = ts.filter((t) => t.side === "buy").length;
       const bt = backtest(ts, 10, now);
-      return { address, nns: null, avatar: null, smart: null, copyPnl: bt.pnl, copyRoi: bt.roi, volume, trades: ts.length, buys, sells: ts.length - buys, net: volume - 2 * bought, tokens, lastAt: Math.max(...ts.map((t) => t.at)), series };
+      return { address, nns: null, avatar: null, smart: null, copiers: 0, copies: 0, copyPnl: bt.pnl, copyRoi: bt.roi, volume, trades: ts.length, buys, sells: ts.length - buys, net: volume - 2 * bought, tokens, lastAt: Math.max(...ts.map((t) => t.at)), series };
     })
     .sort((a, b) => b.volume - a.volume);
 }
@@ -123,10 +127,10 @@ export const getMainnetBoard = (): Promise<MainnetBoard> =>
   swr("mainnetBoard", 60_000, async () => {
     const { trades, failed } = await recentTrades();
     const rows = aggregate(trades).slice(0, 100);
-    const [names, sm] = await Promise.all([profiles(rows.map((r) => r.address)), smartMoney()]);
+    const [names, sm, copy] = await Promise.all([profiles(rows.map((r) => r.address)), smartMoney(), copyStats()]);
     const smart = new Map(sm?.wallets.map((w) => [w.address, w.label ?? ""]));
     return {
-      rows: rows.map((r) => ({ ...r, ...names.get(r.address), smart: smart.get(r.address) ?? null })),
+      rows: rows.map((r) => ({ ...r, ...names.get(r.address), smart: smart.get(r.address) ?? null, copiers: copy.get(r.address)?.copiers ?? 0, copies: copy.get(r.address)?.copies ?? 0 })),
       since: trades.length ? trades[trades.length - 1].at : null,
       failed,
     };
@@ -185,3 +189,35 @@ export async function getFeed(wallets: string[]): Promise<FeedItem[]> {
   const names = await swr(`nns:${key.join(",")}`, 10 * 60_000, () => profiles(key));
   return items.map((t) => ({ ...t, nns: names.get(t.trader)?.nns ?? null, avatar: names.get(t.trader)?.avatar ?? null }));
 }
+
+export type Candidate = {
+  address: string;
+  nns: string | null;
+  avatar: string | null;
+  smart: string | null; // Nansen label when it's smart money ("" = smart money without a label)
+  pnl30d: number | null; // Nansen 30-day PnL
+  copyRoi: number;
+  trades: number;
+  lastBuy: { token: TokenMini; usd: number; at: number };
+};
+
+/**
+ * Wallets worth following for a first trade: Nansen smart money first, then the best copy backtests with at least
+ * three trades — each with its latest buy of a token Kadd lists, which is what the newcomer copies. From caches only.
+ */
+export const followCandidates = (): Promise<Candidate[]> =>
+  swr("candidates", 120_000, async () => {
+    const [board, { trades }, sm] = await Promise.all([getMainnetBoard(), recentTrades(), smartMoney()]);
+    const lastBuy = new Map<string, WalletTrade>();
+    for (const t of trades) if (t.side === "buy" && t.usd >= 1 && !lastBuy.has(t.trader)) lastBuy.set(t.trader, t); // newest first
+    const pnl = new Map(sm?.wallets.map((w) => [w.address, w.totalPnlUsd]));
+    const rank = (r: MainnetRow) => (r.smart !== null ? 1e9 + (pnl.get(r.address) ?? 0) : r.trades >= 3 ? r.copyRoi : -1e9);
+    return board.rows
+      .filter((r) => lastBuy.has(r.address))
+      .sort((a, b) => rank(b) - rank(a))
+      .slice(0, 3)
+      .map((r) => {
+        const b = lastBuy.get(r.address)!;
+        return { address: r.address, nns: r.nns, avatar: r.avatar, smart: r.smart, pnl30d: pnl.get(r.address) ?? null, copyRoi: r.copyRoi, trades: r.trades, lastBuy: { token: b.token, usd: b.usd, at: b.at } };
+      });
+  });

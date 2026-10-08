@@ -10,7 +10,8 @@ Kuru · Submission notes: [`SUBMISSION.md`](SUBMISSION.md)
 
 ## For judges: try it in 3 minutes
 
-No wallet, extension or seed phrase needed.
+No wallet, extension or seed phrase needed. Fastest path: **Try it in 60 seconds** on the landing page (`/start`):
+passkey, gas, copy a trader's latest buy, with a timer from arrival to the confirmed trade.
 
 1. **Sign in** (top right) and create a passkey (Face ID / Touch ID / Windows Hello). Your account is derived from
    the passkey with [Mera](https://github.com/category-labs/mera); nothing secret is stored. A new account gets a
@@ -27,6 +28,10 @@ No wallet, extension or seed phrase needed.
      never more than your per-trade and daily limits, and **Stop & withdraw** returns everything anytime.
 5. **Trade together.** Groups & Clubs → **Create club**: friends pool test USDC, the captain trades within a cap the
    contract enforces, and anyone can exit with their share at any time.
+
+Also: **Share** on a wallet or copy vault (`/vault/<id>`) gives a link whose preview card shows its numbers; **Notify me**
+on the Following feed raises a notification when a followed wallet trades or one of your vaults copies a trade (while
+Kadd is open in a tab).
 
 Also worth a look: any token page (live chart 1m–1D, **Live · Kuru** to trade on mainnet, a 0–100 risk score with the reason for every point, limit /
 take-profit / stop-loss / DCA orders that execute onchain), **Stats** (activity read from the contracts), and
@@ -60,6 +65,14 @@ leader trades on Monad mainnet ──► keeper sees it ──► KaddCopy.copyB
 copies each leader trade once, keeps the output in the follower's vault, and lets the owner close at any time. The
 keeper can't move funds anywhere else. 16 Foundry tests plus an end-to-end fork test with the real keeper.
 
+**Copy clubs** (`KaddCopyClubs`) apply the same rules to a pooled vault: limits are a share of the club's cash,
+deposits only while the club holds no tokens (so nobody joins at a manipulated price), and every member can redeem
+their share in kind at any time. **Mainnet** (`KaddCopyKuru`): MON vaults trading through the Kuru Flow router; a buy
+must raise the vault's own token balance by the quoted minimum, a sell approves exactly the position. Both are tested
+(16 and 15 Foundry tests, plus a keeper fork run and a mainnet fork test on a real Kuru Flow route). Copy clubs are
+live on testnet (Groups & Clubs); the mainnet vault is **not deployed yet** and the app shows it once
+`NEXT_PUBLIC_COPY_MAINNET` is set.
+
 ## Contracts (Monad testnet, all Sourcify verified)
 
 | Contract | Address |
@@ -69,6 +82,7 @@ keeper can't move funds anywhere else. 16 Foundry tests plus an end-to-end fork 
 | KaddClubFactory (clubs on the venue) | [`0x4E24…624c`](https://testnet.monadexplorer.com/address/0x4E24bA0762624EAa63E02f3834105efa423A624c) |
 | KaddClubFactory (clubs on Kuru Spot V2) | [`0xcF7e…b647`](https://testnet.monadexplorer.com/address/0xcF7e32d79553aA97259724bb780b951115F5b647) |
 | KaddStrategies (limit / TP / SL / DCA) | [`0xC126…cEA`](https://testnet.monadexplorer.com/address/0xC12684b7063e3C749f0227539601a7b370073cEA) |
+| KaddCopyClubs (pooled auto copy) | [`0x67A9…30D2`](https://testnet.monadexplorer.com/address/0x67A974949d2918e07763C86cfe8bbc3E817930D2) |
 | KaddCore · tUSDC | `0x3F86…DA70` · `0x9173…80CB` |
 
 Every deployment, deploy transaction and seeded pool: [`contracts/deployment.json`](contracts/deployment.json).
@@ -91,7 +105,7 @@ Every deployment, deploy transaction and seeded pool: [`contracts/deployment.jso
 | Path | What |
 |---|---|
 | [`kadd/`](kadd/) | Next.js 16 app (App Router, React 19, Tailwind 4, viem) |
-| [`contracts/`](contracts/) | Foundry: KaddVenue, KaddClub(+Factory), KaddStrategies, KaddCopy, tests, deploy scripts |
+| [`contracts/`](contracts/) | Foundry: KaddVenue, KaddClub(+Factory), KaddStrategies, KaddCopy, KaddCopyClubs, KaddCopyKuru, tests, deploy scripts |
 | [`indexer/`](indexer/) | Envio HyperIndex indexer for the Kadd contracts |
 | [`skills/`](skills/) | Agent skills (`npx skills add maulana-tech/kaad-app`) |
 
@@ -106,4 +120,4 @@ cd ../contracts && forge test
 ```
 
 Self-checks for the data logic: `npx tsx --conditions=react-server src/lib/<name>.check.ts` (cache, market, onchain,
-wallets, keeper, leaderboard).
+wallets, keeper, leaderboard, events).

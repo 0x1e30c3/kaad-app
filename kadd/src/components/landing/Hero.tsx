@@ -69,9 +69,9 @@ export default function Hero() {
             Find new Monad tokens, see what your group is buying, and pool USDC in clubs with rules enforced onchain. Sign in with a passkey — no seed phrase.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Cta href="/trenches">Launch app</Cta>
-            <Link href="/groups" className="h-11 rounded-full px-5 text-[15px] font-medium leading-[44px] text-muted ring-1 ring-line hover:bg-raised hover:text-fg">
-              Explore clubs
+            <Cta href="/start">Try it in 60 seconds</Cta>
+            <Link href="/trenches" className="h-11 rounded-full px-5 text-[15px] font-medium leading-[44px] text-muted ring-1 ring-line hover:bg-raised hover:text-fg">
+              Launch app
             </Link>
           </div>
           <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-1 text-[13px] text-muted">

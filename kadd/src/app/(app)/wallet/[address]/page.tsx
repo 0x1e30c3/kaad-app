@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { isAddress } from "viem";
-import { ArrowUpRight } from "lucide-react";
+import { isAddress, zeroAddress } from "viem";
+import { COPY_CLUBS } from "@/lib/addresses";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { getWallet, aggregate, backtest } from "@/lib/wallets";
 import { smartWallet } from "@/lib/nansen";
 import { num, short, usd } from "@/lib/mock";
-import { PageHeader, Panel, PanelEmpty, TokenIcon, card } from "@/components/ui";
+import { CopyChip, PageHeader, Panel, PanelEmpty, TokenIcon, card } from "@/components/ui";
+import { copyStats } from "@/lib/events";
 import WalletAvatar from "@/components/WalletAvatar";
 import { AreaChart } from "@/components/charts";
 import CopyAddress from "@/components/CopyAddress";
@@ -13,11 +15,13 @@ import FollowButton from "@/components/FollowButton";
 import CopyButton from "@/components/CopyButton";
 import { AutoCopyForm } from "@/components/AutoCopy";
 import AutoRefresh from "@/components/AutoRefresh";
+import ShareButton from "@/components/ShareButton";
 
 export const revalidate = 60;
 
 export async function generateMetadata(props: PageProps<"/wallet/[address]">) {
-  return { title: `Wallet ${short((await props.params).address)} · Kadd` };
+  const who = short((await props.params).address);
+  return { title: `Wallet ${who} · Kadd`, description: `${who} on Monad: trades, holdings, copy backtest and auto copy on Kadd.` };
 }
 
 const SCAN = "https://monadscan.com";
@@ -31,7 +35,8 @@ const ago = (ms: number) => {
 export default async function WalletPage(props: PageProps<"/wallet/[address]">) {
   const { address } = await props.params;
   if (!isAddress(address, { strict: false })) notFound();
-  const [w, smart] = await Promise.all([getWallet(address), smartWallet(address)]);
+  const [w, smart, copy] = await Promise.all([getWallet(address), smartWallet(address), copyStats()]);
+  const copying = copy.get(address.toLowerCase());
   const row = aggregate(w.trades)[0] ?? null;
   const bt = backtest(w.trades);
   const held = w.holdings?.reduce((s, h) => s + h.usd, 0) ?? null;
@@ -50,6 +55,7 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
         <a href={`${SCAN}/address/${w.address}`} target="_blank" rel="noreferrer" className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md border border-line-strong text-[13px] font-semibold hover:bg-hover">
           Monadscan <ArrowUpRight className="size-4" />
         </a>
+        <ShareButton path={`/wallet/${w.address}`} text={`${w.nns ?? short(w.address)} on Monad${smart ? `: ${signed(smart.totalPnlUsd)} in 30 days (Nansen)` : bt.copied ? `: copying them would have returned ${bt.roi >= 0 ? "+" : ""}${bt.roi.toFixed(1)}%` : ""}. Follow or auto-copy them on Kadd.`} />
         <FollowButton address={w.address} />
       </PageHeader>
 
@@ -59,6 +65,12 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
           <div>
             <div className={`text-[16px] font-semibold ${w.nns ? "" : "font-mono"}`}>{w.nns ?? short(w.address)}</div>
             <CopyAddress address={w.address} />
+            {copying && (copying.copiers > 0 || copying.copies > 0) && (
+              <p className="mt-1 flex items-center gap-1.5 text-[12px] text-muted tabular-nums">
+                <CopyChip n={copying.copiers} />
+                {usd(copying.depositedUsd)} in Kadd copy vaults · {copying.copies} {copying.copies === 1 ? "trade" : "trades"} copied
+              </p>
+            )}
           </div>
         </div>
         <dl className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -172,6 +184,11 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
           )}
           <div id="auto-copy" className="scroll-mt-4">
             <AutoCopyForm leader={w.address} />
+            {COPY_CLUBS !== zeroAddress && (
+              <Link href={`/groups?leader=${w.address}#copy-clubs`} className="mt-2 inline-flex items-center gap-1 text-[12px] text-muted hover:text-fg">
+                Or start a copy club for this wallet with friends <ArrowRight className="size-3" />
+              </Link>
+            )}
           </div>
           <Panel title="Holdings" count={w.holdings?.length || undefined}>
             {w.holdings === null ? (
