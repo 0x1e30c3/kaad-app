@@ -2,12 +2,13 @@
 // trade counts, volume and unique wallets need event history, which comes from Envio HyperRPC when ENVIO_API_TOKEN is
 // set (the public RPC caps eth_getLogs at 100 blocks, ~40 seconds of Monad history; HyperRPC serves any range).
 import "server-only";
-import { createPublicClient, erc20Abi, formatUnits, getAbiItem, http, zeroAddress, type Address } from "viem";
+import { createPublicClient, erc20Abi, formatUnits, http, zeroAddress, type Address } from "viem";
 import { kaddClubAbi, kaddClubFactoryAbi, kaddPoolAbi, kaddVenueAbi, mirrorTokenAbi } from "./abi";
 import { CLUB_FACTORY, STRATEGIES, TUSDC, VENUE } from "./addresses";
 import { hourlyCloses, quotes } from "./market";
 import { swr } from "./cache";
 import { indexedDepositors, indexedSwaps, indexerUrl } from "./indexer";
+import { kaddLogs } from "./events";
 import { chain, publicClient } from "./chain";
 
 export const DEPLOY_BLOCK = 67_481_453; // KaddVenue deployment
@@ -111,7 +112,7 @@ async function readStats(): Promise<Stats> {
     : [];
 
   const [activity, refs] = await Promise.all([
-    readActivity(poolAddrs, clubAddrs).catch(() => null),
+    readActivity().catch(() => null),
     quotes(poolAddrs.map((_, i) => meta[i * 2 + 1] as Address)).catch(() => ({}) as Awaited<ReturnType<typeof quotes>>),
   ]);
   const sparks = await Promise.all(
@@ -150,8 +151,8 @@ async function readStats(): Promise<Stats> {
   };
 }
 
-/** Swap + club deposit history since the venue deploy, via Envio HyperRPC. Null when no token is configured. */
-async function readActivity(pools: readonly Address[], clubs: readonly Address[]) {
+/** Swap + club deposit history since the venue deploy (indexer, else HyperRPC). Null when neither is configured. */
+async function readActivity() {
   if (indexerUrl()) {
     try {
       return await readActivityIndexed();
@@ -159,31 +160,22 @@ async function readActivity(pools: readonly Address[], clubs: readonly Address[]
       console.error("indexer stats failed, falling back to HyperRPC", e);
     }
   }
-  const token = process.env.ENVIO_API_TOKEN;
-  if (!token) return null;
-  if (!pools.length) return { perPool: new Map<string, { trades: number; volume: number }>(), trades: 0, volume: 0, traders: 0, deposits: 0, ...buckets([]) };
-  const hyper = hyperClient(token);
-  const fromBlock = BigInt(DEPLOY_BLOCK);
-  const [head, swaps, deposits] = await Promise.all([
-    publicClient.getBlockNumber(), // the head from the regular RPC: one less HyperRPC call
-    hyper.getLogs({ address: [...pools], event: getAbiItem({ abi: kaddPoolAbi, name: "Swap" }), fromBlock }),
-    clubs.length ? hyper.getLogs({ address: [...clubs], event: getAbiItem({ abi: kaddClubAbi, name: "Deposited" }), fromBlock }) : [],
-  ]);
-
+  const logs = await kaddLogs();
+  if (!logs) return null;
   const perPool = new Map<string, { trades: number; volume: number }>();
   const traders = new Set<string>();
   let volume = 0;
-  for (const l of swaps) {
+  for (const l of logs.swaps) {
     const v = usdc(l.args.isBuy ? l.args.amountIn! : l.args.amountOut!);
     const p = perPool.get(l.address.toLowerCase()) ?? { trades: 0, volume: 0 };
     perPool.set(l.address.toLowerCase(), { trades: p.trades + 1, volume: p.volume + v });
     traders.add(l.args.trader!.toLowerCase());
     volume += v;
   }
-  for (const l of deposits) traders.add(l.args.member!.toLowerCase());
-  // Testnet blocks are ~0.4 s apart, so block distance from the head is a good clock here.
-  const points = swaps.map((l) => ({ ago: Number(head - l.blockNumber!) * 0.4, usd: usdc(l.args.isBuy ? l.args.amountIn! : l.args.amountOut!) }));
-  return { perPool, trades: swaps.length, volume, traders: traders.size, deposits: deposits.length, ...buckets(points) };
+  for (const l of logs.deposits) traders.add(l.args.member!.toLowerCase());
+  const now = Date.now() / 1000;
+  const points = logs.swaps.map((l) => ({ ago: now - l.timestamp, usd: usdc(l.args.isBuy ? l.args.amountIn! : l.args.amountOut!) }));
+  return { perPool, trades: logs.swaps.length, volume, traders: traders.size, deposits: logs.deposits.length, ...buckets(points) };
 }
 
 /** The same numbers from the Kadd indexer, with real timestamps. */
