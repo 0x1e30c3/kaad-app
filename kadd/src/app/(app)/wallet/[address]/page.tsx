@@ -14,11 +14,13 @@ import FollowButton from "@/components/FollowButton";
 import CopyButton from "@/components/CopyButton";
 import { AutoCopyForm } from "@/components/AutoCopy";
 import AutoRefresh from "@/components/AutoRefresh";
+import ShareButton from "@/components/ShareButton";
 
 export const revalidate = 60;
 
 export async function generateMetadata(props: PageProps<"/wallet/[address]">) {
-  return { title: `Wallet ${short((await props.params).address)} · Kadd` };
+  const who = short((await props.params).address);
+  return { title: `Wallet ${who} · Kadd`, description: `${who} on Monad: trades, holdings, copy backtest and auto copy on Kadd.` };
 }
 
 const SCAN = "https://monadscan.com";
@@ -52,6 +54,7 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
         <a href={`${SCAN}/address/${w.address}`} target="_blank" rel="noreferrer" className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md border border-line-strong text-[13px] font-semibold hover:bg-hover">
           Monadscan <ArrowUpRight className="size-4" />
         </a>
+        <ShareButton path={`/wallet/${w.address}`} text={`${w.nns ?? short(w.address)} on Monad${smart ? `: ${signed(smart.totalPnlUsd)} in 30 days (Nansen)` : bt.copied ? `: copying them would have returned ${bt.roi >= 0 ? "+" : ""}${bt.roi.toFixed(1)}%` : ""}. Follow or auto-copy them on Kadd.`} />
         <FollowButton address={w.address} />
       </PageHeader>
 

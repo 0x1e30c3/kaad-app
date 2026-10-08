@@ -119,6 +119,9 @@ export function CopyVaults() {
                   <div className="text-[14px] font-semibold">{usd(c.value)}</div>
                   <div className="text-[11px] text-muted">{usd(c.cash)} cash</div>
                 </div>
+                <Link href={`/vault/${c.id}`} className="h-8 px-3 inline-flex items-center rounded-lg border border-line-strong text-[12px] font-semibold hover:bg-hover">
+                  View &amp; share
+                </Link>
                 <button
                   onClick={async () => {
                     setBusy(c.id);

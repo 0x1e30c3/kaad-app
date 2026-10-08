@@ -59,12 +59,12 @@ CHOG; a failed buy keeps the user on step 3 with the error.
 
 **Why.** Every good copy result should be an ad: a link that previews well on X / Telegram and lands on Kadd.
 
-**Images** (`next/og`, 1200×630, cached):
-- `/api/og/wallet/[address]` — avatar, name, Nansen 30-day PnL or copy-backtest ROI, volume, "N copying".
-- `/api/og/vault/[id]` — "Auto-copying 0xf70d… · +x% · 8 trades copied", vault limits.
+**Images** (`next/og`, 1200×630, `opengraph-image.tsx` next to each page so Next adds `og:image` itself):
+- `/wallet/[address]` — blockie, name, Nansen 30-day PnL + win rate, else copy-backtest ROI, "N copying".
+- `/vault/[id]` — "Auto-copying 0xf70d…", return, trades copied, vault limits.
 
 **Pages.**
-- Wallet page `generateMetadata` → `og:image` = wallet card.
+- Root `metadataBase` (production URL on Vercel) and `twitter:card = summary_large_image`.
 - `/vault/[id]` — public read-only page for a copy vault: leader, limits, value vs deposit, copied trades, CTA
   "Copy the same wallet" → leader's wallet page `#auto-copy`.
 
