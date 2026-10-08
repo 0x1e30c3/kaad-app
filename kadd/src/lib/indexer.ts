@@ -30,7 +30,8 @@ export async function indexedSwaps(since = 0): Promise<IndexedSwap[]> {
       }`,
       { since, limit: PAGE, offset },
     );
-    out.push(...Swap);
+    // Envio serves Float fields as Postgres numeric, which Hasura returns as strings.
+    out.push(...Swap.map((x) => ({ ...x, usd: Number(x.usd), tokens: Number(x.tokens), timestamp: Number(x.timestamp) })));
     if (Swap.length < PAGE) break;
   }
   return out;
