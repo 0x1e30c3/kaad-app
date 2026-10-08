@@ -161,7 +161,7 @@ type PerplMarket {
 }
 
 # One Perpl exchange account: how much went in and out, and how often it was liquidated. With live equity from the
-# contract this gives all-time PnL (equity − deposited + withdrawn).
+# contract this gives all-time trading PnL: equity − deposited + withdrawn − fromProtocol + toProtocol.
 type PerplAccount {
   id: ID! # Perpl account id
   address: String! @index
@@ -169,6 +169,8 @@ type PerplAccount {
   depositedUsd: Float!
   withdrawals: Int!
   withdrawnUsd: Float!
+  fromProtocolUsd: Float! # AUSD the protocol transferred in (allocations, rewards): not trading profit
+  toProtocolUsd: Float! # AUSD transferred back to the protocol
   liquidations: Int!
   liquidatedUsd: Float!
   createdAt: Int!

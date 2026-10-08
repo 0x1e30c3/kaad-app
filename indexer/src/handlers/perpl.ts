@@ -1,6 +1,7 @@
 /*
  * Perpl perps on Monad mainnet, low-volume events only, so the whole history stays inside Envio's free plan (100k
- * events): markets (decimals), accounts with their deposits / withdrawals, every liquidation, and per-day flows.
+ * events): markets (decimals), accounts with their deposits / withdrawals and protocol transfers, every liquidation,
+ * and per-day flows.
  * Closes and fills (~50k a day) are left out on purpose: the app reads open positions from the contract and derives
  * all-time PnL as live equity minus net deposits.
  */
@@ -20,18 +21,18 @@ async function daily(context: Ctx, ts: number, add: DailyAdd) {
   context.PerplDaily.set(next);
 }
 
-const emptyAccount = (id: string, ts: number) => ({ id, address: "", deposits: 0, depositedUsd: 0, withdrawals: 0, withdrawnUsd: 0, liquidations: 0, liquidatedUsd: 0, createdAt: ts, lastAt: ts });
+const emptyAccount = (id: string, ts: number) => ({ id, address: "", deposits: 0, depositedUsd: 0, withdrawals: 0, withdrawnUsd: 0, fromProtocolUsd: 0, toProtocolUsd: 0, liquidations: 0, liquidatedUsd: 0, createdAt: ts, lastAt: ts });
 
 // ---------------------------------------------------------------- markets and accounts
 
 indexer.onEvent({ contract: "PerplExchange", event: "ContractAdded" }, async ({ event, context }) => {
   const p = event.params;
-  context.PerplMarket.set({ id: p.perpId.toString(), symbol: p.symbol || p.name, priceDecimals: Number(p.priceDecimals), lotDecimals: Number(p.lotDecimals) });
+  context.PerplMarket.set({ id: p.perpId.toString(), symbol: (p.symbol || p.name).replace(/_v\d+$/, ""), priceDecimals: Number(p.priceDecimals), lotDecimals: Number(p.lotDecimals) });
 });
 
 indexer.onEvent({ contract: "PerplExchange", event: "ContractAddedV2" }, async ({ event, context }) => {
   const p = event.params;
-  context.PerplMarket.set({ id: p.perpId.toString(), symbol: p.symbol || p.name, priceDecimals: Number(p.priceDecimals), lotDecimals: Number(p.lotDecimals) });
+  context.PerplMarket.set({ id: p.perpId.toString(), symbol: (p.symbol || p.name).replace(/_v\d+$/, ""), priceDecimals: Number(p.priceDecimals), lotDecimals: Number(p.lotDecimals) });
 });
 
 indexer.onEvent({ contract: "PerplExchange", event: "AccountCreated" }, async ({ event, context }) => {
@@ -60,6 +61,21 @@ indexer.onEvent({ contract: "PerplExchange", event: "CollateralWithdrawal" }, as
   const a = (await context.PerplAccount.get(id)) ?? emptyAccount(id, ts);
   context.PerplAccount.set({ ...a, withdrawals: a.withdrawals + 1, withdrawnUsd: a.withdrawnUsd + value, lastAt: ts });
   await daily(context, ts, { withdrawals: 1, withdrawnUsd: value });
+});
+
+// Protocol transfers (allocations, rewards) move money without being trading PnL, so they're tracked apart.
+indexer.onEvent({ contract: "PerplExchange", event: "TransferProtocolToAccount" }, async ({ event, context }) => {
+  const id = event.params.accountId.toString();
+  const ts = event.block.timestamp;
+  const a = (await context.PerplAccount.get(id)) ?? emptyAccount(id, ts);
+  context.PerplAccount.set({ ...a, fromProtocolUsd: a.fromProtocolUsd + usd(event.params.amountCNS), lastAt: ts });
+});
+
+indexer.onEvent({ contract: "PerplExchange", event: "TransferAccountToProtocol" }, async ({ event, context }) => {
+  const id = event.params.accountId.toString();
+  const ts = event.block.timestamp;
+  const a = (await context.PerplAccount.get(id)) ?? emptyAccount(id, ts);
+  context.PerplAccount.set({ ...a, toProtocolUsd: a.toProtocolUsd + usd(event.params.amountCNS), lastAt: ts });
 });
 
 // ---------------------------------------------------------------- liquidations

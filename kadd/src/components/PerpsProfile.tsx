@@ -46,6 +46,7 @@ export default function PerpsProfile({ address, risk }: { address: string; risk:
               <Stat k="All-time PnL" v={signed(h.allTime)} tone={h.allTime >= 0 ? "up" : "down"} />
               <Stat k="Deposited" v={money(h.deposited)} />
               <Stat k="Withdrawn" v={money(h.withdrawn)} />
+              {h.fromProtocol !== 0 && <Stat k="From protocol" v={money(h.fromProtocol)} />}
               <Stat k="Liquidated" v={h.liquidations.length ? `${h.liquidations.length}× · ${money(h.liquidatedUsd)}` : "Never"} tone={h.liquidations.length ? "down" : "up"} />
             </>
           )}
@@ -106,7 +107,7 @@ export default function PerpsProfile({ address, risk }: { address: string; risk:
           </details>
         )}
         <p className="px-4 py-3 border-t border-line text-[11px] text-faint">
-          {h ? "All-time PnL is equity minus what went in net of withdrawals, so fees and funding are included." : "All-time PnL and liquidation history appear when Kadd's indexer is reachable."}
+          {h ? "All-time PnL is equity minus money that came in from outside trading (deposits net of withdrawals, plus protocol transfers such as allocations), so fees and funding are included." : "All-time PnL and liquidation history appear when Kadd's indexer is reachable."}
         </p>
       </Panel>
     </section>

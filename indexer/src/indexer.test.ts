@@ -43,6 +43,10 @@ describe("Kadd indexer", () => {
     t.expect(sets(created, "PerplAccount")[0]).toMatchObject({ id: "1" });
     t.expect(sets(created, "PerplAccount")[0]!.address).toMatch(/^0x[0-9a-f]{40}$/);
 
+    // A protocol transfer (an allocation, not trading profit): $49,900 into account 5356.
+    const transfer = await indexer.process({ chains: { 143: { startBlock: 109_930_343, endBlock: 109_930_343 } } });
+    t.expect(sets(transfer, "PerplAccount").find((a) => a.id === "5356")).toMatchObject({ fromProtocolUsd: 49900 });
+
     // A full liquidation: account 1922's MON long, 4,157 MON at $0.027636 (≈ $114.88), −$6.62 realized.
     const liq = await indexer.process({ chains: { 143: { startBlock: 111_195_974, endBlock: 111_195_974 } } });
     const [l] = sets(liq, "PerplLiquidation");

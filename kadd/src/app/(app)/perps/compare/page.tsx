@@ -24,7 +24,7 @@ const ROWS: Row[] = [
   ["Closest to liquidation", (r) => (Number.isFinite(nearest(r)) ? `${(nearest(r) * 100).toFixed(1)}% away` : "–"), "high", (r) => (Number.isFinite(nearest(r)) ? nearest(r) : null)],
   ["Open PnL", (r) => signed(r.open.reduce((s, p) => s + p.pnl, 0)), "high", (r) => r.open.reduce((s, p) => s + p.pnl, 0)],
   ["All-time PnL", (r) => (r.history ? signed(r.history.allTime) : "–"), "high", (r) => r.history?.allTime ?? null],
-  ["Net deposited", (r) => (r.history ? money(r.history.deposited - r.history.withdrawn) : "–")],
+  ["Net money in", (r) => (r.history ? money(r.history.deposited - r.history.withdrawn + r.history.fromProtocol) : "–")],
   ["Liquidations", (r) => (r.history ? String(r.history.liquidations.length) : "–"), "low", (r) => r.history?.liquidations.length ?? null],
   ["Liquidated (USD)", (r) => (r.history ? money(r.history.liquidatedUsd) : "–"), "low", (r) => r.history?.liquidatedUsd ?? null],
 ];

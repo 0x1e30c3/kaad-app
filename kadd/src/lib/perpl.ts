@@ -1,7 +1,7 @@
 // Perpl (perpetual futures on Monad): every open position on mainnet, read straight from the Exchange contract.
 // getPositionsV2 pages through each market's position list with unrealized PnL, so live "who holds what" needs no
-// indexer. The Kadd indexer (indexer/, Perpl on chain 143) adds deposits / withdrawals and liquidations per account,
-// which turn live equity into all-time PnL (equity − net deposits).
+// indexer. The Kadd indexer (indexer/, Perpl on chain 143) adds deposits / withdrawals, protocol transfers and
+// liquidations per account, which turn live equity into all-time trading PnL (equity − net money in).
 import "server-only";
 import { createPublicClient, erc20Abi, http, parseAbi, type Address } from "viem";
 import { monad, monadTestnet } from "viem/chains";
@@ -182,7 +182,7 @@ export function tradersFrom(positions: PerpPosition[]): PerpTrader[] {
 export type PerpRow = {
   address: string;
   equity: number; // free balance + margin in positions + open PnL
-  /** All-time PnL: equity minus net deposits (fees and funding included). Null without the indexer. */
+  /** All-time trading PnL: equity minus net money in (fees and funding included). Null without the indexer. */
   allTime: number | null;
   netDeposits: number | null;
   liquidations: number;
@@ -192,6 +192,9 @@ export type PerpRow = {
   leverage: number; // open notional / open margin
 };
 export type PerpBoard = { rows: PerpRow[]; history: boolean; markets: number; positions: number; holders: number; openInterest: number; volume24h: number; marketStats: PerpMarketStat[] };
+
+/** Money that came in from outside trading: deposits net of withdrawals, plus protocol transfers (allocations, rewards). */
+export const netIn = (a: IndexedPerplAccount) => a.depositedUsd - a.withdrawnUsd + a.fromProtocolUsd - a.toProtocolUsd;
 
 /** Every Perpl account (indexer) by address, cached 5 min. Null without the indexer. */
 const perplAccounts = () =>
@@ -220,7 +223,7 @@ export const perpBoard = () =>
     const rows: PerpRow[] = traders.map((t) => {
       const a = accounts?.get(t.address);
       const equity = (free.get(t.positions[0].account) ?? 0) + t.deposit + t.pnl;
-      const net = a ? a.depositedUsd - a.withdrawnUsd : null;
+      const net = a ? netIn(a) : null;
       return {
         address: t.address,
         equity,
@@ -382,7 +385,7 @@ export type WalletRisk = {
   marginUse: number; // margin / equity, %
   open: (PerpPosition & { distance: number })[];
   /** From the indexer (null without it): money in and out, all-time PnL (equity − net deposits) and liquidations. */
-  history: { deposited: number; withdrawn: number; allTime: number; liquidations: IndexedPerplLiquidation[]; liquidatedUsd: number } | null;
+  history: { deposited: number; withdrawn: number; fromProtocol: number; allTime: number; liquidations: IndexedPerplLiquidation[]; liquidatedUsd: number } | null;
 };
 
 /** One wallet's Perpl risk profile: margin, distance to liquidation per position, all-time PnL and liquidations. */
@@ -410,7 +413,7 @@ export async function walletRisk(address: string): Promise<WalletRisk | null> {
     marginUse: equity > 0 ? (margin / equity) * 100 : 0,
     open: open.sort((x, y) => x.distance - y.distance),
     history: acct
-      ? { deposited: acct.depositedUsd, withdrawn: acct.withdrawnUsd, allTime: equity - (acct.depositedUsd - acct.withdrawnUsd), liquidations: liquidations ?? [], liquidatedUsd: acct.liquidatedUsd }
+      ? { deposited: acct.depositedUsd, withdrawn: acct.withdrawnUsd, fromProtocol: acct.fromProtocolUsd - acct.toProtocolUsd, allTime: equity - netIn(acct), liquidations: liquidations ?? [], liquidatedUsd: acct.liquidatedUsd }
       : null,
   };
 }
