@@ -52,6 +52,27 @@ On `/perps` below the ticket, and per wallet:
 - **Wallet**: realized PnL, win rate, closes, liquidations (indexer), open book with liquidation prices; best / worst
   market (indexer per-day rows).
 
+## F8b. Risk tool (built)
+
+- **`/perps/risk`**: TVL (AUSD held by the Exchange), open interest, 24h volume, positions within 5% of liquidation;
+  a **liquidation map** per market (notional liquidated per 1% price move, ±30%, plus "a 2 / 5 / 10% move wipes out
+  $X of longs / shorts"); the 25 positions closest to liquidation; 30-day charts from the indexer (volume, fees,
+  active traders, cumulative net deposits, liquidations, new accounts).
+- **Wallet risk profile** (wallet page): equity, margin in use, free AUSD, open PnL, distance to liquidation per
+  position; with the indexer: realized PnL, win rate, profit factor, max drawdown, win / loss streaks, average hold,
+  best / worst market, cumulative PnL curve and recent closes.
+- **`/perps/compare?w=a,b,c,d`**: up to four traders side by side, best value per row highlighted.
+- **Alerts**: in-app (every minute while Kadd is open) and Telegram (with Kadd closed) when one of my Perpl positions
+  comes within 5%, then 2%, of liquidation; the order ticket warns when the chosen leverage leaves less than a 15%
+  move before liquidation.
+- **Indexer** (chain 143): `PerplMarket` (decimals, from `ContractAdded`), `PerplDaily` (volume from maker fills,
+  maker + taker fees, active traders, new accounts, deposits / withdrawals, liquidations), `PerplClose` (every
+  realized event with hold time), `PerplPosition` (open time). Start block moved to 54,773,000 so the first markets'
+  `ContractAdded` is indexed.
+
+Checks: `perplRisk.check.ts` (liquidation buckets and cumulative sums, wallet performance), indexer replay test
+(markets, closes, daily totals on real mainnet blocks).
+
 ## F9. Mera: one passkey, many keys (blocked on Perpl)
 
 Derive the Perpl API key (Ed25519) from the passkey PRF with a `perpl-api-v1` salt: nothing stored, the same key on

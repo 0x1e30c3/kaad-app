@@ -40,7 +40,8 @@ contracts:
       - event: Deposited(uint256 indexed id, address indexed member, uint256 amount, uint256 shares)
       - event: Redeemed(uint256 indexed id, address indexed member, uint256 shares, uint256 cash)
       - event: Copied(uint256 indexed id, bytes32 indexed leaderTx, address indexed pool, bool isBuy, uint256 amountIn, uint256 amountOut)
-  # Perpl perpetual futures (Monad mainnet): realized PnL per trader from closes, partial closes and liquidations.
+  # Perpl perpetual futures (Monad mainnet): realized PnL per trader, every close (trade history), and protocol health
+  # per day (volume, fees, active traders, deposits / withdrawals, liquidations).
   - name: PerplExchange
     events:
       - event: AccountCreated(address account, uint256 id)
@@ -48,6 +49,18 @@ contracts:
       - event: PositionDecreased(uint256 perpId, uint256 accountId, uint8 positionType, uint256 startDepositCNS, uint256 endDepositCNS, uint256 startLotLNS, uint256 endLotLNS, int256 deltaPnlCNS, int256 fundingCNS)
       - event: PositionLiquidated(uint256 perpId, uint256 posAccountId, uint8 positionType, uint256 markPricePNS, uint256 liqPricePNS, uint256 liqLotLNS, uint256 posLotLNS, int256 deltaPnlCNS, int256 fundingCNS, int256 posAmountCNS, uint256 posDepositCNS, int256 accAmountCNS, uint256 accBalanceCNS, bool onOrderBook)
       - event: PositionInverted(uint256 perpId, uint256 accountId, uint8 positionType, uint256 leverageHdths, uint256 startDepositCNS, uint256 endDepositCNS, int256 pnlCollateralizedCNS, uint256 pricePNS, uint256 startLotLNS, uint256 endLotLNS, int256 deltaPnlCNS, int256 fundingCNS, uint256 insFeeCNS, uint256 protFeeCNS)
+      - event: ContractAdded(uint256 perpId, string name, string symbol, uint8 status, uint256 basePricePNS, uint256 priceDecimals, uint256 lotDecimals, uint256 takerFeePer100K, uint256 makerFeePer100K, uint256 initMarginFracHdths, uint256 maintMarginFracHdths, uint256 maxOpenInterestLNS, uint256 unityDescentThreshHdths, uint256 overColDescentThreshHdths, uint256 dcpBorrowThreshHdths, uint256 priceTolPer100K, uint256 marginTol, uint256 marginTolDecimals, uint256 refPriceMaxAgeSec, uint256 absFundingClampPctPer100K, uint256 permCancelMinOrders, uint256 permCancelSegment, uint256 insAmtPer100K, uint256 liqInsAmtPer100K, uint256 liqUserAmtPer100K, bool btlRestrictBuyers, uint256 btlPriceThreshPer100K, uint256 btlInsAmtPer100K, uint256 btlUserAmtPer100K, uint256 btlBuyerAmtPer100K, uint256 numPerpetuals)
+      - event: ContractAddedV2(uint256 perpId, string name, string symbol, uint8 status, uint256 basePricePNS, uint256 priceDecimals, uint256 lotDecimals, uint256 initMarginFracHdths, uint256 maintMarginFracHdths, uint256 maxOpenInterestLNS, uint256 unityDescentThreshHdths, uint256 overColDescentThreshHdths, uint256 dcpBorrowThreshHdths, uint256 priceTolPer100K, uint256 marginTol, uint256 marginTolDecimals, uint256 refPriceMaxAgeSec, uint256 absFundingClampPctPer100K, uint256 permCancelMinOrders, uint256 permCancelSegment, uint256 insAmtPer100K, uint256 liqInsAmtPer100K, uint256 liqUserAmtPer100K, bool btlRestrictBuyers, uint256 btlPriceThreshPer100K, uint256 btlInsAmtPer100K, uint256 btlUserAmtPer100K, uint256 btlBuyerAmtPer100K, uint256 numPerpetuals, uint256 perpFeeSchedId)
+      - event: CollateralDeposit(uint256 accountId, uint256 amountCNS, uint256 balanceCNS)
+      - event: CollateralWithdrawal(uint256 accountId, uint256 amountCNS, uint256 balanceCNS)
+      - event: MakerOrderFilled(uint256 perpId, uint256 accountId, uint256 orderId, uint256 pricePNS, uint256 lotLNS, uint256 feeCNS, uint256 lockedBalanceCNS, int256 amountCNS, uint256 balanceCNS)
+      - event: MakerOrderFilledV2(uint256 perpId, uint256 accountId, uint256 orderId, uint256 pricePNS, uint256 lotLNS, uint256 feeCNS, uint256 lockedBalanceCNS, int256 amountCNS, uint256 balanceCNS, uint256 builderId, uint256 builderFeeCNS)
+      - event: TakerOrderFilled(uint256 entryPricePNS, uint256 collatPricePNS, uint256 pnlPricePNS, uint256 lotLNS, uint256 feeCNS, int256 amountCNS, uint256 balanceCNS)
+      - event: TakerOrderFilledV2(uint256 entryPricePNS, uint256 collatPricePNS, uint256 pnlPricePNS, uint256 lotLNS, uint256 feeCNS, int256 amountCNS, uint256 balanceCNS, uint256 builderId, uint256 builderFeeCNS)
+      - event: PositionOpened(uint256 perpId, uint256 accountId, uint8 positionType, uint256 leverageHdths, uint256 depositCNS, int256 pnlCollateralizedCNS, uint256 pricePNS, uint256 lotLNS, uint256 insFeeCNS, uint256 protFeeCNS)
+      - event: PositionOpenedV2(uint256 perpId, uint256 accountId, uint8 positionType, uint256 leverageHdths, uint256 depositCNS, int256 pnlCollateralizedCNS, uint256 pricePNS, uint256 lotLNS, uint256 insFeeCNS, uint256 protFeeCNS, uint256 priceResiduePNSQ16)
+      - event: PositionIncreased(uint256 perpId, uint256 accountId, uint8 positionType, uint256 leverageHdths, uint256 startDepositCNS, uint256 endDepositCNS, int256 pnlCollateralizedCNS, int256 premiumPnlSettledCNS, uint256 maxNegPnlCollatBPS, uint256 pricePNS, uint256 startLotLNS, uint256 endLotLNS, uint256 insFeeCNS, uint256 protFeeCNS)
+      - event: PositionIncreasedV2(uint256 perpId, uint256 accountId, uint8 positionType, uint256 leverageHdths, uint256 startDepositCNS, uint256 endDepositCNS, int256 pnlCollateralizedCNS, int256 premiumPnlSettledCNS, uint256 maxNegPnlCollatBPS, uint256 pricePNS, uint256 startLotLNS, uint256 endLotLNS, uint256 insFeeCNS, uint256 protFeeCNS, uint256 priceResiduePNSQ16)
 chains:
   - id: 10143 # Monad testnet
     # Local runs without HyperSync access: read through an RPC instead (Envio HyperRPC handles wide log ranges).
@@ -67,7 +80,7 @@ chains:
       - name: KaddCopyClubs
         address: 0x67A974949d2918e07763C86cfe8bbc3E817930D2
   - id: 143 # Monad mainnet
-    start_block: 54972991 # Perpl Exchange's first account
+    start_block: 54773000 # just before Perpl adds its first markets (54773025)
     rpc:
       - url: https://rpc.monad.xyz
         for: sync

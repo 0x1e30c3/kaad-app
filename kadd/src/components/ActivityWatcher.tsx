@@ -5,6 +5,8 @@ import type { CopyActivity } from "@/lib/share";
 import { short, usd } from "@/lib/mock";
 import { toast, useStore } from "@/lib/store";
 import { linkTelegram, tgToken } from "@/lib/telegramLink";
+import { fetchPerpMarkets, myPositions, perpAccount, type PerpNet } from "@/lib/perplTrade";
+import { liqDistance } from "@/lib/perplRisk";
 
 const SEEN = "kadd:seen:"; // + stream: tx hashes already announced, shared by every open tab
 const seen = (k: string): string[] | null => {
@@ -38,9 +40,36 @@ export function announce<T extends { tx: string }>(stream: string, items: T[], l
   for (const x of fresh) notify(title, line(x));
 }
 
+/** Bands a position is in when it's close to liquidation (as a share of the price left), or null when it's safe. */
+const band = (d: number) => (d < 0.02 ? "2" : d < 0.05 ? "5" : null);
+
 /**
- * Every 60 s while Kadd is open: new trades by followed wallets and new trades copied into my vaults, as a toast plus
- * a system notification when allowed. ponytail: polling, not web push — nothing fires with every tab closed.
+ * My Perpl positions (testnet and mainnet) closer than 5%, then 2%, to liquidation: one alert per position per band.
+ * A position that moves back out of a band can alert again later.
+ */
+async function watchLiquidations(me: `0x${string}`) {
+  const alerted = new Set(seen("liq") ?? []);
+  const now = new Set<string>();
+  for (const net of ["testnet", "mainnet"] as PerpNet[]) {
+    const acct = await perpAccount(net, me).catch(() => null);
+    if (!acct?.accountId) continue;
+    const markets = await fetchPerpMarkets(net).catch(() => []);
+    for (const p of await myPositions(net, acct.accountId, markets).catch(() => [])) {
+      const d = liqDistance(p.side, p.mark, p.liquidation);
+      const b = band(d);
+      if (!b) continue;
+      const key = `${net}:${p.market.id}:${p.side}:${b}`;
+      now.add(key);
+      if (!alerted.has(key)) notify("Liquidation risk", `${p.side === "long" ? "Long" : "Short"} ${p.market.name} on Perpl ${net} is ${(d * 100).toFixed(1)}% from liquidation (${p.leverage.toFixed(1)}×). Add margin or reduce it on /perps.`);
+    }
+  }
+  markSeen("liq", [...now]);
+}
+
+/**
+ * Every 60 s while Kadd is open: new trades by followed wallets, trades copied into my vaults, and my Perpl positions
+ * nearing liquidation, as a toast plus a system notification when allowed. ponytail: polling, not web push — nothing
+ * fires with every tab closed (Telegram covers that).
  */
 export default function ActivityWatcher() {
   const { following, user } = useStore();
@@ -50,6 +79,12 @@ export default function ActivityWatcher() {
   useEffect(() => {
     if (tgToken()) linkTelegram(owner, key ? key.split(",") : []).catch(() => {});
   }, [key, owner]);
+  useEffect(() => {
+    if (!owner) return;
+    watchLiquidations(owner).catch(() => {});
+    const id = setInterval(() => watchLiquidations(owner).catch(() => {}), 60_000);
+    return () => clearInterval(id);
+  }, [owner]);
   useEffect(() => {
     const poll = async () => {
       if (key) {

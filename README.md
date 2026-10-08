@@ -51,6 +51,7 @@ seed phrase, nothing to install.
 | 5 | A copy club: friends pool into one vault that copies one wallet | Groups & Clubs → New copy club |
 | 6 | Trade on mainnet through Kuru, with the guaranteed minimum shown first | Token page → Live · Kuru |
 | 6b | Long or short BTC on Perpl from the same passkey, AUSD in and out | `/perps` |
+| 6c | Where Perpl positions get liquidated, and who is closest | `/perps/risk` |
 | 7 | Everything onchain: trades, copy vaults, clubs, invites | Stats |
 
 ---
@@ -139,6 +140,7 @@ harmless: the contract copies each leader trade once, so extra runs find nothing
 - **Token pages**: live mainnet chart (1m to 1D), trades, a 0–100 risk score with the reason for every point
 - **Live · Kuru**: buy and sell on Monad mainnet routed by Kuru Flow, with a review step showing the guaranteed minimum
 - **Perps from your passkey (Perpl)**: AUSD in, long or short BTC / ETH / SOL / MON with up to 10×, close, withdraw, on testnet or mainnet; the liquidation price is shown before you sign; Get AUSD swaps MON → AUSD on Kuru
+- **Perps risk (Perpl)**: a liquidation map per market ("a 5% drop liquidates $X of longs"), positions closest to liquidation, protocol health over 30 days (volume, fees, active traders, net deposits, liquidations), a risk profile per wallet (margin use, distance to liquidation, profit factor, max drawdown, streaks, hold time) and side-by-side compare; alerts in-app and on Telegram when your position nears liquidation
 - **Perps leaderboard (Perpl)**: every open perps position on Monad mainnet with leverage and open PnL, 30-day realized PnL per trader, and Kadd's copy bot mirroring one of them on testnet
 - **Best auto copy leaderboard**: every live vault and copy club ranked by return
 - **Share cards**: wallet and vault links unfold into image cards with live numbers on X and Telegram
@@ -164,7 +166,7 @@ harmless: the contract copies each leader trade once, so extra runs find nothing
 | Backend | Next.js route handlers on Vercel: keeper, gas drip, agent API, Telegram webhook |
 | Storage | Onchain for everything that moves money; Upstash Redis (REST) only for Telegram subscriptions |
 | Share cards | `next/og` (Satori) image routes per wallet and vault |
-| Tests | Foundry (96), an indexer replay test on real chain history, 10 self-checks for the data logic |
+| Tests | Foundry (96), an indexer replay test on real chain history, 11 self-checks for the data logic |
 
 ---
 
@@ -191,7 +193,7 @@ Kuru's testnet order books are empty and only list governance-whitelisted tokens
 |---|---|---|
 | **Nansen** | Smart-money PnL leaderboard: Smart Money tab, SMART badges, wallet cards, `/start` picks, agent API. One paid call a day, shared | [`NANSEN.md`](NANSEN.md), [`nansen.ts`](kadd/src/lib/nansen.ts) |
 | **Kuru** | Live mainnet trades through Kuru Flow (quote → review with minimum → passkey signs); `KaddCopyKuru` for mainnet auto copy; `KaddClub` fork-tested on Kuru Spot V2 | [`kuru.ts`](kadd/src/lib/kuru.ts), [`KuruTrade.tsx`](kadd/src/components/KuruTrade.tsx) |
-| **Envio** | Multichain HyperIndex indexer: every Kadd contract (testnet) and Perpl's realized PnL (mainnet), swaps attributed to whoever's money it was; HyperRPC for event history and the chart fallback | [`indexer/`](indexer/), [`events.ts`](kadd/src/lib/events.ts) |
+| **Envio** | Multichain HyperIndex indexer: every Kadd contract (testnet) and Perpl (mainnet): realized PnL, every close with hold time, protocol health per day, swaps attributed to whoever's money it was; HyperRPC for event history and the chart fallback | [`indexer/`](indexer/), [`events.ts`](kadd/src/lib/events.ts) |
 | **Mera** | The whole account layer: one passkey ceremony, prompt-free signing, no seed phrase | [`wallet.ts`](kadd/src/lib/wallet.ts) |
 | **Perpl** | Perps trading from the passkey account straight on the Exchange contract (`createAccount`, `execOrder`); perps leaderboard and market analytics (volume, OI, long/short, leverage, funding, positions near liquidation) from the Exchange contract (open positions, leverage, open PnL) and the indexer (30-day realized PnL); Kadd's copy bot mirrors a mainnet trader on Perpl testnet through the API | [`perpl.ts`](kadd/src/lib/perpl.ts), [`perplBot.ts`](kadd/src/lib/perplBot.ts) |
 | **Nad Name Service** | `.nad` names and avatars for wallets | [`nns.ts`](kadd/src/lib/nns.ts) |
@@ -288,7 +290,7 @@ Every unset contract address falls back to the live testnet deployment.
 
 ```bash
 npm run dev / build / lint                                      # app
-npx tsx --conditions=react-server src/lib/<name>.check.ts       # self-checks: cache, events, keeper, leaderboard, market, onchain, perplBot, perplOrder, telegram, wallets
+npx tsx --conditions=react-server src/lib/<name>.check.ts       # self-checks: cache, events, keeper, leaderboard, market, onchain, perplBot, perplOrder, perplRisk, telegram, wallets
 node contracts/export-abi.mjs                                   # ABIs for the app, after forge build
 node contracts/export-deployments.mjs                           # contracts/deployment.json from broadcasts
 eval "$(node script/kuru-quotes.mjs)" && forge test --match-contract KaddCopyKuruFork --fork-url https://rpc.monad.xyz   # mainnet fork test on a real Kuru Flow route

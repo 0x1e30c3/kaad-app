@@ -175,3 +175,55 @@ type PerplTraderDay {
   wins: Int!
   liquidations: Int!
 }
+
+# Perpl markets (price / size decimals), so fills and liquidations can be valued in USD.
+type PerplMarket {
+  id: ID! # perpId
+  symbol: String!
+  priceDecimals: Int!
+  lotDecimals: Int!
+}
+
+# Perpl protocol health per UTC day.
+type PerplDaily {
+  id: ID! # day number
+  day: Int!
+  volumeUsd: Float! # notional of every fill (each fill counted once, from the maker side)
+  feesUsd: Float! # maker + taker fees
+  fills: Int!
+  activeTraders: Int! # accounts that opened, added to, reduced or closed a position that day
+  newAccounts: Int!
+  opens: Int!
+  deposits: Int!
+  depositedUsd: Float!
+  withdrawals: Int!
+  withdrawnUsd: Float!
+  liquidations: Int!
+  liquidatedUsd: Float!
+  realizedPnlUsd: Float!
+}
+
+# Marks an account as active on a day (so activeTraders counts each account once).
+type PerplActive {
+  id: ID! # day_accountId
+}
+
+# When an account's position in a market was opened (for hold time).
+type PerplPosition {
+  id: ID! # accountId_perpId
+  openedAt: Int!
+}
+
+# Every PnL-realizing event: a wallet's trade history.
+type PerplClose {
+  id: ID! # chainId_block_logIndex
+  account: String! @index
+  address: String! @index
+  perpId: Int!
+  symbol: String!
+  side: String! # long | short (the position that was reduced)
+  kind: String! # close | partial | flip | liquidation
+  pnlUsd: Float! # price PnL + funding, before fees
+  holdSec: Int! # since the position was opened
+  timestamp: Int! @index
+}

@@ -9,6 +9,7 @@ import { liquidationPrice, type PerpSide } from "@/lib/perplOrder";
 import { AUSD, PERPL_APP, quoteAusd, closePerp, depositAusd, fetchPerpMarkets, myPositions, openPerp, perpAccount, withdrawAusd, type MyPosition, type PerpNet } from "@/lib/perplTrade";
 import { Pct, btnSm, card } from "./ui";
 import LoginGate from "./LoginGate";
+import TelegramConnect from "./TelegramConnect";
 
 const SIZES = [25, 50, 100, 250];
 const LEVERAGES = [1, 2, 3, 5, 10];
@@ -60,7 +61,7 @@ export default function PerpsTrade() {
   const margin = size / leverage;
   const fee = m ? (size * m.takerFee) / 100_000 : 0;
   const liq = m && mark ? liquidationPrice(side, mark, leverage, m.maintLeverage) : 0;
-  const free = account.data?.balance ?? 0;
+  const free = account.data?.free ?? 0;
   const canTrade = !!acctId && size > 0 && margin <= free && !!m;
 
   const run = async (key: string, fn: () => Promise<unknown>) => {
@@ -170,6 +171,11 @@ export default function PerpsTrade() {
               <dt className="text-muted">Fee ≈</dt><dd className="text-right">{money(fee)}</dd>
             </dl>
 
+            {mark > 0 && liq > 0 && Math.abs(liq - mark) / mark < 0.15 && (
+              <p className="rounded-lg bg-warn/10 text-warn px-3 py-2 text-[12px]">
+                At {leverage}× a {Math.round((Math.abs(liq - mark) / mark) * 100)}% move against you liquidates this position. Lower leverage gives it more room.
+              </p>
+            )}
             <button
               onClick={() => m && run("open", () => openPerp(net, m, side, size, leverage))}
               disabled={!!busy || !canTrade}
@@ -195,7 +201,10 @@ function Positions({ net, positions, accountId, busy, run }: { net: PerpNet; pos
   if (!accountId) return null;
   return (
     <section className={`${card} overflow-hidden`}>
-      <h2 className="px-4 h-11 flex items-center border-b border-line text-[13px] font-semibold">Your positions <span className="ml-2 text-faint font-normal">{positions.length || ""}</span></h2>
+      <h2 className="px-4 h-11 flex items-center gap-2 border-b border-line text-[13px] font-semibold">
+        Your positions <span className="text-faint font-normal">{positions.length || ""}</span>
+        <span className="ml-auto font-normal"><TelegramConnect /></span>
+      </h2>
       {!positions.length ? (
         <p className="px-4 py-5 text-[13px] text-muted">No open positions.</p>
       ) : (
@@ -207,7 +216,7 @@ function Positions({ net, positions, accountId, busy, run }: { net: PerpNet; pos
                   <span className={p.side === "long" ? "text-up" : "text-down"}>{p.side === "long" ? "Long" : "Short"}</span> {p.market.name} · {p.leverage.toFixed(1)}×
                 </div>
                 <div className="text-muted">
-                  {money(p.size * p.mark)} · {px(p.entry)} → {px(p.mark)} · liq ≈ {px(liquidationPrice(p.side, p.entry, Math.max(1, (p.size * p.entry) / p.deposit), p.market.maintLeverage))}
+                  {money(p.size * p.mark)} · {px(p.entry)} → {px(p.mark)} · liq ≈ {px(p.liquidation)}
                 </div>
               </div>
               <span className={`text-[14px] font-semibold tabular-nums ${p.pnl >= 0 ? "text-up" : "text-down"}`}>{signed(p.pnl)}</span>
