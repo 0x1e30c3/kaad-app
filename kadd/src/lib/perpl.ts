@@ -298,7 +298,8 @@ export type PerpRisk = {
   openInterest: number;
   volume24h: number;
   markets: (PerpMarketStat & { liqMap: LiqBucket[] })[];
-  atRisk: AtRisk[]; // closest to liquidation first
+  atRisk: AtRisk[]; // the 25 closest to liquidation (within 10%), closest first
+  near: { count: number; notional: number }; // every position within 5% of liquidation
   daily: IndexedPerplDaily[] | null; // last 30 days, null without the indexer
 };
 
@@ -315,14 +316,16 @@ export const perpRisk = () =>
       indexerUrl() ? indexedPerplDaily(today - 30).catch(() => null) : Promise.resolve(null),
     ]);
     const stats = marketStats(markets, positions, tickers, funding);
+    const withDistance = positions.map((p) => ({ ...p, distance: liqDistance(p.side, p.mark, p.liquidation) })).filter((p) => p.address);
+    const near = withDistance.filter((p) => p.distance < 0.05);
     return {
       tvl: Number(tvl) / 1e6,
+      near: { count: near.length, notional: near.reduce((s, p) => s + p.notional, 0) },
       openInterest: stats.reduce((s, m) => s + m.openInterest, 0),
       volume24h: stats.reduce((s, m) => s + m.volume24h, 0),
       markets: stats.map((m) => ({ ...m, liqMap: liquidationMap(positions.filter((p) => p.marketId === m.id), m.mark) })),
-      atRisk: positions
-        .map((p) => ({ ...p, distance: liqDistance(p.side, p.mark, p.liquidation) }))
-        .filter((p) => p.distance < 0.1 && p.address)
+      atRisk: withDistance
+        .filter((p) => p.distance < 0.1)
         .sort((a, b) => a.distance - b.distance || b.notional - a.notional)
         .slice(0, 25),
       daily,

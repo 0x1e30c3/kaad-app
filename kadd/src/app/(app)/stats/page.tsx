@@ -119,7 +119,7 @@ export default async function StatsPage() {
               ["Collateral (TVL)", money(perps.tvl), "AUSD in the Exchange"],
               ["Open interest", money(perps.openInterest), "per side"],
               ["24h volume", money(perps.volume24h), `${perps.markets.length} markets`],
-              ["Near liquidation", int(perps.atRisk.filter((p) => p.distance < 0.05).length), "positions within 5%"],
+              ["Near liquidation", int(perps.near.count), "positions within 5%"],
               ...(perps.daily?.length
                 ? ([
                     ["7d volume", money(perps.daily.slice(-7).reduce((a, d) => a + d.volumeUsd, 0)), "from fills"],

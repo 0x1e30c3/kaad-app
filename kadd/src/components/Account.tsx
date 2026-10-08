@@ -20,7 +20,7 @@ export default function Account() {
 
   if (!user)
     return (
-      <button onClick={() => openLogin()} className="h-8 px-3.5 rounded-md bg-fg text-bg text-[13px] font-semibold hover:opacity-90">
+      <button onClick={() => openLogin()} className="h-8 px-3.5 rounded-md bg-fg text-bg text-[13px] font-semibold whitespace-nowrap hover:opacity-90">
         Sign in
       </button>
     );
