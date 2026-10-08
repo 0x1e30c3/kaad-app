@@ -317,12 +317,14 @@ export const perpDailyVolume = (days = 30) =>
       markets.map((m) =>
         fetch(`${PERPL.mainnet.api}/v1/market-data/${m.id}/candles/86400/${from}-${to}`, { cache: "no-store" })
           .then((r) => r.json() as Promise<{ d?: { t: number; v: string; n: number }[] }>)
-          .then((j) => j.d ?? [], () => []),
+          .then((j) => j.d ?? [], () => null),
       ),
     );
+    // Throw rather than cache an empty series when Perpl didn't answer, so the last good one is kept.
+    if (per.every((c) => !c?.length)) throw new Error("Perpl candles unavailable");
     const byDay = new Map<number, { usd: number; trades: number }>();
     for (const candles of per)
-      for (const c of candles) {
+      for (const c of candles ?? []) {
         const day = Math.floor(c.t / 86_400_000);
         const d = byDay.get(day) ?? { usd: 0, trades: 0 };
         byDay.set(day, { usd: d.usd + Number(c.v) / 1e6, trades: d.trades + c.n }); // v: AUSD atoms
