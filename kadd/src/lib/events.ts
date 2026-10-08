@@ -3,8 +3,8 @@
 // per source each refresh blew through it and left both pages empty.
 import "server-only";
 import { getAbiItem, parseEventLogs, toEventSelector, type Address, type Hex } from "viem";
-import { kaddClubAbi, kaddClubFactoryAbi, kaddCopyAbi, kaddPoolAbi, kaddStrategiesAbi, kaddVenueAbi } from "./abi";
-import { CLUB_FACTORY, COPY, STRATEGIES, VENUE } from "./addresses";
+import { kaddClubAbi, kaddClubFactoryAbi, kaddCopyAbi, kaddCopyClubsAbi, kaddPoolAbi, kaddReferralsAbi, kaddStrategiesAbi, kaddVenueAbi } from "./abi";
+import { CLUB_FACTORY, COPY, COPY_CLUBS, REFERRALS, STRATEGIES, VENUE } from "./addresses";
 import { publicClient } from "./chain";
 import { swr } from "./cache";
 import { DEPLOY_BLOCK, hyperClient } from "./stats";
@@ -19,6 +19,15 @@ const EVENTS = [
   getAbiItem({ abi: kaddCopyAbi, name: "Funded" }),
   getAbiItem({ abi: kaddCopyAbi, name: "Closed" }),
 ];
+// Copy clubs and referrals: separate ABIs (some event names repeat with other arguments), parsed per contract.
+const CLUB_EVENTS = [
+  getAbiItem({ abi: kaddCopyClubsAbi, name: "ClubCreated" }),
+  getAbiItem({ abi: kaddCopyClubsAbi, name: "Deposited" }),
+  getAbiItem({ abi: kaddCopyClubsAbi, name: "Redeemed" }),
+  getAbiItem({ abi: kaddCopyClubsAbi, name: "Copied" }),
+];
+const REFERRED = getAbiItem({ abi: kaddReferralsAbi, name: "Referred" });
+const live = (a: Address) => !/^0x0+$/.test(a);
 
 type Raw = { address: Address; topics: [Hex, ...Hex[]]; data: Hex; blockNumber: Hex; blockTimestamp?: Hex; transactionHash: Hex; logIndex: Hex; blockHash: Hex; transactionIndex: Hex; removed: boolean };
 
@@ -35,11 +44,11 @@ async function read() {
         contracts: Array.from({ length: Number(clubCount) }, (_, i) => ({ address: CLUB_FACTORY, abi: kaddClubFactoryAbi, functionName: "clubs", args: [BigInt(i)] }) as const),
       })
     : [];
-  const addresses = [...pools, ...clubs, STRATEGIES, ...(/^0x0+$/.test(COPY) ? [] : [COPY])];
+  const addresses = [...pools, ...clubs, STRATEGIES, ...[COPY, COPY_CLUBS, REFERRALS].filter(live)];
   const head = await publicClient.getBlock(); // anchors timestamps for logs that come without one
   const raw = (await hyperClient(token).request({
     method: "eth_getLogs",
-    params: [{ address: addresses, topics: [EVENTS.map((e) => toEventSelector(e))], fromBlock: `0x${DEPLOY_BLOCK.toString(16)}`, toBlock: "latest" }],
+    params: [{ address: addresses, topics: [[...new Set([...EVENTS, ...CLUB_EVENTS, REFERRED].map((e) => toEventSelector(e)))]], fromBlock: `0x${DEPLOY_BLOCK.toString(16)}`, toBlock: "latest" }],
   })) as Raw[];
 
   const key = (tx: string, index: string | number) => `${tx}:${Number(index)}`;
@@ -50,7 +59,11 @@ async function read() {
     [Number(head.number), Number(head.timestamp)] as const,
   ].sort((x, y) => x[0] - y[0]);
   const ts = new Map(raw.map((l) => [key(l.transactionHash, l.logIndex), l.blockTimestamp ? Number(BigInt(l.blockTimestamp)) : interpolate(anchors, Number(BigInt(l.blockNumber)))]));
-  const logs = parseEventLogs({ abi: EVENTS, logs: raw as never, strict: false }).map((l) => ({ ...l, timestamp: ts.get(key(l.transactionHash, l.logIndex)) ?? 0 }));
+  const stamp = <T extends { transactionHash: Hex; logIndex: number }>(l: T) => ({ ...l, timestamp: ts.get(key(l.transactionHash, l.logIndex)) ?? 0 });
+  const only = (a: Address) => raw.filter((l) => l.address.toLowerCase() === a.toLowerCase()) as never;
+  const logs = parseEventLogs({ abi: EVENTS, logs: raw as never, strict: false }).map(stamp);
+  const club = parseEventLogs({ abi: CLUB_EVENTS, logs: only(COPY_CLUBS), strict: false }).map(stamp);
+  const ofClub = <N extends (typeof club)[number]["eventName"]>(name: N) => club.filter((l) => l.eventName === name) as Extract<(typeof club)[number], { eventName: N }>[];
   const from = (set: readonly string[]) => new Set(set.map((a) => a.toLowerCase()));
   const poolSet = from(pools);
   const clubSet = from(clubs);
@@ -66,6 +79,11 @@ async function read() {
     copied: at("Copied", from([COPY])) as Extract<(typeof logs)[number], { eventName: "Copied" }>[],
     funded: at("Funded", from([COPY])) as Extract<(typeof logs)[number], { eventName: "Funded" }>[],
     closed: at("Closed", from([COPY])) as Extract<(typeof logs)[number], { eventName: "Closed" }>[],
+    clubCreated: ofClub("ClubCreated"),
+    clubDeposits: ofClub("Deposited"),
+    clubRedeemed: ofClub("Redeemed"),
+    clubCopied: ofClub("Copied"),
+    referred: parseEventLogs({ abi: [REFERRED], logs: only(REFERRALS), strict: false }).map(stamp),
   };
 }
 
@@ -118,4 +136,25 @@ export function copyStatsFrom(logs: Pick<KaddLogs, "followed" | "funded" | "clos
 export async function copyStats(): Promise<Map<string, CopyStat>> {
   const logs = await kaddLogs().catch(() => null);
   return logs ? copyStatsFrom(logs) : new Map();
+}
+
+export type ReferralStat = { invited: string[]; active: string[] };
+
+/** Per referrer: wallets they invited onchain, and which of those then traded, copied or joined a club. */
+export function referralsFrom(logs: Pick<KaddLogs, "referred" | "swaps" | "deposits" | "followed" | "clubDeposits">): Map<string, ReferralStat> {
+  const acted = new Set([
+    ...logs.swaps.map((l) => l.args.trader!),
+    ...logs.deposits.map((l) => l.args.member!),
+    ...logs.followed.map((l) => l.args.owner!),
+    ...logs.clubDeposits.map((l) => l.args.member!),
+  ].map((a) => a.toLowerCase()));
+  const out = new Map<string, ReferralStat>();
+  for (const l of logs.referred) {
+    const r = l.args.referrer!.toLowerCase();
+    const u = l.args.user!.toLowerCase();
+    const s = out.get(r) ?? out.set(r, { invited: [], active: [] }).get(r)!;
+    s.invited.push(u);
+    if (acted.has(u)) s.active.push(u);
+  }
+  return out;
 }

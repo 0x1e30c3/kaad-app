@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ArrowUpRight, Coins, Copy, Droplets, Layers, Target, Users, Wallet } from "lucide-react";
-import { copyStats } from "@/lib/events";
+import { ArrowUpRight, Bot, Coins, Copy, Droplets, Layers, Target, UserPlus, Users, Wallet } from "lucide-react";
+import { copyStatsFrom, kaddLogs, referralsFrom } from "@/lib/events";
 import { getStats } from "@/lib/stats";
-import { CLUB_FACTORY, STRATEGIES, TUSDC, VENUE } from "@/lib/addresses";
+import { CLUB_FACTORY, COPY, COPY_CLUBS, REFERRALS, STRATEGIES, TUSDC, VENUE } from "@/lib/addresses";
 import { EXPLORER } from "@/lib/venue";
 import { PageHeader, Pct, TokenIcon, card } from "@/components/ui";
 import { ActivityChart, AreaChart, Gauge } from "@/components/charts";
@@ -18,19 +18,24 @@ const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
 const pressureLabel = (v: number) => (v < 20 ? "Strong selling" : v < 45 ? "Selling" : v <= 55 ? "Balanced" : v <= 80 ? "Buying" : "Strong buying");
 
 export default async function StatsPage() {
-  const [s, copy] = await Promise.all([getStats(), copyStats()]);
-  const vaults = [...copy.values()].reduce((a, c) => ({ n: a.n + c.copiers, copies: a.copies + c.copies, usd: a.usd + c.depositedUsd }), { n: 0, copies: 0, usd: 0 });
+  const [s, logs] = await Promise.all([getStats(), kaddLogs().catch(() => null)]);
+  const vaults = [...(logs ? copyStatsFrom(logs) : new Map()).values()].reduce((a, c) => ({ n: a.n + c.copiers, copies: a.copies + c.copies, usd: a.usd + c.depositedUsd }), { n: 0, copies: 0, usd: 0 });
   const a = s.activity;
   const buys = sum(s.pools.map((p) => p.buys24h));
   const sells = sum(s.pools.map((p) => p.sells24h));
   const pressure = buys + sells > 0 ? (buys / (buys + sells)) * 100 : 50;
-  const contracts: [string, string][] = [["Venue", VENUE], ["tUSDC", TUSDC], ["Club factory", CLUB_FACTORY], ["Strategies", STRATEGIES]];
+  const members = new Set(logs?.clubDeposits.map((l) => l.args.member!.toLowerCase()));
+  const invites = [...(logs ? referralsFrom(logs) : new Map()).values()].reduce((a, r) => ({ n: a.n + r.invited.length, active: a.active + r.active.length }), { n: 0, active: 0 });
+  const live = (a: string) => !/^0x0+$/.test(a);
+  const contracts: [string, string][] = [["Venue", VENUE], ["tUSDC", TUSDC], ["Club factory", CLUB_FACTORY], ["Strategies", STRATEGIES], ["Copy vaults", COPY], ["Copy clubs", COPY_CLUBS], ...(live(REFERRALS) ? [["Invites", REFERRALS] as [string, string]] : [])];
   const indicators: [React.ReactNode, string, string, string][] = [
     [<Users key="u" />, "Unique wallets", a ? int(a.traders) : "–", "traded at least once"],
     [<Droplets key="d" />, "Pool liquidity", money(s.poolLiquidity), `${s.pools.length} markets`],
     [<Layers key="l" />, "Clubs", int(s.clubs), a ? `${int(a.deposits)} deposits` : "pooled trading"],
     [<Wallet key="w" />, "tUSDC in clubs", money(s.clubTvl), "held by club contracts"],
     [<Copy key="cp" />, "Copy vaults", int(vaults.n), `${int(vaults.copies)} trades copied · ${money(vaults.usd)} in`],
+    [<Bot key="cc" />, "Copy clubs", logs ? int(logs.clubCreated.length) : "–", `${int(members.size)} members · ${int(logs?.clubCopied.length ?? 0)} trades copied`],
+    ...(live(REFERRALS) ? [[<UserPlus key="r" />, "Invited wallets", logs ? int(invites.n) : "–", `${int(invites.active)} went on to trade`] as [React.ReactNode, string, string, string]] : []),
     [<Target key="t" />, "Strategies", s.strategies === null ? "–" : int(s.strategies), "limit · TP / SL · DCA"],
     [<Coins key="c" />, "Faucet claims", int(s.faucetClaims), "1,000 tUSDC each"],
   ];
