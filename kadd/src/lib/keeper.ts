@@ -95,6 +95,11 @@ export async function keep(getTrades: () => Promise<{ trades: WalletTrade[] }> =
   for (const p of fresh) {
     const v = all.find((x) => x.kind === p.kind && x.id === p.id)!;
     const c = contractOf(p.kind);
+    // A vault with no cash left can't buy: skip before spending any RPC request on it.
+    if (p.isBuy && v.buy(v.cash) === 0n) {
+      skipped++;
+      continue;
+    }
     try {
       const pool = await publicClient.readContract({ address: VENUE, abi: kaddVenueAbi, functionName: "poolOf", args: [p.source] });
       const amountIn = p.isBuy ? v.buy(v.cash) : await publicClient.readContract({ ...c, functionName: "held", args: [p.id, pool] });
