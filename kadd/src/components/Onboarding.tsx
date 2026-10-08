@@ -35,7 +35,7 @@ export default function Onboarding() {
         </button>
       ),
     },
-    { title: "Make your first trade", detail: "Pick any token and buy $10 worth.", done: fills.length > 0, action: <Link href="/token/0x350035555e10d9afaf1566aaebfced5ba6c27777" className="font-semibold underline">Try CHOG</Link> },
+    { title: "Make your first trade", detail: "Copy a real Monad trader's latest buy with $10, in about a minute.", done: fills.length > 0, action: <Link href="/start" className="font-semibold underline">Start</Link> },
     { title: "Join a group or club", detail: "Trade alongside friends and pool funds onchain.", done: joined.length > 0, action: <Link href="/groups" className="font-semibold underline">Browse groups</Link> },
   ];
   const done = steps.filter((s) => s.done).length;

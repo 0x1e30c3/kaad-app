@@ -189,3 +189,35 @@ export async function getFeed(wallets: string[]): Promise<FeedItem[]> {
   const names = await swr(`nns:${key.join(",")}`, 10 * 60_000, () => profiles(key));
   return items.map((t) => ({ ...t, nns: names.get(t.trader)?.nns ?? null, avatar: names.get(t.trader)?.avatar ?? null }));
 }
+
+export type Candidate = {
+  address: string;
+  nns: string | null;
+  avatar: string | null;
+  smart: string | null; // Nansen label when it's smart money ("" = smart money without a label)
+  pnl30d: number | null; // Nansen 30-day PnL
+  copyRoi: number;
+  trades: number;
+  lastBuy: { token: TokenMini; usd: number; at: number };
+};
+
+/**
+ * Wallets worth following for a first trade: Nansen smart money first, then the best copy backtests with at least
+ * three trades — each with its latest buy of a token Kadd lists, which is what the newcomer copies. From caches only.
+ */
+export const followCandidates = (): Promise<Candidate[]> =>
+  swr("candidates", 120_000, async () => {
+    const [board, { trades }, sm] = await Promise.all([getMainnetBoard(), recentTrades(), smartMoney()]);
+    const lastBuy = new Map<string, WalletTrade>();
+    for (const t of trades) if (t.side === "buy" && t.usd >= 1 && !lastBuy.has(t.trader)) lastBuy.set(t.trader, t); // newest first
+    const pnl = new Map(sm?.wallets.map((w) => [w.address, w.totalPnlUsd]));
+    const rank = (r: MainnetRow) => (r.smart !== null ? 1e9 + (pnl.get(r.address) ?? 0) : r.trades >= 3 ? r.copyRoi : -1e9);
+    return board.rows
+      .filter((r) => lastBuy.has(r.address))
+      .sort((a, b) => rank(b) - rank(a))
+      .slice(0, 3)
+      .map((r) => {
+        const b = lastBuy.get(r.address)!;
+        return { address: r.address, nns: r.nns, avatar: r.avatar, smart: r.smart, pnl30d: pnl.get(r.address) ?? null, copyRoi: r.copyRoi, trades: r.trades, lastBuy: { token: b.token, usd: b.usd, at: b.at } };
+      });
+  });
