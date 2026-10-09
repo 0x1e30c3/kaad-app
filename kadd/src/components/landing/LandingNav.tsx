@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -18,12 +18,22 @@ const LINKS = [
   ["/stats", "Stats"],
 ];
 
-/** Mark left, links centred, sign-in pill right. Transparent over the hero, a soft bar once you scroll. */
+/**
+ * Mark left, links centred, sign-in pill right. Transparent over the hero, a soft bar once you scroll; the link of
+ * the section in view is highlighted, and a thin bar along the top shows how far down the page you are.
+ */
 export default function LandingNav() {
   const ref = useRef<HTMLElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState<string | null>(null);
   useGSAP(() => {
     gsap.from(ref.current, { y: -20, opacity: 0, duration: 0.9, ease: "expo.out", delay: 0.1 });
     ScrollTrigger.create({ start: 60, end: "max", toggleClass: { targets: ref.current, className: "is-scrolled" } });
+    gsap.fromTo(bar.current, { scaleX: 0 }, { scaleX: 1, ease: "none", scrollTrigger: { start: 0, end: "max", scrub: 0.3 } });
+    for (const [href] of LINKS) {
+      const el = href.startsWith("#") ? document.querySelector<HTMLElement>(href) : null;
+      if (el) ScrollTrigger.create({ trigger: el, start: "top 55%", end: "bottom 55%", onToggle: (st) => setActive((a) => (st.isActive ? href : a === href ? null : a)) });
+    }
   });
 
   return (
@@ -35,7 +45,12 @@ export default function LandingNav() {
         </Link>
         <div className="hidden items-center gap-1 md:flex">
           {LINKS.map(([href, label]) => (
-            <a key={href} href={href} className="rounded-full px-3.5 py-2 text-[13px] text-muted transition-colors hover:text-fg">
+            <a
+              key={href}
+              href={href}
+              aria-current={active === href ? "location" : undefined}
+              className={`rounded-full px-3.5 py-2 text-[13px] transition-colors hover:text-fg ${active === href ? "bg-raised text-fg" : "text-muted"}`}
+            >
               {label}
             </a>
           ))}
@@ -47,6 +62,7 @@ export default function LandingNav() {
           </Pill>
         </div>
       </nav>
+      <div ref={bar} aria-hidden className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-[#836ef9]" />
     </header>
   );
 }

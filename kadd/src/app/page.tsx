@@ -31,6 +31,18 @@ const WHY = [
   { icon: Eye, title: "Risk you can read", body: "Every token gets a 0–100 risk score with the reason for each point. Every perps trader shows how close they are to liquidation." },
 ];
 
+/** A USD amount that counts up when seen ($67K), static when it's in millions. */
+function CountUsd({ value, className }: { value: number; className?: string }) {
+  if (value >= 1e6) return <span className={className}>{compact(value)}</span>;
+  const k = value >= 1e3;
+  const n = Math.round(k ? value / 1e3 : value);
+  return (
+    <span data-count={n} data-prefix="$" data-suffix={k ? "K" : ""} className={className}>
+      {compact(value)}
+    </span>
+  );
+}
+
 const compact = (n: number) => "$" + (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : Math.round(n).toString());
 
 export default async function Landing() {
@@ -43,20 +55,21 @@ export default async function Landing() {
     <div className="landing overflow-x-clip bg-bg text-fg antialiased">
       <SmoothScroll />
       <LandingNav />
+      <Fx>
 
       {/* Hero: headline left, pitch and action right */}
       <section className="px-5 pt-28 md:px-8 md:pt-36">
         <div className="mx-auto grid max-w-[1280px] items-end gap-8 md:grid-cols-[1.6fr_1fr] md:gap-16">
-          <h1 className="text-balance text-[clamp(40px,5.2vw,76px)] font-normal leading-[1.04] tracking-[-0.04em]">
+          <h1 data-anim="lines" className="text-balance text-[clamp(40px,5.2vw,76px)] font-normal leading-[1.04] tracking-[-0.04em]">
             Follow Monad&apos;s
             {" "}<br className="hidden md:block" />
             smart money, safely
           </h1>
-          <div className="flex max-w-[380px] flex-col items-start gap-5 md:justify-self-end md:pb-3">
+          <div data-anim="rise" className="flex max-w-[380px] flex-col items-start gap-5 md:justify-self-end md:pb-3">
             <p className="text-[15px] leading-relaxed text-muted">
               See who&apos;s actually winning on Monad, check their risk, then copy them with limits a contract enforces. One passkey, no seed phrase.
             </p>
-            <Pill href="/start" arrow>
+            <Pill href="/start" arrow magnetic>
               Try it in 60 seconds
             </Pill>
           </div>
@@ -66,9 +79,9 @@ export default async function Landing() {
       {/* Hero visual with the three promises on a glass card */}
       <section className="px-3 pt-12 md:px-5 md:pt-20">
         <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] md:rounded-[36px]">
-          <Image src="/landing/space.jpg" alt="" fill preload sizes="100vw" className="object-cover object-[50%_35%]" />
+          <Image data-parallax src="/landing/space.jpg" alt="" fill preload sizes="100vw" className="object-cover object-[50%_35%]" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1b0f4d]/10 to-[#120a33]/40" />
-          <div className="relative px-3 pb-3 pt-[clamp(180px,26vw,340px)] md:px-10 md:pb-10">
+          <div data-anim="rise" className="relative px-3 pb-3 pt-[clamp(180px,26vw,340px)] md:px-10 md:pb-10">
             <div className="grid gap-8 rounded-[22px] bg-white/80 p-6 text-[#0a0a0a] shadow-[0_30px_80px_-30px_rgb(20_10_60/0.5)] ring-1 ring-white/60 backdrop-blur-xl md:grid-cols-[1fr_1.1fr] md:gap-14 md:p-10 dark:bg-[#0b0b0c]/70 dark:text-white dark:ring-white/10">
               <div className="flex flex-col items-start justify-between gap-6">
                 <div>
@@ -77,14 +90,14 @@ export default async function Landing() {
                     Kadd turns Monad&apos;s public trading data into something you can act on: rank the traders, check how they trade, then follow them inside rules you set.
                   </p>
                 </div>
-                <Pill href="/leaderboard" arrow className="bg-[#0a0a0a] text-white dark:bg-white dark:text-[#0a0a0a]">
+                <Pill href="/leaderboard" arrow magnetic className="bg-[#0a0a0a] text-white dark:bg-white dark:text-[#0a0a0a]">
                   See who&apos;s winning
                 </Pill>
               </div>
               <ul className="grid gap-6">
                 {HERO_POINTS.map(({ icon: Icon, title, body }) => (
-                  <li key={title} className="grid grid-cols-[40px_1fr] gap-4">
-                    <span className="grid size-10 place-items-center rounded-full ring-1 ring-black/10 dark:ring-white/15">
+                  <li key={title} className="group grid grid-cols-[40px_1fr] gap-4">
+                    <span className="grid size-10 place-items-center rounded-full ring-1 ring-black/10 transition-colors duration-300 group-hover:bg-[#0a0a0a] group-hover:text-white dark:ring-white/15 dark:group-hover:bg-white dark:group-hover:text-[#0a0a0a]">
                       <Icon className="size-[18px]" strokeWidth={1.6} />
                     </span>
                     <div>
@@ -116,7 +129,6 @@ export default async function Landing() {
         </div>
       </section>
 
-      <Fx>
         {/* Why Kadd */}
         <section id="why" className="relative scroll-mt-20 px-5 py-32 md:px-8 md:py-48">
           <div aria-hidden className="pointer-events-none absolute inset-x-0 top-10 mx-auto h-[420px] max-w-[900px] rounded-full bg-[radial-gradient(closest-side,rgb(131_110_249/0.16),transparent)] blur-2xl" />
@@ -139,15 +151,15 @@ export default async function Landing() {
             </div>
             <div data-anim="rise" className="mt-16 grid gap-12 md:mt-20 md:grid-cols-3 md:gap-12">
               {WHY.map(({ icon: Icon, title, body }) => (
-                <article key={title}>
-                  <Icon className="size-7 text-muted" strokeWidth={1.4} />
+                <article key={title} className="group">
+                  <Icon className="size-7 text-muted transition duration-500 group-hover:-translate-y-1 group-hover:rotate-[-8deg] group-hover:text-[#836ef9]" strokeWidth={1.4} />
                   <h3 className="mt-6 text-[19px] font-medium tracking-[-0.01em]">{title}</h3>
                   <p className="mt-2 text-[14px] leading-relaxed text-muted">{body}</p>
                 </article>
               ))}
             </div>
             <div className="mt-16 flex justify-center md:mt-20">
-              <Pill href="/start" arrow>
+              <Pill href="/start" arrow magnetic>
                 Start in a minute
               </Pill>
             </div>
@@ -173,13 +185,13 @@ export default async function Landing() {
             </div>
 
             <div data-anim="rise" className="mt-14 grid gap-4 md:mt-20 md:grid-cols-2 md:gap-5">
-              <article className="flex flex-col overflow-hidden rounded-[22px] bg-panel ring-1 ring-line md:row-span-2">
+              <article data-spotlight className="spotlight flex flex-col overflow-hidden rounded-[22px] bg-panel ring-1 ring-line md:row-span-2">
                 <div className="p-6 pb-0">
                   <h3 className="text-[19px] font-medium leading-snug tracking-[-0.01em]">Smart money, ranked and backtested</h3>
                   <p className="mt-1 text-[12px] text-muted">Nansen · Monad mainnet · updated daily</p>
                 </div>
                 <div className="relative mt-6 aspect-[16/11] flex-1 overflow-hidden">
-                  <Image src="/landing/space.jpg" alt="" fill sizes="(min-width: 768px) 560px, 100vw" className="object-cover object-[50%_70%]" />
+                  <Image data-parallax src="/landing/space.jpg" alt="" fill sizes="(min-width: 768px) 560px, 100vw" className="object-cover object-[50%_70%]" />
                   <div className="absolute inset-0 grid place-items-center p-6">
                     <LeaderboardMini className="w-full max-w-[340px] shadow-2xl" />
                   </div>
@@ -194,7 +206,7 @@ export default async function Landing() {
                 </div>
               </article>
 
-              <article className="flex flex-col justify-between gap-8 rounded-[22px] bg-panel p-6 ring-1 ring-line">
+              <article data-spotlight className="spotlight flex flex-col justify-between gap-8 rounded-[22px] bg-panel p-6 ring-1 ring-line">
                 <div>
                   <h3 className="text-[19px] font-medium leading-snug tracking-[-0.01em]">Perps on Perpl, from your passkey</h3>
                   <p className="mt-1 text-[12px] text-muted">Long or short · up to 10× · AUSD</p>
@@ -213,7 +225,7 @@ export default async function Landing() {
                 </div>
               </article>
 
-              <article className="flex flex-col justify-between gap-8 rounded-[22px] bg-panel p-6 ring-1 ring-line">
+              <article data-spotlight className="spotlight flex flex-col justify-between gap-8 rounded-[22px] bg-panel p-6 ring-1 ring-line">
                 <div>
                   <h3 className="text-[19px] font-medium leading-snug tracking-[-0.01em]">A liquidation map for every market</h3>
                   <p className="mt-1 text-[12px] text-muted">Every open Perpl position · live</p>
@@ -222,7 +234,7 @@ export default async function Landing() {
                   <p className="text-[clamp(20px,2vw,26px)] font-normal leading-tight tracking-[-0.02em]">
                     {btc ? (
                       <>
-                        A 5% BTC drop liquidates <span className="text-[#ff8b7a]">{compact(liquidatedAt(btc.liqMap, -5))}</span> of longs right now
+                        A 5% BTC drop liquidates <CountUsd value={liquidatedAt(btc.liqMap, -5)} className="text-[#ff8b7a]" /> of longs right now
                       </>
                     ) : (
                       "See how much a 5% move would liquidate, market by market"
@@ -231,7 +243,13 @@ export default async function Landing() {
                 </div>
                 <div className="flex flex-col items-start gap-4">
                   <p className="text-[13px] leading-relaxed text-muted">
-                    {risk ? `${risk.near.count} positions sit within 5% of liquidation. See who, and where the cascade would start.` : "See who sits closest to liquidation, and where the cascade would start."}
+                    {risk ? (
+                      <>
+                        <span data-count={risk.near.count}>{risk.near.count}</span> positions sit within 5% of liquidation. See who, and where the cascade would start.
+                      </>
+                    ) : (
+                      "See who sits closest to liquidation, and where the cascade would start."
+                    )}
                   </p>
                   <Pill href="/perps/risk" tone="outline" arrow className="h-9 text-[13px]">
                     View risk
@@ -251,7 +269,7 @@ export default async function Landing() {
                 {" "}<br className="hidden md:block" />
                 <span className="text-muted">into your next trade</span>
               </h2>
-              <Pill href="/start" arrow>
+              <Pill href="/start" arrow magnetic>
                 Get started
               </Pill>
             </div>
@@ -263,7 +281,7 @@ export default async function Landing() {
                 { title: "Pool it with friends", body: "A copy club is one vault, many members. Deposits only while the club holds no tokens, so nobody joins at a bad price; everyone exits with their share.", ui: <ClubMini className="w-full max-w-[340px]" />, tint: "from-[#eef0ff] via-[#f7f5ff] to-[#fff3ea]", href: "/groups" },
                 { title: "New tokens, risk in plain words", body: "Every new Monad token as it launches, with a safety check that says why: liquidity, holders, honeypot tests, who is buying.", ui: <TrenchesMini className="w-full max-w-[360px]" />, tint: "from-[#fff6e6] via-[#fffaf3] to-[#effbff]", href: "/trenches" },
               ].map((c) => (
-                <Link key={c.title} href={c.href} className="group flex flex-col overflow-hidden rounded-[22px] bg-bg ring-1 ring-line transition-shadow hover:shadow-[0_20px_50px_-25px_rgb(0_0_0/0.25)]">
+                <Link key={c.title} href={c.href} data-tilt data-spotlight className="spotlight group flex flex-col overflow-hidden rounded-[22px] bg-bg ring-1 ring-line transition-shadow hover:shadow-[0_20px_50px_-25px_rgb(0_0_0/0.25)]">
                   <div className={`grid aspect-[16/9] place-items-center bg-gradient-to-br p-6 ${c.tint} dark:from-[#17151f] dark:via-[#121214] dark:to-[#141a1f]`}>
                     <div className="w-full transition-transform duration-500 group-hover:-translate-y-1 [&>*]:mx-auto [&>*]:shadow-[0_18px_40px_-20px_rgb(0_0_0/0.3)]">{c.ui}</div>
                   </div>
@@ -276,21 +294,19 @@ export default async function Landing() {
             </div>
           </div>
         </section>
-      </Fx>
-
       {/* CTA band and footer, dark in both themes */}
       <div className="on-dark bg-bg text-fg">
         <section className="px-3 pt-12 md:px-5 md:pt-16">
           <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] px-6 py-20 text-center md:rounded-[36px] md:py-28">
-            <Image src="/landing/space.jpg" alt="" fill sizes="100vw" className="object-cover object-[50%_45%]" />
+            <Image data-parallax src="/landing/space.jpg" alt="" fill sizes="100vw" className="object-cover object-[50%_45%]" />
             <div className="absolute inset-0 bg-[#140b3d]/25" />
             <div className="relative mx-auto max-w-[640px]">
-              <h2 className="text-balance text-[clamp(30px,4vw,52px)] font-normal leading-[1.08] tracking-[-0.03em] text-white">Trade like the best wallets on Monad</h2>
+              <h2 data-anim="lines" className="text-balance text-[clamp(30px,4vw,52px)] font-normal leading-[1.08] tracking-[-0.03em] text-white">Trade like the best wallets on Monad</h2>
               <p className="mx-auto mt-4 max-w-[48ch] text-[14px] leading-relaxed text-white/75">
                 Free on testnet with test USDC, live on mainnet through Kuru and Perpl when you&apos;re ready. One passkey for both.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <Pill href="/start" tone="light" arrow>
+                <Pill href="/start" tone="light" arrow magnetic>
                   Try it in 60 seconds
                 </Pill>
                 <Pill href="/trenches" tone="ghost">
@@ -339,7 +355,7 @@ export default async function Landing() {
                 ))}
               </nav>
             </div>
-            <div aria-hidden className="mt-16 select-none text-center text-[clamp(96px,24vw,340px)] font-semibold leading-[0.8] tracking-[-0.07em] text-white/[0.06]">
+            <div aria-hidden data-anim="lines" className="mt-16 select-none text-center text-[clamp(96px,24vw,340px)] font-semibold leading-[0.8] tracking-[-0.07em] text-white/[0.06]">
               kadd
             </div>
             <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-line pt-6 text-[12px] text-muted">
@@ -349,6 +365,7 @@ export default async function Landing() {
           </div>
         </footer>
       </div>
+      </Fx>
     </div>
   );
 }

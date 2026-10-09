@@ -8,14 +8,18 @@ const TONES = {
   ghost: "text-white ring-1 ring-white/25 hover:bg-white/10",
 } as const;
 
-/** Rounded action: a label, optionally followed by a small circled arrow (the reference's "View More ⊙"). */
-export default function Pill({ href, children, tone = "dark", arrow = false, className = "" }: { href: string; children: React.ReactNode; tone?: keyof typeof TONES; arrow?: boolean; className?: string }) {
+/**
+ * Rounded action: a label, optionally followed by a small circled arrow (the reference's "View More ⊙").
+ * `magnetic` makes it lean toward the pointer (Fx's data-magnetic).
+ */
+export default function Pill({ href, children, tone = "dark", arrow = false, magnetic = false, className = "" }: { href: string; children: React.ReactNode; tone?: keyof typeof TONES; arrow?: boolean; magnetic?: boolean; className?: string }) {
   const external = href.startsWith("http");
   return (
     <Link
       href={href}
       {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
-      className={`group inline-flex h-11 items-center gap-2 rounded-full text-[14px] font-medium transition ${arrow ? "pl-5 pr-1.5" : "px-5"} ${TONES[tone]} ${className}`}
+      {...(magnetic ? { "data-magnetic": "" } : {})}
+      className={`group inline-flex h-11 items-center gap-2 rounded-full text-[14px] font-medium transition-colors ${arrow ? "pl-5 pr-1.5" : "px-5"} ${TONES[tone]} ${className}`}
     >
       {children}
       {arrow && (
