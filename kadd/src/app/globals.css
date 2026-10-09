@@ -131,6 +131,8 @@ input:focus-visible {
   --muted: #5f6066;
   --faint: #a1a1a8;
 }
+/* Sections that stay dark in both themes (features band, CTA, footer): widgets inside follow these tokens. */
+.landing .on-dark,
 [data-theme="dark"] .landing {
   --bg: #0b0b0c;
   --panel: #131315;

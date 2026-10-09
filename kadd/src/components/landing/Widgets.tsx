@@ -1,7 +1,7 @@
 "use client";
-// Product UI pieces shown on the landing page (chart, trade ticket, feeds...). Colours come from the landing's
+// Product UI pieces shown on the landing page (leaderboard, trenches list, club card, passkey sheet). Colours come from the landing's
 // theme tokens, so they follow light/dark. Live-looking motion starts after mount only (no hydration mismatch).
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Crown, Fingerprint, ShieldAlert, ShieldCheck, TrendingUp } from "lucide-react";
 
@@ -19,51 +19,6 @@ function useTick(ms: number) {
     return () => clearInterval(id);
   }, [ms]);
   return n;
-}
-
-// ---------------------------------------------------------------- activity feed
-
-const PEOPLE = [
-  ["rara", 32],
-  ["bimo", 140],
-  ["sinta", 280],
-  ["dimas", 210],
-  ["ayu", 20],
-] as const;
-const TOKENS_FEED = ["CHOG", "MOE", "NADS", "KADD", "PURPL", "BLITZ"];
-
-export function ActivityFeed({ className = "", rows = 3 }: { className?: string; rows?: number }) {
-  const tick = useTick(2200);
-  const items = useMemo(
-    () =>
-      Array.from({ length: rows }, (_, k) => {
-        const i = tick + rows - k; // newest first
-        const [name, hue] = PEOPLE[i % PEOPLE.length];
-        return { key: i, name, hue, buy: i % 3 !== 1, token: TOKENS_FEED[(i * 7) % TOKENS_FEED.length], usd: 10 + ((i * 37) % 90) };
-      }),
-    [tick, rows],
-  );
-  return (
-    <div className={`rounded-2xl p-3 ${surface} ${className}`}>
-      <div className={`mb-1.5 flex items-center justify-between px-1 text-[11px] font-medium ${muted}`}>
-        <span>Campus Fund · activity</span>
-        <span className="flex items-center gap-1"><span className="size-1.5 rounded-full animate-pulse" style={{ background: UP }} />Live</span>
-      </div>
-      <ul className="grid gap-1">
-        {items.map((it, k) => (
-          <li key={it.key} className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12px] ${k === 0 ? "animate-[slidein_.5s_ease-out]" : ""} ${k === 0 ? sub : ""}`}>
-            <span className="grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white" style={{ background: `hsl(${it.hue} 45% 48%)` }}>
-              {it.name[0].toUpperCase()}
-            </span>
-            <span className="min-w-0 flex-1 truncate">
-              <b className="font-semibold">{it.name}</b> <span style={{ color: it.buy ? UP : DOWN }}>{it.buy ? "bought" : "sold"}</span> {it.token}
-            </span>
-            <span className="tabular-nums font-medium">${it.usd}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------- trenches list
