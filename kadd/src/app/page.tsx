@@ -64,7 +64,7 @@ export default async function Landing() {
       </section>
 
       {/* Hero visual with the three promises on a glass card */}
-      <section className="px-3 pt-10 md:px-5 md:pt-14">
+      <section className="px-3 pt-12 md:px-5 md:pt-20">
         <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] md:rounded-[36px]">
           <Image src="/landing/space.jpg" alt="" fill preload sizes="100vw" className="object-cover object-[50%_35%]" />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1b0f4d]/10 to-[#120a33]/40" />
@@ -100,9 +100,9 @@ export default async function Landing() {
       </section>
 
       {/* The terminal itself, interactive with demo data */}
-      <section id="terminal" className="scroll-mt-20 px-3 pt-24 md:px-5 md:pt-32">
+      <section id="terminal" className="scroll-mt-20 px-3 pt-32 md:px-5 md:pt-48">
         <div className="mx-auto max-w-[1240px]">
-          <div className="mx-auto mb-10 max-w-[640px] px-2 text-center md:mb-14">
+          <div className="mx-auto mb-12 max-w-[640px] px-2 text-center md:mb-16">
             <p className="flex items-center justify-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
               <span className="size-1 rounded-full bg-fg" />
               The terminal
@@ -118,7 +118,7 @@ export default async function Landing() {
 
       <Fx>
         {/* Why Kadd */}
-        <section id="why" className="relative scroll-mt-20 px-5 py-24 md:px-8 md:py-32">
+        <section id="why" className="relative scroll-mt-20 px-5 py-32 md:px-8 md:py-48">
           <div aria-hidden className="pointer-events-none absolute inset-x-0 top-10 mx-auto h-[420px] max-w-[900px] rounded-full bg-[radial-gradient(closest-side,rgb(131_110_249/0.16),transparent)] blur-2xl" />
           <div className="relative mx-auto max-w-[1180px]">
             <div className="grid gap-6 md:grid-cols-[1.25fr_1fr] md:items-end">
@@ -137,7 +137,7 @@ export default async function Landing() {
                 Copy bots want your private key. Kadd never sees one: your account is a passkey, your copies run in vaults with hard limits, and every risk is spelled out before you commit.
               </p>
             </div>
-            <div data-anim="rise" className="mt-16 grid gap-10 md:grid-cols-3 md:gap-12">
+            <div data-anim="rise" className="mt-16 grid gap-12 md:mt-20 md:grid-cols-3 md:gap-12">
               {WHY.map(({ icon: Icon, title, body }) => (
                 <article key={title}>
                   <Icon className="size-7 text-muted" strokeWidth={1.4} />
@@ -146,7 +146,7 @@ export default async function Landing() {
                 </article>
               ))}
             </div>
-            <div className="mt-16 flex justify-center">
+            <div className="mt-16 flex justify-center md:mt-20">
               <Pill href="/start" arrow>
                 Start in a minute
               </Pill>
@@ -155,7 +155,7 @@ export default async function Landing() {
         </section>
 
         {/* Features: dark band with bento cards */}
-        <section id="features" className="on-dark scroll-mt-20 border-y border-line bg-bg px-5 py-24 text-fg md:px-8 md:py-32">
+        <section id="features" className="on-dark scroll-mt-20 border-y border-line bg-bg px-5 py-28 text-fg md:px-8 md:py-44">
           <div className="mx-auto max-w-[1180px]">
             <div className="mx-auto max-w-[760px] text-center">
               <p className="flex items-center justify-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
@@ -172,7 +172,7 @@ export default async function Landing() {
               </p>
             </div>
 
-            <div data-anim="rise" className="mt-14 grid gap-4 md:grid-cols-2">
+            <div data-anim="rise" className="mt-14 grid gap-4 md:mt-20 md:grid-cols-2 md:gap-5">
               <article className="flex flex-col overflow-hidden rounded-[22px] bg-panel ring-1 ring-line md:row-span-2">
                 <div className="p-6 pb-0">
                   <h3 className="text-[19px] font-medium leading-snug tracking-[-0.01em]">Smart money, ranked and backtested</h3>
@@ -243,7 +243,7 @@ export default async function Landing() {
         </section>
 
         {/* Get started: 2×2 product cards */}
-        <section id="start" className="scroll-mt-20 px-5 py-24 md:px-8 md:py-32">
+        <section id="start" className="scroll-mt-20 px-5 py-32 md:px-8 md:py-48">
           <div className="mx-auto max-w-[1180px]">
             <div className="flex flex-wrap items-end justify-between gap-6">
               <h2 data-anim="lines" className="text-balance text-[clamp(28px,3.2vw,42px)] font-normal leading-[1.12] tracking-[-0.03em]">
@@ -256,7 +256,7 @@ export default async function Landing() {
               </Pill>
             </div>
 
-            <div data-anim="rise" className="mt-12 grid gap-4 md:grid-cols-2">
+            <div data-anim="rise" className="mt-12 grid gap-4 md:mt-16 md:grid-cols-2 md:gap-5">
               {[
                 { title: "Your first trade in a minute", body: "Sign in with a passkey, get gas sent to you, copy a real trader's latest buy. A timer runs from arrival to the confirmed trade.", ui: <PasskeySheet className="w-full max-w-[300px]" />, tint: "from-[#f6e7ff] via-[#fff5fb] to-[#e9f8ff]", href: "/start" },
                 { title: "Copy a wallet automatically", body: "Fund a copy vault, set a limit per buy and per day. New trades by that wallet are copied within minutes; stop and withdraw anytime.", ui: <LeaderboardMini className="w-full max-w-[340px]" />, tint: "from-[#e8fff4] via-[#f5fffb] to-[#eef3ff]", href: "/leaderboard" },
@@ -280,7 +280,7 @@ export default async function Landing() {
 
       {/* CTA band and footer, dark in both themes */}
       <div className="on-dark bg-bg text-fg">
-        <section className="px-3 pt-3 md:px-5 md:pt-5">
+        <section className="px-3 pt-12 md:px-5 md:pt-16">
           <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] px-6 py-20 text-center md:rounded-[36px] md:py-28">
             <Image src="/landing/space.jpg" alt="" fill sizes="100vw" className="object-cover object-[50%_45%]" />
             <div className="absolute inset-0 bg-[#140b3d]/25" />
@@ -301,7 +301,7 @@ export default async function Landing() {
           </div>
         </section>
 
-        <footer className="px-5 pb-8 pt-16 md:px-8">
+        <footer className="px-5 pb-8 pt-20 md:px-8 md:pt-28">
           <div className="mx-auto max-w-[1180px]">
             <div className="flex flex-wrap justify-between gap-12">
               <div>
