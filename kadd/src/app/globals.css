@@ -131,6 +131,8 @@ input:focus-visible {
   --muted: #5f6066;
   --faint: #a1a1a8;
 }
+/* Sections that stay dark in both themes (features band, CTA, footer): widgets inside follow these tokens. */
+.landing .on-dark,
 [data-theme="dark"] .landing {
   --bg: #0b0b0c;
   --panel: #131315;
@@ -140,4 +142,24 @@ input:focus-visible {
   --fg: #f2f2f3;
   --muted: #9b9ba3;
   --faint: #5c5c63;
+}
+
+/* Landing spotlight: a soft light under the pointer (position from Fx's data-spotlight). */
+.landing .spotlight {
+  position: relative;
+  isolation: isolate;
+}
+.landing .spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgb(131 110 249 / 0.14), transparent 60%);
+  pointer-events: none;
+}
+.landing .spotlight:hover::before {
+  opacity: 1;
 }

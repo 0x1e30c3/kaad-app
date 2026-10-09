@@ -1,89 +1,41 @@
 "use client";
+// The trading terminal as an interactive landing preview with demo data: pick a token, see its chart, place a demo
+// order and watch it land in your club's feed. On scroll the window tilts flat (perspective → 0).
 import { useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import { ArrowUpRight, Check, Fingerprint, Search, ShieldAlert, ShieldCheck, Zap } from "lucide-react";
+import { Check, Fingerprint, Search, ShieldAlert, ShieldCheck, Zap } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
-import Cta from "./Cta";
 import Chart from "../Chart";
 import { Logo } from "../ui";
 import { GROUPS, TOKENS, candles, groupFeed, num, pct, usd, type Risk } from "@/lib/mock";
 
-gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP);
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 const LIST = TOKENS.filter((t) => t.mc > 250_000).slice(0, 6);
 const FEED = groupFeed(GROUPS[0].members, 4);
 const RISK: Record<Risk, [string, string]> = { safe: ["Safe", "text-up"], caution: ["Caution", "text-warn"], danger: ["Risky", "text-down"] };
 
-/**
- * Product-first hero: a short centred pitch, then the terminal itself — pick a token, see its chart, place a
- * demo order and watch it land in your club's feed. On scroll the window tilts flat (perspective → 0).
- */
-export default function Hero() {
-  const root = useRef<HTMLElement>(null);
-
+/** The terminal preview, tilted back until it scrolls into view. */
+export default function TerminalPreview() {
+  const root = useRef<HTMLDivElement>(null);
   useGSAP(
     () => {
-      const q = gsap.utils.selector(root);
       gsap.matchMedia().add("(prefers-reduced-motion: no-preference)", () => {
-        const split = SplitText.create(q("[data-title]")[0], { type: "lines", mask: "lines" });
-        gsap
-          .timeline({ defaults: { ease: "expo.out" } })
-          .from(q("[data-chip]"), { y: 14, opacity: 0, duration: 0.8 }, 0.1)
-          .from(split.lines, { yPercent: 115, duration: 1.2, stagger: 0.08 }, 0.15)
-          .from(q("[data-sub]"), { y: 20, opacity: 0, duration: 1 }, 0.45)
-          .from(q("[data-frame]"), { y: 80, opacity: 0, duration: 1.4 }, 0.55);
         gsap.fromTo(
-          q("[data-frame]"),
+          root.current,
           { rotationX: 16, transformPerspective: 1600, transformOrigin: "50% 0%" },
-          { rotationX: 0, ease: "none", scrollTrigger: { trigger: q("[data-frame]")[0], start: "top 85%", end: "top 25%", scrub: 1 } },
+          { rotationX: 0, ease: "none", scrollTrigger: { trigger: root.current, start: "top 90%", end: "top 30%", scrub: 1 } },
         );
-        return () => split.revert();
       });
     },
     { scope: root },
   );
-
   return (
-    <section ref={root} className="bg-bg px-5 pb-20 pt-32 text-fg md:px-10 md:pt-40">
-      <div className="mx-auto flex max-w-[860px] flex-col items-center text-center">
-        <a
-          data-chip
-          href="/perps"
-          className="group inline-flex items-center gap-2 rounded-full bg-raised py-1 pl-1 pr-3 text-[13px] ring-1 ring-line hover:bg-hover"
-        >
-          <span className="rounded-full bg-brand-fill px-2 py-0.5 text-[11px] font-semibold text-[#0a0a0a]">New</span>
-          Perps on Perpl, from your passkey
-          <ArrowUpRight className="size-3.5 text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </a>
-        <h1 data-title className="mt-7 text-[clamp(40px,6.4vw,84px)] font-medium leading-[1.04] tracking-[-0.035em]">
-          The trading terminal you share with friends
-        </h1>
-        <div data-sub className="flex flex-col items-center">
-          <p className="mt-6 max-w-[52ch] text-[17px] leading-[1.5] text-muted md:text-[18px]">
-            See who&apos;s actually winning on Monad, check their risk, and follow them with limits a contract enforces: spot or perps, alone or with friends. Sign in with a passkey — no seed phrase.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Cta href="/start">Try it in 60 seconds</Cta>
-            <Link href="/trenches" className="h-11 rounded-full px-5 text-[15px] font-medium leading-[44px] text-muted ring-1 ring-line hover:bg-raised hover:text-fg">
-              Launch app
-            </Link>
-          </div>
-          <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-1 text-[13px] text-muted">
-            {["Passkey sign-in", "Live Monad data", "Withdraw any time"].map((x) => (
-              <li key={x} className="flex items-center gap-1.5"><Check className="size-3.5 text-up" />{x}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div data-frame className="mx-auto mt-16 max-w-[1240px] md:mt-20">
-        <Terminal />
-        <p className="mt-3 text-center text-[12px] text-faint">Interactive preview with demo data — pick a token and place an order.</p>
-      </div>
-    </section>
+    <div ref={root}>
+      <Terminal />
+      <p className="mt-3 text-center text-[12px] text-faint">Interactive preview with demo data: pick a token and place an order.</p>
+    </div>
   );
 }
 

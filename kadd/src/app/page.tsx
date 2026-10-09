@@ -1,316 +1,371 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Activity, Eye, Fingerprint, ScanSearch, ShieldCheck } from "lucide-react";
 import LandingNav from "@/components/landing/LandingNav";
-import Hero from "@/components/landing/Hero";
 import SmoothScroll from "@/components/landing/SmoothScroll";
 import Fx from "@/components/landing/Fx";
-import Cta from "@/components/landing/Cta";
+import Pill from "@/components/landing/Pill";
 import Live from "@/components/landing/Live";
-import { ActivityFeed, ClubMini, LeaderboardMini, PasskeySheet, TrenchesMini } from "@/components/landing/Widgets";
+import TerminalPreview from "@/components/landing/Terminal";
+import { ClubMini, LeaderboardMini, PasskeySheet, TrenchesMini } from "@/components/landing/Widgets";
 import { Logo } from "@/components/ui";
-import { CLUB_FACTORY } from "@/lib/addresses";
+import { perpRisk } from "@/lib/perpl";
+import { liquidatedAt } from "@/lib/perplRisk";
 
+export const revalidate = 300;
 export const metadata: Metadata = {
-  title: "Kadd — Trade together on Monad",
-  description: "The social trading terminal for Monad: passkey sign-in, live Monad token data, trading with friends, and onchain clubs.",
+  title: "Kadd — Follow Monad's smart money, safely",
+  description: "See who's actually winning on Monad, check their risk, and follow them with limits a contract enforces: spot or perps, alone or with friends. One passkey, no seed phrase.",
 };
 
-const STEPS = [
-  ["Sign in with a passkey", "Face ID, fingerprint, or your device PIN. Your Monad account comes from the passkey — no seed phrase, no extension."],
-  ["Start or join a group", "Bring your campus, office, or community. See who's buying what and race for the best weekly PnL."],
-  ["Pool funds in a club", "Deposit USDC into an onchain club. The captain trades within a per-trade limit the contract enforces."],
-  ["Climb together", "Withdraw your share whenever you want, without anyone's permission. Everything settles on Monad."],
-];
-
-const TAGS: [string, string][] = [
-  ["Trenches", "#c6ee2e"],
-  ["Copy trading", "#ff6b5a"],
-  ["Passkeys", "#7aa7ff"],
-  ["Onchain clubs", "#b79bff"],
-  ["Risk labels", "#ffc14d"],
-  ["Leaderboards", "#3fd1a8"],
-  ["Testnet swaps", "#ff8fbf"],
-  ["400ms blocks", "#ff9a3d"],
+const HERO_POINTS = [
+  { icon: ScanSearch, title: "Smart money, checked", body: "Nansen's profitable Monad wallets and every wallet trading right now, each with a copy backtest on its real trades." },
+  { icon: ShieldCheck, title: "Limits a contract enforces", body: "Auto copy from a vault capped per trade and per day. Kadd decides when; the contract decides what's allowed." },
+  { icon: Activity, title: "Perps with the risk shown first", body: "Trade Perpl from your passkey with the liquidation price on the ticket, and see where every position would break." },
 ];
 
 const WHY = [
-  ["No seed phrase", "The passkey already on your phone is the key. New device? Your account follows the same passkey."],
-  ["Social by default", "Most trading tools assume you trade alone. Kadd is built for groups: friends' feeds, shared clubs, weekly leaderboards."],
-  ["Risk you can read", "Every token gets a safety check with plain-language reasons: holder concentration, dev wallet, snipers, insiders."],
-  ["Exchange-grade speed", "Monad closes a block every 400ms, so a trade confirms in under a second — no pending states."],
+  { icon: Fingerprint, title: "No seed phrase", body: "Your account comes from the passkey on your phone. Same passkey on a new device, same account. Gas is sent for you." },
+  { icon: ShieldCheck, title: "Your keys stay yours", body: "Copy vaults and clubs hold funds in contracts with hard limits, and you can close or withdraw at any time." },
+  { icon: Eye, title: "Risk you can read", body: "Every token gets a 0–100 risk score with the reason for each point. Every perps trader shows how close they are to liquidation." },
 ];
 
-const FEATURES = [
-  { title: "Trenches", ui: <TrenchesMini />, tags: ["Discovery", "Risk labels"], body: "Every new Monad token as it launches, with safety checks written in plain language.", href: "/trenches" },
-  { title: "Onchain clubs", ui: <ClubMini />, tags: ["Live on testnet", "Onchain"], body: "Pool USDC with friends. The captain trades inside contract-enforced limits; every member can exit any time.", href: "/groups" },
-  { title: "Passkey accounts", ui: <PasskeySheet />, tags: ["Mera", "No seed phrase"], body: "One tap with Face ID and you're in. No extension to install, nothing to write down, works across devices.", href: "/trenches" },
-];
+/** A USD amount that counts up when seen ($67K), static when it's in millions. */
+function CountUsd({ value, className }: { value: number; className?: string }) {
+  if (value >= 1e6) return <span className={className}>{compact(value)}</span>;
+  const k = value >= 1e3;
+  const n = Math.round(k ? value / 1e3 : value);
+  return (
+    <span data-count={n} data-prefix="$" data-suffix={k ? "K" : ""} className={className}>
+      {compact(value)}
+    </span>
+  );
+}
 
-const INSIDE: [string, string[]][] = [
-  ["Follow", ["Nansen smart money", "Copy backtests", "Auto copy vaults", "Copy clubs"]],
-  ["Perps", ["Trade Perpl from a passkey", "Liquidation map", "Trader risk profiles", "Liquidation alerts"]],
-  ["Trading", ["Trenches feed", "Token safety checks", "Live on Kuru (mainnet)", "Limit, TP / SL, DCA"]],
-  ["Accounts", ["Passkey sign-in", "Cross-device recovery", "Session signing", "Gas sent for you"]],
-];
+const compact = (n: number) => "$" + (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : Math.round(n).toString());
 
-const STATS: [string, number | null, string, string][] = [
-  ["400ms", 400, "ms", "Monad block time"],
-  ["800ms", 800, "ms", "To finality"],
-  ["0", null, "", "Seed phrases to write down"],
-  ["1 tap", null, "", "To sign in"],
-];
+export default async function Landing() {
+  // Live from Perpl (Monad mainnet); each card falls back to plain copy if Perpl can't be read.
+  const risk = await perpRisk().catch(() => null);
+  const btc = risk?.markets.find((m) => m.name === "BTC");
+  const away = 1 / 3 - 1 / 25; // a 3× BTC long, liquidated at 25×
 
-const FAQ = [
-  ["Does Kadd hold my funds?", "No. Your account comes from the passkey on your device, and club funds are held by a contract on Monad. Kadd has no access to your keys and no way to withdraw club funds."],
-  ["What if a club's captain disappears?", "Every member can withdraw their share at any time, straight from the contract, without the captain's permission. Captains can only trade approved markets, within a per-trade limit."],
-  ["How is Kadd different from other trading terminals?", "Most terminals are built for experienced traders working alone. Kadd is about trading together: groups, friends' feeds, pooled onchain clubs, and risk explained in plain language."],
-  ["Can I use it today?", "Yes, on Monad testnet. Token data is live from mainnet; swaps and clubs are real testnet transactions with free test USDC, so nothing has real value yet."],
-];
-
-export default function Landing() {
   return (
     <div className="landing overflow-x-clip bg-bg text-fg antialiased">
       <SmoothScroll />
       <LandingNav />
-      <Hero />
-
       <Fx>
-        {/* Statement + steps */}
-        <section id="how-it-works" className="scroll-mt-24 px-5 py-24 md:px-10 md:py-36">
-          <div className="mx-auto max-w-[1400px]">
-            <div className="grid gap-8 md:grid-cols-[220px_1fr]">
-              <ul className="text-[15px] font-medium leading-6">
-                <li>Social</li>
-                <li>Onchain</li>
-                <li>Passkey-first</li>
-              </ul>
-              <p data-anim="words" className="max-w-[24ch] text-[clamp(30px,4vw,48px)] font-medium leading-[1.18] tracking-[-0.02em]">
-                Kadd works like a group chat for your trades — see what friends buy, copy what works, and pool funds in clubs where the rules live onchain.
-              </p>
-            </div>
 
-            <div data-anim="rise" className="mt-16 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 md:mt-24">
-              {STEPS.map(([title, body], i) => {
-                return (
-                  <article key={title} data-tilt className="flex min-h-[260px] flex-col justify-between gap-10 rounded-2xl bg-raised p-6 md:min-h-[380px]">
+      {/* Hero: headline left, pitch and action right */}
+      <section className="px-5 pt-28 md:px-8 md:pt-36">
+        <div className="mx-auto grid max-w-[1280px] items-end gap-8 md:grid-cols-[1.6fr_1fr] md:gap-16">
+          <h1 data-anim="lines" className="text-balance text-[clamp(40px,5.2vw,76px)] font-normal leading-[1.04] tracking-[-0.04em]">
+            Follow Monad&apos;s
+            {" "}<br className="hidden md:block" />
+            smart money, safely
+          </h1>
+          <div data-anim="rise" className="flex max-w-[380px] flex-col items-start gap-5 md:justify-self-end md:pb-3">
+            <p className="text-[15px] leading-relaxed text-muted">
+              See who&apos;s actually winning on Monad, check their risk, then copy them with limits a contract enforces. One passkey, no seed phrase.
+            </p>
+            <Pill href="/start" arrow magnetic>
+              Try it in 60 seconds
+            </Pill>
+          </div>
+        </div>
+      </section>
+
+      {/* Hero visual with the three promises on a glass card */}
+      <section className="px-3 pt-12 md:px-5 md:pt-20">
+        <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] md:rounded-[36px]">
+          <Image data-parallax src="/landing/space.jpg" alt="" fill preload sizes="100vw" className="object-cover object-[50%_35%]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1b0f4d]/10 to-[#120a33]/40" />
+          <div data-anim="rise" className="relative px-3 pb-3 pt-[clamp(180px,26vw,340px)] md:px-10 md:pb-10">
+            <div className="grid gap-8 rounded-[22px] bg-white/80 p-6 text-[#0a0a0a] shadow-[0_30px_80px_-30px_rgb(20_10_60/0.5)] ring-1 ring-white/60 backdrop-blur-xl md:grid-cols-[1fr_1.1fr] md:gap-14 md:p-10 dark:bg-[#0b0b0c]/70 dark:text-white dark:ring-white/10">
+              <div className="flex flex-col items-start justify-between gap-6">
+                <div>
+                  <h2 className="text-balance text-[clamp(28px,3vw,40px)] font-normal leading-[1.08] tracking-[-0.03em]">Find who&apos;s winning. Follow them with limits.</h2>
+                  <p className="mt-4 max-w-[42ch] text-[14px] leading-relaxed opacity-70">
+                    Kadd turns Monad&apos;s public trading data into something you can act on: rank the traders, check how they trade, then follow them inside rules you set.
+                  </p>
+                </div>
+                <Pill href="/leaderboard" arrow magnetic className="bg-[#0a0a0a] text-white dark:bg-white dark:text-[#0a0a0a]">
+                  See who&apos;s winning
+                </Pill>
+              </div>
+              <ul className="grid gap-6">
+                {HERO_POINTS.map(({ icon: Icon, title, body }) => (
+                  <li key={title} className="group grid grid-cols-[40px_1fr] gap-4">
+                    <span className="grid size-10 place-items-center rounded-full ring-1 ring-black/10 transition-colors duration-300 group-hover:bg-[#0a0a0a] group-hover:text-white dark:ring-white/15 dark:group-hover:bg-white dark:group-hover:text-[#0a0a0a]">
+                      <Icon className="size-[18px]" strokeWidth={1.6} />
+                    </span>
                     <div>
-                      <span className="font-mono text-[13px] text-muted">0{i + 1}</span>
-                      <h3 className="mt-3 text-[26px] font-medium leading-tight tracking-[-0.02em] md:text-[30px]">{title}</h3>
+                      <h3 className="text-[16px] font-medium tracking-[-0.01em]">{title}</h3>
+                      <p className="mt-1 text-[13px] leading-relaxed opacity-70">{body}</p>
                     </div>
-                    <p className="text-[15px] leading-relaxed text-muted">{body}</p>
-                  </article>
-                );
-              })}
-            </div>
-            <div className="mt-12 flex justify-center">
-              <Cta href="/trenches">Launch app</Cta>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Tag cloud */}
-        <section className="px-5 pb-24 md:px-10 md:pb-32">
-          <div data-stickers className="mx-auto grid max-w-[1400px] place-items-center py-10 md:py-20">
-            <h2 data-anim="lines" className="text-center text-[clamp(40px,6vw,80px)] font-medium leading-[1.02] tracking-[-0.035em]">
-              One terminal,
-              <br />
-              all your friends
-            </h2>
-            <div className="mt-10 flex max-w-[760px] flex-wrap justify-center gap-2.5">
-              {TAGS.map(([label, color], i) => (
-                <span key={label} data-sticker className={`px-3.5 py-1.5 text-[14px] font-semibold text-[#0a0a0a] ${i % 2 ? "rounded-full -rotate-2" : "rounded-md rotate-2"}`} style={{ background: color }}>
-                  {label}
-                </span>
+      {/* The terminal itself, interactive with demo data */}
+      <section id="terminal" className="scroll-mt-20 px-3 pt-32 md:px-5 md:pt-48">
+        <div className="mx-auto max-w-[1240px]">
+          <div className="mx-auto mb-12 max-w-[640px] px-2 text-center md:mb-16">
+            <p className="flex items-center justify-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+              <span className="size-1 rounded-full bg-fg" />
+              The terminal
+            </p>
+            <h2 className="mt-4 text-balance text-[clamp(28px,3.2vw,42px)] font-normal leading-[1.1] tracking-[-0.03em]">Pick a token, read its risk, trade it with friends</h2>
+            <p className="mx-auto mt-4 max-w-[52ch] text-[14px] leading-relaxed text-muted">
+              Live Monad token data, a safety check on every token, one-tap orders signed by your passkey, and your club&apos;s trades right next to the chart.
+            </p>
+          </div>
+          <TerminalPreview />
+        </div>
+      </section>
+
+        {/* Why Kadd */}
+        <section id="why" className="relative scroll-mt-20 px-5 py-32 md:px-8 md:py-48">
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-10 mx-auto h-[420px] max-w-[900px] rounded-full bg-[radial-gradient(closest-side,rgb(131_110_249/0.16),transparent)] blur-2xl" />
+          <div className="relative mx-auto max-w-[1180px]">
+            <div className="grid gap-6 md:grid-cols-[1.25fr_1fr] md:items-end">
+              <div>
+                <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+                  <span className="size-1 rounded-full bg-fg" />
+                  Why Kadd
+                </p>
+                <h2 data-anim="lines" className="text-balance mt-4 text-[clamp(30px,3.4vw,44px)] font-normal leading-[1.1] tracking-[-0.03em]">
+                  Copy the best wallets
+                  {" "}<br className="hidden md:block" />
+                  without giving up your keys
+                </h2>
+              </div>
+              <p className="max-w-[46ch] text-[15px] leading-relaxed text-muted md:justify-self-end">
+                Copy bots want your private key. Kadd never sees one: your account is a passkey, your copies run in vaults with hard limits, and every risk is spelled out before you commit.
+              </p>
+            </div>
+            <div data-anim="rise" className="mt-16 grid gap-12 md:mt-20 md:grid-cols-3 md:gap-12">
+              {WHY.map(({ icon: Icon, title, body }) => (
+                <article key={title} className="group">
+                  <Icon className="size-7 text-muted transition duration-500 group-hover:-translate-y-1 group-hover:rotate-[-8deg] group-hover:text-[#836ef9]" strokeWidth={1.4} />
+                  <h3 className="mt-6 text-[19px] font-medium tracking-[-0.01em]">{title}</h3>
+                  <p className="mt-2 text-[14px] leading-relaxed text-muted">{body}</p>
+                </article>
               ))}
             </div>
-          </div>
-          <div className="mx-auto flex max-w-[1400px] justify-between text-[15px] font-medium">
-            <span>Built for groups, not whales</span>
-            <Link href="/groups" className="underline-offset-4 hover:underline">Start a group</Link>
+            <div className="mt-16 flex justify-center md:mt-20">
+              <Pill href="/start" arrow magnetic>
+                Start in a minute
+              </Pill>
+            </div>
           </div>
         </section>
 
-        {/* Dark manifesto */}
-        <section className="border-t border-line px-5 py-24 md:px-10 md:py-36">
-          <div className="mx-auto grid max-w-[1400px] items-center gap-14 lg:grid-cols-[0.8fr_1.2fr]">
-            {/* Product UI: weekly leaderboard above the live activity feed. */}
-            <div data-tilt className="mx-auto grid w-full max-w-[460px] gap-4">
-              <LeaderboardMini />
-              <ActivityFeed rows={3} />
-            </div>
-            <div>
-              <p data-anim="words" className="max-w-[22ch] text-[clamp(30px,3.8vw,48px)] font-medium leading-[1.16] tracking-[-0.02em]">
-                At Kadd, we believe a small group of friends can out-trade any solo degen — when the tools are built for them.
+        {/* Features: dark band with bento cards */}
+        <section id="features" className="on-dark scroll-mt-20 border-y border-line bg-bg px-5 py-28 text-fg md:px-8 md:py-44">
+          <div className="mx-auto max-w-[1180px]">
+            <div className="mx-auto max-w-[760px] text-center">
+              <p className="flex items-center justify-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+                <span className="size-1 rounded-full bg-fg" />
+                Features
               </p>
-              <h3 data-anim="lines" className="mt-14 text-[clamp(26px,3vw,40px)] font-medium tracking-[-0.02em]">Here&apos;s why it works</h3>
-              <dl data-anim="rise" className="mt-6">
-                {WHY.map(([k, v]) => (
-                  <div key={k} className="grid gap-2 border-t border-line py-5 sm:grid-cols-[200px_1fr] sm:gap-8">
-                    <dt className="text-[15px] font-medium">{k}</dt>
-                    <dd className="text-[15px] leading-relaxed text-muted">{v}</dd>
+              <h2 data-anim="lines" className="text-balance mt-4 text-[clamp(30px,3.6vw,48px)] font-normal leading-[1.1] tracking-[-0.03em]">
+                Every winning wallet on Monad,
+                {" "}<br className="hidden md:block" />
+                <span className="text-white/40">and the risk behind it</span>
+              </h2>
+              <p className="mx-auto mt-5 max-w-[56ch] text-[14px] leading-relaxed text-muted">
+                Read straight from the chain, not from screenshots: who is trading, what they made, how much leverage they carry, and what would happen if the market moved.
+              </p>
+            </div>
+
+            <div data-anim="rise" className="mt-14 grid gap-4 md:mt-20 md:grid-cols-2 md:gap-5">
+              <article data-spotlight className="spotlight flex flex-col overflow-hidden rounded-[22px] bg-panel ring-1 ring-line md:row-span-2">
+                <div className="p-6 pb-0">
+                  <h3 className="text-[19px] font-medium leading-snug tracking-[-0.01em]">Smart money, ranked and backtested</h3>
+                  <p className="mt-1 text-[12px] text-muted">Nansen · Monad mainnet · updated daily</p>
+                </div>
+                <div className="relative mt-6 aspect-[16/11] flex-1 overflow-hidden">
+                  <Image data-parallax src="/landing/space.jpg" alt="" fill sizes="(min-width: 768px) 560px, 100vw" className="object-cover object-[50%_70%]" />
+                  <div className="absolute inset-0 grid place-items-center p-6">
+                    <LeaderboardMini className="w-full max-w-[340px] shadow-2xl" />
                   </div>
-                ))}
-              </dl>
+                </div>
+                <div className="flex flex-col items-start gap-4 p-6">
+                  <p className="text-[13px] leading-relaxed text-muted">
+                    Wallets Nansen labels as profitable on Monad, next to everyone trading right now. Before you follow anyone, replay their real trades: what would copying them have returned?
+                  </p>
+                  <Pill href="/leaderboard" tone="outline" arrow className="h-9 text-[13px]">
+                    View leaderboard
+                  </Pill>
+                </div>
+              </article>
+
+              <article data-spotlight className="spotlight flex flex-col justify-between gap-8 rounded-[22px] bg-panel p-6 ring-1 ring-line">
+                <div>
+                  <h3 className="text-[19px] font-medium leading-snug tracking-[-0.01em]">Perps on Perpl, from your passkey</h3>
+                  <p className="mt-1 text-[12px] text-muted">Long or short · up to 10× · AUSD</p>
+                </div>
+                <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 rounded-xl bg-raised p-4 text-[13px] tabular-nums max-sm:grid-cols-1 max-sm:gap-y-1">
+                  <span className="text-muted">Long BTC · $100 at 3×</span>
+                  <span className="font-medium sm:justify-self-end">margin $33.33</span>
+                  <span className="text-muted max-sm:mt-2">Liquidation ≈</span>
+                  <span className="font-medium text-[#ff8b7a] sm:justify-self-end">{btc ? `$${Math.round(btc.mark * (1 - away)).toLocaleString("en-US")} (${Math.round(away * 100)}% away)` : `${Math.round(away * 100)}% below entry`}</span>
+                </div>
+                <div className="flex flex-col items-start gap-4">
+                  <p className="text-[13px] leading-relaxed text-muted">Trade like a trader you found, with the liquidation price on the ticket before you sign. No API key, no wallet app.</p>
+                  <Pill href="/perps" tone="outline" arrow className="h-9 text-[13px]">
+                    Open perps
+                  </Pill>
+                </div>
+              </article>
+
+              <article data-spotlight className="spotlight flex flex-col justify-between gap-8 rounded-[22px] bg-panel p-6 ring-1 ring-line">
+                <div>
+                  <h3 className="text-[19px] font-medium leading-snug tracking-[-0.01em]">A liquidation map for every market</h3>
+                  <p className="mt-1 text-[12px] text-muted">Every open Perpl position · live</p>
+                </div>
+                <div>
+                  <p className="text-[clamp(20px,2vw,26px)] font-normal leading-tight tracking-[-0.02em]">
+                    {btc ? (
+                      <>
+                        A 5% BTC drop liquidates <CountUsd value={liquidatedAt(btc.liqMap, -5)} className="text-[#ff8b7a]" /> of longs right now
+                      </>
+                    ) : (
+                      "See how much a 5% move would liquidate, market by market"
+                    )}
+                  </p>
+                </div>
+                <div className="flex flex-col items-start gap-4">
+                  <p className="text-[13px] leading-relaxed text-muted">
+                    {risk ? (
+                      <>
+                        <span data-count={risk.near.count}>{risk.near.count}</span> positions sit within 5% of liquidation. See who, and where the cascade would start.
+                      </>
+                    ) : (
+                      "See who sits closest to liquidation, and where the cascade would start."
+                    )}
+                  </p>
+                  <Pill href="/perps/risk" tone="outline" arrow className="h-9 text-[13px]">
+                    View risk
+                  </Pill>
+                </div>
+              </article>
             </div>
           </div>
         </section>
 
-        {/* Feature cards */}
-        <section id="clubs" className="scroll-mt-24 px-5 py-24 md:px-10 md:py-36">
-          <div className="mx-auto max-w-[1400px]">
+        {/* Get started: 2×2 product cards */}
+        <section id="start" className="scroll-mt-20 px-5 py-32 md:px-8 md:py-48">
+          <div className="mx-auto max-w-[1180px]">
             <div className="flex flex-wrap items-end justify-between gap-6">
-              <h2 data-anim="lines" className="max-w-[18ch] text-[clamp(34px,4.4vw,56px)] font-normal leading-[1.08] tracking-[-0.035em]">
-                Built for trading
-                <br />
-                with the people you trust
+              <h2 data-anim="lines" className="text-balance text-[clamp(28px,3.2vw,42px)] font-normal leading-[1.12] tracking-[-0.03em]">
+                Turn a good trader
+                {" "}<br className="hidden md:block" />
+                <span className="text-muted">into your next trade</span>
               </h2>
-              <Link href="/trenches" className="text-[15px] font-medium underline-offset-4 hover:underline">Open the app</Link>
+              <Pill href="/start" arrow magnetic>
+                Get started
+              </Pill>
             </div>
-            <div data-anim="rise" className="mt-12 grid gap-4 md:grid-cols-3">
-              {FEATURES.map((f) => (
-                <Link key={f.title} href={f.href} className="group block">
-                  <div className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-2xl bg-raised p-6">
-                    <div data-parallax className="relative w-full max-w-[340px] transition-transform duration-500 group-hover:-translate-y-1.5">
-                      {f.ui}
-                    </div>
+
+            <div data-anim="rise" className="mt-12 grid gap-4 md:mt-16 md:grid-cols-2 md:gap-5">
+              {[
+                { title: "Your first trade in a minute", body: "Sign in with a passkey, get gas sent to you, copy a real trader's latest buy. A timer runs from arrival to the confirmed trade.", ui: <PasskeySheet className="w-full max-w-[300px]" />, tint: "from-[#f6e7ff] via-[#fff5fb] to-[#e9f8ff]", href: "/start" },
+                { title: "Copy a wallet automatically", body: "Fund a copy vault, set a limit per buy and per day. New trades by that wallet are copied within minutes; stop and withdraw anytime.", ui: <LeaderboardMini className="w-full max-w-[340px]" />, tint: "from-[#e8fff4] via-[#f5fffb] to-[#eef3ff]", href: "/leaderboard" },
+                { title: "Pool it with friends", body: "A copy club is one vault, many members. Deposits only while the club holds no tokens, so nobody joins at a bad price; everyone exits with their share.", ui: <ClubMini className="w-full max-w-[340px]" />, tint: "from-[#eef0ff] via-[#f7f5ff] to-[#fff3ea]", href: "/groups" },
+                { title: "New tokens, risk in plain words", body: "Every new Monad token as it launches, with a safety check that says why: liquidity, holders, honeypot tests, who is buying.", ui: <TrenchesMini className="w-full max-w-[360px]" />, tint: "from-[#fff6e6] via-[#fffaf3] to-[#effbff]", href: "/trenches" },
+              ].map((c) => (
+                <Link key={c.title} href={c.href} data-tilt data-spotlight className="spotlight group flex flex-col overflow-hidden rounded-[22px] bg-bg ring-1 ring-line transition-shadow hover:shadow-[0_20px_50px_-25px_rgb(0_0_0/0.25)]">
+                  <div className={`grid aspect-[16/9] place-items-center bg-gradient-to-br p-6 ${c.tint} dark:from-[#17151f] dark:via-[#121214] dark:to-[#141a1f]`}>
+                    <div className="w-full transition-transform duration-500 group-hover:-translate-y-1 [&>*]:mx-auto [&>*]:shadow-[0_18px_40px_-20px_rgb(0_0_0/0.3)]">{c.ui}</div>
                   </div>
-                  <div className="mt-4 flex gap-3 text-[13px] text-muted">
-                    {f.tags.map((t) => (
-                      <span key={t}>{t}</span>
-                    ))}
+                  <div className="p-6">
+                    <h3 className="text-[17px] font-medium tracking-[-0.01em]">{c.title}</h3>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{c.body}</p>
                   </div>
-                  <h3 className="mt-1 text-[22px] font-medium tracking-[-0.02em]">{f.title}</h3>
-                  <p className="mt-1 max-w-[40ch] text-[15px] leading-relaxed text-muted">{f.body}</p>
                 </Link>
               ))}
             </div>
           </div>
         </section>
+      {/* CTA band and footer, dark in both themes */}
+      <div className="on-dark bg-bg text-fg">
+        <section className="px-3 pt-12 md:px-5 md:pt-16">
+          <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] px-6 py-20 text-center md:rounded-[36px] md:py-28">
+            <Image data-parallax src="/landing/space.jpg" alt="" fill sizes="100vw" className="object-cover object-[50%_45%]" />
+            <div className="absolute inset-0 bg-[#140b3d]/25" />
+            <div className="relative mx-auto max-w-[640px]">
+              <h2 data-anim="lines" className="text-balance text-[clamp(30px,4vw,52px)] font-normal leading-[1.08] tracking-[-0.03em] text-white">Trade like the best wallets on Monad</h2>
+              <p className="mx-auto mt-4 max-w-[48ch] text-[14px] leading-relaxed text-white/75">
+                Free on testnet with test USDC, live on mainnet through Kuru and Perpl when you&apos;re ready. One passkey for both.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Pill href="/start" tone="light" arrow magnetic>
+                  Try it in 60 seconds
+                </Pill>
+                <Pill href="/trenches" tone="ghost">
+                  Launch app
+                </Pill>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {/* What's inside */}
-        <section id="inside" className="scroll-mt-24 border-t border-line px-5 py-24 md:px-10">
-          <div className="mx-auto max-w-[1400px]">
-            <h2 data-anim="lines" className="text-[clamp(30px,3vw,40px)] font-medium tracking-[-0.02em]">What&apos;s inside</h2>
-            <div data-anim="rise" className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-              {INSIDE.map(([group, items]) => (
-                <div key={group}>
-                  <h3 className="text-[15px] text-muted">{group}</h3>
-                  <ul className="mt-4 grid gap-2 text-[17px] font-medium tracking-[-0.01em]">
-                    {items.map((it) => (
-                      <li key={it}>{it}</li>
-                    ))}
-                  </ul>
+        <footer className="px-5 pb-8 pt-20 md:px-8 md:pt-28">
+          <div className="mx-auto max-w-[1180px]">
+            <div className="flex flex-wrap justify-between gap-12">
+              <div>
+                <Link href="/" className="flex items-center gap-2">
+                  <Logo size={24} />
+                  <span className="text-[16px] font-semibold tracking-[-0.02em]">kadd</span>
+                </Link>
+                <p className="mt-5 max-w-[22ch] text-[18px] tracking-[-0.01em]">Follow Monad&apos;s smart money, safely.</p>
+                <div className="mt-5 text-muted [&>div]:flex-wrap [&>div]:gap-x-5 [&>div]:gap-y-1 [&>div]:text-[13px]">
+                  <Live compact />
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Stats */}
-        <section className="px-5 pb-24 md:px-10">
-          <div data-anim="rise" className="mx-auto grid max-w-[1400px] grid-cols-2 gap-y-10 border-t border-line pt-10 lg:grid-cols-4">
-            {STATS.map(([shown, to, suffix, label]) => (
-              <div key={label}>
-                <div className="text-[clamp(44px,5.6vw,80px)] font-medium leading-none tracking-[-0.04em] tabular-nums" {...(to ? { "data-count": to, "data-suffix": suffix } : {})}>
-                  {shown}
-                </div>
-                <div className="mt-3 text-[15px] text-muted">{label}</div>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Status (Verteal's pricing cards) */}
-        <section className="border-t border-line px-5 py-24 md:px-10 md:py-32">
-          <div className="mx-auto max-w-[1400px]">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-muted">Status</p>
-            <h2 data-anim="lines" className="mt-3 max-w-[16ch] text-[clamp(34px,4.4vw,56px)] font-medium leading-[1.05] tracking-[-0.03em]">
-              Live today, and what ships next
-            </h2>
-            <div data-anim="rise" className="mt-12 grid gap-4 md:grid-cols-2">
-              <div data-tilt className="flex flex-col rounded-2xl bg-raised p-7">
-                <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-muted">Live on testnet</span>
-                <p className="mt-3 text-[40px] font-medium leading-none tracking-[-0.03em]">Today</p>
-                <ul className="mt-8 grid gap-3 text-[15px]">
-                  {["Passkey accounts with Mera", "Onchain clubs (KaddClub, verified)", "Groups, feeds and leaderboards", "Live token data, testnet swaps"].map((x) => (
-                    <li key={x} className="flex gap-2.5"><Check className="mt-0.5 size-4 shrink-0" />{x}</li>
-                  ))}
-                </ul>
-                <Cta href="/trenches" className="mt-10 self-start">Launch app</Cta>
-              </div>
-              <div data-tilt className="flex flex-col rounded-2xl bg-raised p-7">
-                <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-brand">Coming next</span>
-                <p className="mt-3 text-[40px] font-medium leading-none tracking-[-0.03em]">Soon</p>
-                <ul className="mt-8 grid gap-3 text-[15px]">
-                  {["Mainnet trading on Kuru's order book", "Live Monad token data", "Copy trading with capped permissions", "Installable mobile app"].map((x) => (
-                    <li key={x} className="flex gap-2.5"><Check className="mt-0.5 size-4 shrink-0 text-brand" />{x}</li>
-                  ))}
-                </ul>
-                <Cta href="/groups" className="mt-10 self-start">Start a club</Cta>
-              </div>
+              <nav className="grid grid-cols-2 gap-x-14 gap-y-8 text-[13px] sm:grid-cols-3">
+                {(
+                  [
+                    ["Product", [["Trenches", "/trenches"], ["Perps", "/perps"], ["Leaderboard", "/leaderboard"], ["Groups & clubs", "/groups"], ["Portfolio", "/portfolio"]]],
+                    ["Data", [["Stats", "/stats"], ["Perps risk", "/perps/risk"], ["Compare traders", "/perps/compare"], ["AI agents", "/agents"]]],
+                    ["Built on", [["Monad", "https://monad.xyz"], ["Kuru", "https://www.kuru.io"], ["Perpl", "https://app.perpl.xyz"], ["Nansen", "https://www.nansen.ai"], ["Envio", "https://envio.dev"], ["Mera", "https://github.com/category-labs/mera"]]],
+                  ] as const
+                ).map(([group, links]) => (
+                  <div key={group}>
+                    <h3 className="font-medium">{group}</h3>
+                    <ul className="mt-4 grid gap-2.5 text-muted">
+                      {links.map(([label, href]) => (
+                        <li key={label}>
+                          {href.startsWith("http") ? (
+                            <a href={href} target="_blank" rel="noreferrer" className="hover:text-fg">{label}</a>
+                          ) : (
+                            <Link href={href} className="hover:text-fg">{label}</Link>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </nav>
             </div>
-            <p className="mt-6 text-[14px] text-muted">Testnet only. Contracts are unaudited.</p>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section id="faq" className="scroll-mt-24 px-5 py-24 md:px-10 md:py-32">
-          <div className="mx-auto grid max-w-[1400px] gap-10 md:grid-cols-[1fr_1.6fr]">
-            <h2 data-anim="lines" className="text-[clamp(34px,4vw,52px)] font-medium tracking-[-0.03em]">Questions</h2>
-            <div data-anim="rise">
-              {FAQ.map(([q, a]) => (
-                <details key={q} className="group border-b border-line first:border-t">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-6 text-[18px] font-medium">
-                    {q}
-                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-raised text-muted transition-transform group-open:rotate-45">+</span>
-                  </summary>
-                  <p className="-mt-2 max-w-[60ch] pb-6 leading-relaxed text-muted">{a}</p>
-                </details>
-              ))}
+            <div aria-hidden data-anim="lines" className="mt-16 select-none text-center text-[clamp(96px,24vw,340px)] font-semibold leading-[0.8] tracking-[-0.07em] text-white/[0.06]">
+              kadd
+            </div>
+            <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-line pt-6 text-[12px] text-muted">
+              <span>Monad testnet for practice, mainnet via Kuru and Perpl. Contracts are unaudited.</span>
+              <Link href="/stats" className="hover:text-fg">Contracts & live stats</Link>
             </div>
           </div>
-        </section>
-
-        {/* Final CTA */}
-        <section className="px-5 pb-28 md:px-10 md:pb-40">
-          <div className="mx-auto max-w-[1400px] border-t border-line pt-24 text-center">
-            <h2 data-anim="lines" className="mx-auto text-[clamp(40px,6vw,84px)] font-medium leading-[1.02] tracking-[-0.04em]">
-              <span className="text-faint">You&apos;ve seen the terminal.</span>
-              <br />
-              Now trade it with friends.
-            </h2>
-            <p className="mx-auto mt-6 max-w-[48ch] text-[17px] leading-relaxed text-muted">
-              Sign in with a passkey in one tap, start a group, and invite the first person you&apos;d trust with a trade idea.
-            </p>
-            <div className="mt-10 flex justify-center">
-              <Cta href="/trenches">Launch app</Cta>
-            </div>
-          </div>
-        </section>
+        </footer>
+      </div>
       </Fx>
-
-      {/* Footer */}
-      <footer className="border-t border-line px-5 pb-10 pt-16 md:px-10">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-16">
-          <div className="flex flex-wrap items-start justify-between gap-10">
-            <Live />
-            <nav className="grid grid-cols-2 gap-x-12 gap-y-2 text-[15px] text-muted">
-              <Link href="/trenches" className="hover:text-fg">App</Link>
-              <Link href="/groups" className="hover:text-fg">Clubs</Link>
-              <Link href="/leaderboard" className="hover:text-fg">Leaderboard</Link>
-              <a href={`https://testnet.monadexplorer.com/address/${CLUB_FACTORY}`} target="_blank" rel="noreferrer" className="hover:text-fg">Contract</a>
-            </nav>
-          </div>
-          <div className="flex items-end justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <Logo size={40} />
-              <span className="text-[clamp(48px,9vw,140px)] font-medium leading-none tracking-[-0.06em]">kadd</span>
-            </div>
-            <span className="hidden text-right text-[13px] text-faint sm:block">Built on Monad · Mera<br />Testnet, unaudited</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
