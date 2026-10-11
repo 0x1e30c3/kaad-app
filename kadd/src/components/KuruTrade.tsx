@@ -138,7 +138,7 @@ export default function KuruTrade({ token, symbol }: { token: Address; symbol: s
           <span className="text-muted">Signed by your passkey session on Monad mainnet. A fresh quote is taken right before sending.</span>
           <div className="grid grid-cols-2 gap-1.5">
             <button onClick={() => setReview(false)} disabled={busy} className="h-9 rounded-md border border-line-strong font-semibold hover:bg-hover">Cancel</button>
-            <button onClick={run} disabled={busy} className={`h-9 rounded-md font-semibold text-white inline-flex items-center justify-center gap-1.5 ${buy ? "bg-up" : "bg-down"}`}>
+            <button onClick={run} disabled={busy} className={`h-9 rounded-md font-semibold text-white inline-flex items-center justify-center gap-1.5 ${buy ? "bg-buy-fill" : "bg-sell-fill"}`}>
               {busy ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4 fill-current" />} {busy ? "Swapping…" : "Confirm swap"}
             </button>
           </div>
@@ -147,7 +147,7 @@ export default function KuruTrade({ token, symbol }: { token: Address; symbol: s
         <button
           onClick={() => setReview(true)}
           disabled={!amountIn || !quote || "error" in quote || !enough}
-          className={`h-11 rounded-lg inline-flex items-center justify-center gap-1.5 font-semibold text-[14px] text-white disabled:opacity-40 disabled:cursor-not-allowed ${buy ? "bg-up" : "bg-down"}`}
+          className={`h-11 rounded-lg inline-flex items-center justify-center gap-1.5 font-semibold text-[14px] text-white disabled:opacity-40 disabled:cursor-not-allowed ${buy ? "bg-buy-fill" : "bg-sell-fill"}`}
         >
           Review {buy ? "buy" : "sell"} on mainnet
         </button>
