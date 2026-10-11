@@ -19,7 +19,7 @@ const signed = (n: number) => `${n >= 0 ? "+" : "-"}$${Math.abs(n).toFixed(2)}`;
 const input = "h-10 min-w-0 px-3 rounded-lg bg-raised outline-none border border-transparent focus:border-line-strong tabular-nums text-[15px]";
 const field = `${input} w-full`;
 const seg = (on: boolean, tone?: "up" | "down") =>
-  `h-10 flex-1 rounded-lg text-[14px] font-semibold ${on ? (tone === "up" ? "bg-up text-white" : tone === "down" ? "bg-down text-white" : "bg-fg text-bg") : "bg-raised text-muted"}`;
+  `h-10 flex-1 rounded-lg text-[14px] font-semibold ${on ? (tone === "up" ? "bg-buy-fill text-white" : tone === "down" ? "bg-sell-fill text-white" : "bg-fg text-bg") : "bg-raised text-muted"}`;
 
 /**
  * Perps on Perpl from the passkey account: AUSD in and out, a market ticket, open positions. Testnet is free practice
@@ -75,7 +75,7 @@ export default function PerpsTrade() {
       <div role="tablist" aria-label="Network" className="flex p-1 rounded-xl bg-raised self-start">
         {(["testnet", "mainnet"] as const).map((n) => (
           <button key={n} role="tab" aria-selected={net === n} onClick={() => setNet(n)} className={`h-8 px-4 rounded-lg text-[13px] font-semibold ${net === n ? "bg-panel text-fg shadow-sm" : "text-muted"}`}>
-            {n === "testnet" ? "Practice · testnet" : "Live · mainnet"}
+            {n === "testnet" ? "Practice · testnet" : "Real funds · mainnet"}
           </button>
         ))}
       </div>
@@ -88,7 +88,7 @@ export default function PerpsTrade() {
           <section className={`${card} p-4 gap-3`}>
             <div className="flex items-start gap-4">
               <div className="flex-1">
-                <div className="text-[12px] text-muted">Free to trade on Perpl</div>
+                <div className="text-[12px] text-muted">{net === "testnet" ? "Practice · test AUSD" : "Real funds · mainnet AUSD"} · Available on Perpl</div>
                 <div className="text-[28px] font-semibold tabular-nums tracking-[-0.02em]">{account.data ? `${free.toFixed(2)} AUSD` : "–"}</div>
                 <div className="text-[12px] text-muted tabular-nums">
                   {account.data
@@ -100,8 +100,8 @@ export default function PerpsTrade() {
               </div>
               <button onClick={() => account.reload()} aria-label="Refresh balances" className="size-8 grid place-items-center rounded-md hover:bg-hover text-muted"><RefreshCw className="size-4" /></button>
             </div>
-            <div className="flex gap-2">
-              <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" aria-label="AUSD amount" className={`${input} w-24 flex-none`} />
+            <div className="flex flex-wrap gap-2">
+              <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" aria-label="AUSD amount" className={`${input} w-full flex-none`} />
               <button
                 onClick={() => run("deposit", () => depositAusd(net, Number(amount)))}
                 disabled={!!busy || !(Number(amount) > 0)}
@@ -179,10 +179,10 @@ export default function PerpsTrade() {
             <button
               onClick={() => m && run("open", () => openPerp(net, m, side, size, leverage))}
               disabled={!!busy || !canTrade}
-              className={`h-12 rounded-xl text-white text-[15px] font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 ${side === "long" ? "bg-up" : "bg-down"}`}
+              className={`h-12 rounded-xl text-white text-[15px] font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50 ${side === "long" ? "bg-buy-fill" : "bg-sell-fill"}`}
             >
               {busy === "open" && <Loader2 className="size-4 animate-spin" />}
-              {!acctId ? "Deposit AUSD to trade" : margin > free ? "Not enough AUSD for this margin" : `${side === "long" ? "Long" : "Short"} ${m?.name ?? ""} · ${money(size)} at ${leverage}×`}
+              {net === "testnet" ? "Practice · " : "Real funds · "}{!acctId ? "Deposit AUSD to trade" : margin > free ? "Not enough AUSD for this margin" : `${side === "long" ? "Long" : "Short"} ${m?.name ?? ""} · ${money(size)} at ${leverage}×`}
             </button>
             <p className="text-[11px] text-faint">
               Market order on <a href={PERPL_APP[net]} target="_blank" rel="noreferrer" className="underline">Perpl</a> {net}, filled within 1% of the price shown or not at all. Signed by your passkey, no prompt.
