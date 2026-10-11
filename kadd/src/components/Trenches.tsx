@@ -1,34 +1,36 @@
 "use client";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Activity, Droplet, SlidersHorizontal, Zap } from "lucide-react";
 import { usd, type Risk } from "@/lib/mock";
-import { ageOf, dexName, type MarketToken } from "@/lib/market";
+import { ageOf, dexName, type MarketToken, type MarketSnapshot } from "@/lib/market";
 import { RiskBadge, TokenIcon } from "./ui";
 import CopyAddress from "./CopyAddress";
 import QuickBuy from "./QuickBuy";
 import Onboarding from "./Onboarding";
+import { usePracticeOneClick, setPracticeOneClick } from "@/lib/quickBuyPreference";
 
-type Col = { key: string; title: string; hint: string; tokens: MarketToken[] };
+type Col = { key: string; title: string; hint: string; } & MarketSnapshot;
 
 function Card({ t, amount }: { t: MarketToken; amount: string }) {
   const tx = t.txns.h1;
   return (
-    <div className="group relative flex gap-3 px-3 py-2.5 border-b border-line hover:bg-hover">
+    <div className="group relative grid grid-cols-[44px_minmax(0,1fr)] gap-3 px-3 py-2.5 border-b border-line hover:bg-hover">
       <Link href={`/token/${t.address}`} className="absolute inset-0" aria-label={`Open ${t.symbol}`} />
       <TokenIcon t={t} size={44} />
 
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <div className="flex items-baseline gap-1.5 min-w-0">
-          <span className="font-semibold text-[14px] tracking-[-0.01em]">{t.symbol}</span>
+          <span className="max-w-24 truncate font-semibold text-[14px] tracking-[-0.01em]">{t.symbol}</span>
           <span className="text-muted truncate">{t.name}</span>
         </div>
-        <div className="flex items-center gap-2.5 text-[11px] text-muted">
+        <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-muted">
           <span className="text-up font-medium tabular-nums" suppressHydrationWarning>{ageOf(t.createdAt)}</span>
           <span className="capitalize truncate">{dexName(t.dex)}</span>
           <span className="relative z-10"><CopyAddress address={t.address} /></span>
         </div>
-        <div className="flex items-center gap-2.5 text-[11px] text-muted tabular-nums">
+        <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-muted tabular-nums">
           <RiskBadge risk={t.risk} compact />
           <span className="inline-flex items-center gap-1" title="Liquidity"><Droplet className="size-3" />{usd(t.liq)}</span>
           <span className="inline-flex items-center gap-1" title="Buys / sells in the last hour">
@@ -37,12 +39,12 @@ function Card({ t, amount }: { t: MarketToken; amount: string }) {
         </div>
       </div>
 
-      <div className="flex flex-col items-end justify-between text-[12px] tabular-nums">
-        <div className="text-right leading-tight">
+      <div className="col-span-2 flex items-center justify-between gap-2 text-[12px] tabular-nums">
+        <div className="leading-tight">
           <div><span className="text-faint text-[11px]">MC </span><span className="font-semibold">{usd(t.mc)}</span></div>
           <div><span className="text-faint text-[11px]">Vol 1h </span>{usd(t.vol.h1)}</div>
         </div>
-        <QuickBuy t={t} usd={parseFloat(amount) || 0} label={amount} className="relative z-10 inline-flex items-center gap-1 h-6 px-2 rounded-md bg-raised border border-line text-[11px] font-semibold hover:border-fg/40 hover:bg-hover" />
+        <QuickBuy t={t} usd={parseFloat(amount) || 0} className="relative z-10 inline-flex items-center gap-1 min-h-9 px-2 rounded-md bg-raised border border-line text-[11px] font-semibold hover:border-fg/40 hover:bg-hover" />
       </div>
     </div>
   );
@@ -51,6 +53,8 @@ function Card({ t, amount }: { t: MarketToken; amount: string }) {
 const RISKS: [Risk, string][] = [["safe", "Low"], ["caution", "Caution"], ["danger", "High"]];
 
 function Column({ col, hidden }: { col: Col; hidden: boolean }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const [amount, setAmount] = useState("10");
   const [filterOpen, setFilterOpen] = useState(false);
   const [kw, setKw] = useState("");
@@ -59,7 +63,7 @@ function Column({ col, hidden }: { col: Col; hidden: boolean }) {
   const tokens = col.tokens.filter((t) => risks.includes(t.risk) && (!q || t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)));
   const filtered = tokens.length !== col.tokens.length;
   return (
-    <section className={`${hidden ? "hidden" : "flex"} md:flex flex-1 min-w-0 md:min-w-[340px] flex-col rounded-lg border border-line bg-panel overflow-hidden`}>
+    <section className={`${hidden ? "hidden" : "flex"} xl:flex flex-1 min-w-0 xl:min-w-[340px] flex-col rounded-lg border border-line bg-panel overflow-hidden`}>
       <header className="h-11 shrink-0 flex items-center gap-2 px-3 border-b border-line">
         <h2 className="font-semibold text-[13px]">{col.title}</h2>
         <span className="text-[11px] text-faint tabular-nums">{tokens.length}</span>
@@ -115,25 +119,33 @@ function Column({ col, hidden }: { col: Col; hidden: boolean }) {
           </div>
         </div>
       )}
+      <div role="status" className="px-3 py-2 border-b border-line text-[11px] text-muted flex flex-wrap items-center gap-2">
+        <span>{pending ? "Refreshing…" : col.error ? "Data unavailable" : col.stale ? "Stale · showing last available data" : "Data loaded"}</span>
+        {col.updatedAt !== null && <time dateTime={new Date(col.updatedAt).toISOString()}>Last updated: {new Date(col.updatedAt).toISOString().slice(11, 19)} UTC</time>}
+        <button disabled={pending} onClick={() => startTransition(() => router.refresh())} className="underline disabled:opacity-50">{col.error || col.stale ? "Retry" : "Refresh"}</button>
+      </div>
       <p className="px-3 py-1.5 text-[11px] text-faint border-b border-line">{col.hint}</p>
       <div className="flex-1 overflow-auto">
         {tokens.map((t) => <Card key={t.address} t={t} amount={amount || "0"} />)}
-        {tokens.length === 0 && <p className="p-6 text-center text-muted">{col.tokens.length ? "No tokens match the filter." : "Nothing here right now."}</p>}
+        {!col.error && tokens.length === 0 && <p className="p-6 text-center text-muted">{col.tokens.length ? "No tokens match the filter." : "Nothing here right now."}</p>}
       </div>
     </section>
   );
 }
 
 export default function Trenches({ cols }: { cols: Col[] }) {
+  const oneClick = usePracticeOneClick();
   const [tab, setTab] = useState(cols[0].key);
   return (
     <div className="h-full flex flex-col gap-2 p-2 md:p-3">
-      <p className="flex items-center gap-1.5 text-[11px] text-faint">
-        <span className="inline-flex items-center gap-1 px-1 rounded bg-up/15 text-up font-semibold"><span className="size-1.5 rounded-full bg-up animate-pulse" />LIVE</span>
-        Monad mainnet data, refreshed every 30s. Quick buy trades a testnet mirror of the token with free test USDC.
-      </p>
+      <p className="text-[11px] text-muted">Practice · Quick Buy uses free tUSDC on Monad testnet. Market data: Monad mainnet (GeckoTerminal / CoinGecko), refresh attempted every 30s.</p>
+      <label className="flex items-center gap-2 text-[11px] text-muted">
+        <input type="checkbox" checked={oneClick} onChange={(e) => {
+          setPracticeOneClick(e.target.checked);
+        }} /> Enable one-click practice buys for low-risk tokens (skip review)
+      </label>
       <Onboarding />
-      <div className="md:hidden grid grid-cols-3 p-0.5 rounded-lg bg-raised">
+      <div className="xl:hidden grid grid-cols-3 p-0.5 rounded-lg bg-raised">
         {cols.map((c) => (
           <button
             key={c.key}
