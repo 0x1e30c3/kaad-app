@@ -78,7 +78,7 @@ export function LeaderboardMini({ className = "" }: { className?: string }) {
   return (
     <div className={`rounded-2xl p-3 ${surface} ${className}`}>
       <div className={`mb-2 flex items-center justify-between px-1 text-[11px] font-medium ${muted}`}>
-        <span>Weekly leaderboard</span>
+        <span>Weekly leaderboard · Demo</span>
         <span>PnL</span>
       </div>
       <ol className="grid gap-1.5">
