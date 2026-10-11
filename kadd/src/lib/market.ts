@@ -71,14 +71,19 @@ export class NotFound extends Error {}
 // Last good response per URL: when a provider rate-limits (429) or hiccups, serve slightly stale data instead of an
 // error page. ponytail: per-server-instance memory, unbounded by URL count; fine at hackathon traffic.
 const lastGood = new Map<string, unknown>();
+const fetchedAt = new Map<string, number>();
+type Freshness = { stale: boolean; updatedAt: number | null };
 
 // GeckoTerminal allows ~30 requests/minute per IP. Background readers (copy-trade feeds, sparklines) back off for a
 // minute after any 429, so whatever budget is left goes to the page a user is looking at.
 let backoffUntil = 0;
 
-async function get<T>(url: string, revalidate: number, background = false): Promise<T> {
+async function get<T>(url: string, revalidate: number, background = false, freshness?: Freshness): Promise<T> {
   if (background && Date.now() < backoffUntil) {
-    if (lastGood.has(url)) return lastGood.get(url) as T;
+    if (lastGood.has(url)) {
+      if (freshness) { freshness.stale = true; freshness.updatedAt = Math.min(freshness.updatedAt ?? Infinity, fetchedAt.get(url) ?? 0); }
+      return lastGood.get(url) as T;
+    }
     throw new Error("Market data unavailable (backing off after a rate limit)");
   }
   const headers: Record<string, string> = { accept: "application/json" };
@@ -87,14 +92,20 @@ async function get<T>(url: string, revalidate: number, background = false): Prom
   if (res?.status === 404) throw new NotFound(url);
   if (res?.status === 429) backoffUntil = Date.now() + 60_000;
   if (!res?.ok) {
-    if (lastGood.has(url)) return lastGood.get(url) as T;
+    if (lastGood.has(url)) {
+      if (freshness) { freshness.stale = true; freshness.updatedAt = Math.min(freshness.updatedAt ?? Infinity, fetchedAt.get(url) ?? 0); }
+      return lastGood.get(url) as T;
+    }
     throw new Error(`Market data unavailable (${new URL(url).hostname} ${res?.status ?? "offline"})`);
   }
   const json = await res.json();
+  const updated = Date.parse(res.headers.get("date") ?? "") || Date.now();
+  fetchedAt.set(url, updated);
+  if (freshness) freshness.updatedAt = Math.min(freshness.updatedAt ?? Infinity, updated);
   lastGood.set(url, json);
   return json;
 }
-const gt = <T,>(path: string, revalidate = 30, background = false) => get<T>(GT + path, revalidate, background);
+const gt = <T,>(path: string, revalidate = 30, background = false, freshness?: Freshness) => get<T>(GT + path, revalidate, background, freshness);
 const ds = <T,>(path: string, revalidate = 30) => get<T>(DS + path, revalidate);
 
 const n = (v: string | number | null | undefined) => Number(v) || 0;
@@ -131,8 +142,8 @@ function toToken(p: Pool, base: TokenAttrs): MarketToken {
   };
 }
 
-async function poolList(path: string, revalidate = 30): Promise<MarketToken[]> {
-  const j = await gt<{ data: Pool[]; included?: Included[] }>(`${path}${path.includes("?") ? "&" : "?"}include=base_token`, revalidate);
+async function poolList(path: string, revalidate = 30, freshness?: Freshness): Promise<MarketToken[]> {
+  const j = await gt<{ data: Pool[]; included?: Included[] }>(`${path}${path.includes("?") ? "&" : "?"}include=base_token`, revalidate, false, freshness);
   const tokens = new Map((j.included ?? []).map((i) => [i.id, i.attributes]));
   const seen = new Set<string>();
   return j.data.flatMap((p) => {
@@ -144,13 +155,27 @@ async function poolList(path: string, revalidate = 30): Promise<MarketToken[]> {
 }
 
 /** Two pages merged and de-duplicated: after skipping money assets one page can get thin. */
-async function twoPages(path: string) {
-  const pages = await Promise.all([1, 2].map((page) => poolList(`${path}${path.includes("?") ? "&" : "?"}page=${page}`)));
+async function twoPages(path: string, freshness?: Freshness) {
+  const pages = await Promise.all([1, 2].map((page) => poolList(`${path}${path.includes("?") ? "&" : "?"}page=${page}`, 30, freshness)));
   return pages.flat().filter((t, i, all) => all.findIndex((x) => x.address === t.address) === i);
 }
 
 /** For prerendered list pages: an empty list beats failing the build/revalidation when the provider rate-limits. */
 export const orEmpty = (p: Promise<MarketToken[]>) => p.catch((): MarketToken[] => []);
+
+export type MarketSnapshot = Freshness & { tokens: MarketToken[]; error: boolean };
+/** Carry fallback status with each result, never in shared request-global state. */
+export async function trenchesSnapshot(kind: "new" | "hot" | "top"): Promise<MarketSnapshot> {
+  const freshness: Freshness = { stale: false, updatedAt: null };
+  try {
+    const tokens = kind === "new"
+      ? await poolList(`/networks/${NET}/new_pools`, 30, freshness)
+      : await twoPages(kind === "hot" ? `/networks/${NET}/trending_pools?duration=1h` : `/networks/${NET}/pools?sort=h24_volume_usd_desc`, freshness);
+    return { tokens, ...freshness, stale: freshness.stale || (freshness.updatedAt !== null && Date.now() - freshness.updatedAt > 90_000), error: false };
+  } catch {
+    return { tokens: [], stale: false, updatedAt: null, error: true };
+  }
+}
 
 export const newPairs = () => poolList(`/networks/${NET}/new_pools`);
 export const hot = () => twoPages(`/networks/${NET}/trending_pools?duration=1h`);
