@@ -38,15 +38,15 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
       <AutoRefresh />
       <div className="flex-1 min-w-0 flex flex-col lg:overflow-auto">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-3 py-3 border-b border-line bg-panel">
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap min-w-0 max-w-full items-center gap-2.5">
             <Link href="/trenches" aria-label="Back" className="grid place-items-center size-7 rounded-md text-muted hover:text-fg hover:bg-hover">
               <ArrowLeft className="size-4" />
             </Link>
             <TokenIcon t={t} size={40} />
-            <div>
-              <div className="flex items-baseline gap-1.5">
-                <h1 className="font-semibold text-[16px] tracking-[-0.01em]">{t.symbol}</h1>
-                <span className="text-muted">{t.name}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap min-w-0 items-baseline gap-1.5">
+                <h1 title={t.symbol} className="max-w-full break-all font-semibold text-[16px] tracking-[-0.01em]">{t.symbol}</h1>
+                <span title={t.name} className="max-w-full break-words text-muted">{t.name}</span>
               </div>
               <div className="flex items-center gap-2 text-[11px]">
                 <span className="text-up font-medium" suppressHydrationWarning>{ageOf(t.createdAt)}</span>
@@ -56,8 +56,9 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
             <TokenActions t={token} />
           </div>
           <div className="flex flex-col">
+            <span className="text-[11px] text-muted">Market cap / FDV</span>
             <span className="text-[22px] font-semibold tabular-nums tracking-[-0.02em] leading-none">{usd(t.mc)}</span>
-            <Pct v={t.change.h24} className="text-[12px] font-medium" />
+            <span className="text-[12px] text-muted">Price change 24h <Pct v={t.change.h24} className="font-medium" /></span>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             <Stat label="Price">{usd(t.price)}</Stat>
@@ -95,9 +96,9 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
       {/* Mobile: the trade panel sits below the fold, so keep a shortcut pinned above the bottom nav. */}
       <a
         href="#trade"
-        className="lg:hidden fixed inset-x-3 bottom-[68px] z-20 h-11 rounded-lg bg-fg text-bg grid place-items-center font-semibold shadow-lg"
+        className="lg:hidden fixed inset-x-3 bottom-[calc(var(--mobile-nav-height)+8px)] z-20 h-11 rounded-lg bg-fg text-bg grid place-items-center font-semibold shadow-lg"
       >
-        Trade {t.symbol}
+        <span className="max-w-full truncate px-3">Trade {t.symbol}</span>
       </a>
     </div>
   );
