@@ -108,7 +108,7 @@ export default function StrategyForm({ t, kind, held }: { t: MarketToken; kind: 
       )}
       {tooSmall && kind !== "dca" && <p className="text-warn">This token&apos;s price is too small for price triggers on testnet.</p>}
 
-      <button onClick={submit} disabled={busy || (!!user && invalid)} className={`h-11 rounded-lg inline-flex items-center justify-center gap-1.5 font-semibold text-[14px] text-white disabled:opacity-40 ${sell ? "bg-down" : "bg-up"}`}>
+      <button onClick={submit} disabled={busy || (!!user && invalid)} className={`h-11 rounded-lg inline-flex items-center justify-center gap-1.5 font-semibold text-[14px] text-white disabled:opacity-40 ${sell ? "bg-sell-fill" : "bg-buy-fill"}`}>
         {busy ? <Loader2 className="size-4 animate-spin" /> : <Workflow className="size-4" />}
         {!user ? "Sign in to trade" : busy ? "Confirming onchain…" : `Place ${KIND_LABEL[kind].toLowerCase()}`}
       </button>

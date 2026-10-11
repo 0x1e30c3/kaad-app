@@ -60,7 +60,7 @@ export default function Onboarding() {
         <ol className="grid gap-px border-t border-line bg-line sm:grid-cols-5">
           {steps.map((s, i) => (
             <li key={s.title} className={`flex gap-2.5 p-3 bg-panel text-[12px] ${i === next ? "" : "opacity-80"}`}>
-              <span className={`grid place-items-center size-5 shrink-0 rounded-full text-[10px] font-bold ${s.done ? "bg-up text-white" : i === next ? "bg-fg text-bg" : "bg-raised text-muted"}`}>
+              <span className={`grid place-items-center size-5 shrink-0 rounded-full text-[10px] font-bold ${s.done ? "bg-buy-fill text-white" : i === next ? "bg-fg text-bg" : "bg-raised text-muted"}`}>
                 {s.done ? <Check className="size-3" /> : i + 1}
               </span>
               <span className="min-w-0">

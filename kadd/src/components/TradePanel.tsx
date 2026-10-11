@@ -27,10 +27,11 @@ export default function TradePanel({ t }: { t: MarketToken & { analysis?: RiskAn
             Practice · testnet
           </button>
           <button role="tab" aria-selected={net === "mainnet"} onClick={() => setNet("mainnet")} className={`h-8 rounded-md ${net === "mainnet" ? "bg-panel shadow-sm text-fg" : "text-muted hover:text-fg"}`}>
-            Live · Kuru
+            Real funds · Kuru
           </button>
         </div>
       </div>
+      <p className="px-3 pt-2 text-[11px] text-muted">{net === "testnet" ? "Practice · free test tokens on Monad testnet." : "Real funds · execution on Monad mainnet."} Chart and market data: Monad mainnet.</p>
       {net === "testnet" ? <TestnetTrade t={t} /> : <KuruTrade token={t.address as `0x${string}`} symbol={t.symbol} />}
     </div>
   );
@@ -132,7 +133,7 @@ function TestnetTrade({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-muted">
-        <span>Balance</span>
+        <span>Practice balance · testnet</span>
         <span className="tabular-nums text-fg">
           {!user ? "–" : !wallet ? "…" : buy ? `${num(wallet.usdc)} tUSDC` : `${num(held)} ${t.symbol}`}
         </span>
@@ -183,15 +184,16 @@ function TestnetTrade({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
           <p className="text-muted">{t.analysis.factors.find((f) => f.severity !== "good")?.detail}</p>
           <div className="grid grid-cols-2 gap-1.5">
             <button onClick={() => setWarned(false)} className="h-8 rounded-md border border-line-strong font-semibold hover:bg-hover">Cancel</button>
-            <button onClick={submit} className="h-8 rounded-md bg-down text-white font-semibold">Buy anyway</button>
+            <button onClick={submit} className="h-8 rounded-md bg-sell-fill text-white font-semibold">Buy anyway</button>
           </div>
         </div>
       )}
 
+      <p className="text-[11px] text-muted">Practice order · Monad testnet · no real monetary value</p>
       <button
         onClick={submit}
         disabled={!VENUE_READY || (!!user && !n) || !!busy || warned}
-        className={`h-11 rounded-lg inline-flex items-center justify-center gap-1.5 font-semibold text-[14px] text-white disabled:opacity-40 disabled:cursor-not-allowed ${buy ? "bg-up" : "bg-down"}`}
+        className={`h-11 rounded-lg inline-flex items-center justify-center gap-1.5 font-semibold text-[14px] text-white disabled:opacity-40 disabled:cursor-not-allowed ${buy ? "bg-buy-fill" : "bg-sell-fill"}`}
       >
         {busy === "trade" ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4 fill-current" />}
         {!user ? "Sign in to trade" : busy === "trade" ? "Confirming onchain…" : buy ? `Buy ${t.symbol}` : `Sell ${t.symbol}`}

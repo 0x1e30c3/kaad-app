@@ -153,7 +153,7 @@ function Terminal() {
             </div>
             <button
               onClick={() => setMine((m) => [{ id: Date.now(), token: sel.symbol, side, usd: amt }, ...m].slice(0, 2))}
-              className={`mt-2.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg font-semibold text-white active:scale-[0.98] ${buy ? "bg-up" : "bg-down"}`}
+              className={`mt-2.5 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg font-semibold text-white active:scale-[0.98] ${buy ? "bg-buy-fill" : "bg-sell-fill"}`}
             >
               <Zap className="size-3.5 fill-current" /> {buy ? "Buy" : "Sell"} {sel.symbol}
             </button>

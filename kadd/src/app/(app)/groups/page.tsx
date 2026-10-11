@@ -145,7 +145,7 @@ export default function GroupsPage() {
 
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-[15px] font-semibold">Groups</h2>
+            <h2 className="text-[15px] font-semibold">Groups <span className="text-[11px] text-muted">Demo</span></h2>
             <span className="text-[13px] text-faint tabular-nums">{rows.length}</span>
             <div role="tablist" aria-label="Filter groups" className="ml-auto flex p-0.5 rounded-md bg-raised text-[12px] font-medium">
               {(["all", "joined"] as const).map((f) => (
@@ -155,6 +155,7 @@ export default function GroupsPage() {
               ))}
             </div>
           </div>
+          <p className="mb-3 text-[11px] text-muted">Demo group feeds and PnL — illustrative performance, not actual returns.</p>
           {rows.length === 0 ? (
             <div className="rounded-xl border border-line bg-panel">
               <PanelEmpty>
