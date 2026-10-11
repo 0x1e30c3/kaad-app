@@ -14,7 +14,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       <StrategyKeeper />
       <GasDrip />
       <ActivityWatcher />
-      <main className="flex-1 min-h-0 overflow-auto pb-16 md:pb-0">{children}</main>
+      <main className="flex-1 min-h-0 overflow-auto pb-[var(--mobile-nav-height)]">{children}</main>
       <StatusBar />
     </div>
   );
