@@ -2,15 +2,15 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Bot, CandlestickChart, Flame, Layers, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
+import { BarChart3, Bot, CandlestickChart, Flame, Layers, Menu, Trophy, Users, Wallet, type LucideIcon } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import Search from "./Search";
 import Account from "./Account";
 import { Logo } from "./ui";
 
-// [href, label, icon, keyboard shortcut, shows a live dot]
-const NAV: [string, string, LucideIcon, string, boolean?][] = [
-  ["/trenches", "Trenches", Layers, "1", true],
+// [href, label, icon, keyboard shortcut]
+const NAV: [string, string, LucideIcon, string][] = [
+  ["/trenches", "Trenches", Layers, "1"],
   ["/perps", "Perps", CandlestickChart, "2"],
   ["/trending", "Trending", Flame, "3"],
   ["/groups", "Groups & Clubs", Users, "4"],
@@ -19,14 +19,14 @@ const NAV: [string, string, LucideIcon, string, boolean?][] = [
   ["/stats", "Stats", BarChart3, "7"],
   ["/agents", "AI Agents", Bot, "8"],
 ];
-// Trending, Stats and AI Agents are reachable from other pages on phones.
-const MOBILE = NAV.filter((n) => ["/trenches", "/perps", "/groups", "/leaderboard", "/portfolio"].includes(n[0]));
+// Secondary destinations stay available through More at every viewport.
+const MOBILE = NAV.filter((n) => ["/trenches", "/perps", "/groups", "/portfolio"].includes(n[0]));
 const SHORT: Record<string, string> = { "/groups": "Groups", "/agents": "Agents" }; // label where space is tight
 
 const isActive = (path: string, href: string) =>
   href === "/trenches" ? path.startsWith("/trenches") || path.startsWith("/token") : href === "/groups" ? path.startsWith("/groups") || path.startsWith("/clubs") : path.startsWith(href);
 
-/** Number keys 1–7 jump between sections, unless the user is typing. */
+/** Number keys 1–8 jump between sections, unless the user is typing. */
 function useShortcuts() {
   const router = useRouter();
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function Header() {
           <span className="font-semibold text-[15px] tracking-[-0.02em]">kadd</span>
         </Link>
         <nav aria-label="Main" className="hidden md:flex items-stretch gap-0.5 lg:gap-1">
-          {NAV.map(([href, label, Icon, key, live]) => {
+          {NAV.filter((n) => ["/trenches", "/perps", "/trending"].includes(n[0])).map(([href, label, Icon, key]) => {
             const on = isActive(path, href);
             return (
               <Link
@@ -66,29 +66,23 @@ export default function Header() {
                 <Icon className="relative size-4" />
                 <span className="relative hidden lg:inline 2xl:hidden whitespace-nowrap">{SHORT[href] ?? label}</span>
                 <span className="relative hidden 2xl:inline whitespace-nowrap">{label}</span>
-                {live && <span className="relative size-1.5 rounded-full bg-up animate-pulse" title="Live data" />}
+
                 {on && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-fg" />}
               </Link>
             );
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto min-w-0 flex items-center gap-1.5">
           <Search />
-          <span
-            title="Your account and Clubs run on Monad testnet. Token prices and charts are live Monad mainnet data."
-            className="hidden 2xl:flex items-center gap-1.5 h-8 px-2 text-[12px] text-muted cursor-help whitespace-nowrap"
-          >
-            <span className="size-1.5 rounded-full bg-[#836ef9]" />
-            Monad testnet
-          </span>
+          <div className="hidden md:block"><MoreNav path={path} /></div>
           <ThemeToggle />
           <Account />
         </div>
       </header>
 
-      <nav aria-label="Main" className="md:hidden fixed bottom-0 inset-x-0 z-20 grid grid-cols-5 border-t border-line bg-panel/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
-        {MOBILE.map(([href, label, Icon, , live]) => {
+      <nav aria-label="Main" className="md:hidden fixed bottom-0 inset-x-0 z-20 grid grid-cols-5 border-t border-line bg-panel/95 backdrop-blur h-[var(--mobile-nav-height)] pb-[env(safe-area-inset-bottom)]">
+        {MOBILE.map(([href, label, Icon]) => {
           const on = isActive(path, href);
           return (
             <Link
@@ -99,13 +93,31 @@ export default function Header() {
             >
               <span className={`relative grid place-items-center h-7 w-12 rounded-full transition-colors ${on ? "bg-raised" : ""}`}>
                 <Icon className="size-[18px]" />
-                {live && <span className="absolute top-1 right-3 size-1.5 rounded-full bg-up" />}
+
               </span>
               {SHORT[href] ?? label}
             </Link>
           );
         })}
+        <MoreNav path={path} mobile />
       </nav>
     </>
+  );
+}
+
+function MoreNav({ path, mobile = false }: { path: string; mobile?: boolean }) {
+  return (
+    <details className="relative" onKeyDown={(e) => {
+      if (e.key === "Escape") { e.currentTarget.open = false; e.currentTarget.querySelector("summary")?.focus(); }
+    }} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.open = false; }}>
+      <summary className={`cursor-pointer list-none flex items-center justify-center gap-1 text-muted rounded-md hover:bg-hover ${mobile ? "flex-col h-[60px] text-[10px]" : "h-8 px-2 text-[12px]"}`}>
+        <Menu className="size-4" /> More
+      </summary>
+      <nav aria-label="All sections" className={`absolute right-0 z-40 w-56 max-h-[60dvh] overflow-auto rounded-lg border border-line bg-panel p-1 shadow-xl ${mobile ? "bottom-full mb-2" : "top-full mt-2"}`}>
+        {NAV.map(([href, label, Icon]) => <Link key={href} href={href} aria-current={isActive(path, href) ? "page" : undefined}
+          onClick={(e) => { const d = e.currentTarget.closest("details"); if (d) d.open = false; }}
+          className={`flex items-center gap-2 min-h-11 px-3 rounded-md hover:bg-hover ${isActive(path, href) ? "bg-raised font-semibold" : "text-muted"}`}><Icon className="size-4" />{label}</Link>)}
+      </nav>
+    </details>
   );
 }
