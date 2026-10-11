@@ -3,6 +3,10 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
+  --mobile-nav-height: calc(60px + env(safe-area-inset-bottom, 0px));
+  --mobile-trade-height: 52px;
+  --buy-fill: #087443;
+  --sell-fill: #b62038;
   --bg: #f5f6f8;
   --panel: #ffffff;
   --raised: #f0f2f4;
@@ -11,7 +15,7 @@
   --line-strong: #d3d8de;
   --fg: #0e1013;
   --muted: #5a626d;
-  --faint: #8b929c;
+  --faint: #626b77;
   --up: #0c9a57;
   --down: #d62f47;
   --warn: #b26b00;
@@ -29,7 +33,7 @@
   --line-strong: #2c3138;
   --fg: #eceef1;
   --muted: #9aa1ab;
-  --faint: #6a717b;
+  --faint: #9aa1ab;
   --up: #2ccf7f;
   --down: #f2475d;
   --warn: #f0a93a;
@@ -48,6 +52,8 @@
   --color-fg: var(--fg);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
+  --color-buy-fill: var(--buy-fill);
+  --color-sell-fill: var(--sell-fill);
   --color-up: var(--up);
   --color-down: var(--down);
   --color-warn: var(--warn);
@@ -129,7 +135,7 @@ input:focus-visible {
   --line: #e7e7e9;
   --fg: #0a0a0a;
   --muted: #5f6066;
-  --faint: #a1a1a8;
+  --faint: #686870;
 }
 /* Sections that stay dark in both themes (features band, CTA, footer): widgets inside follow these tokens. */
 .landing .on-dark,
@@ -141,7 +147,7 @@ input:focus-visible {
   --line: #26262a;
   --fg: #f2f2f3;
   --muted: #9b9ba3;
-  --faint: #5c5c63;
+  --faint: #a0a0aa;
 }
 
 /* Landing spotlight: a soft light under the pointer (position from Fx's data-spotlight). */
@@ -163,3 +169,6 @@ input:focus-visible {
 .landing .spotlight:hover::before {
   opacity: 1;
 }
+
+@media (min-width: 768px) { :root { --mobile-nav-height: 0px; } }
+@media (min-width: 1024px) { :root { --mobile-trade-height: 0px; } }
