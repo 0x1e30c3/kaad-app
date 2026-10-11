@@ -181,7 +181,7 @@ function CaptainPanel({ club, run, busy }: { club: Club; run: ReturnType<typeof 
       <button
         disabled={!amountIn || !shownQuote || !!busy}
         onClick={() => run("trade", () => trade(club.address, market, isBuy, amountIn, 100), `${isBuy ? "Bought" : "Sold"} ${market.symbol}`).then((ok) => ok && setAmount(""))}
-        className={`h-10 rounded-md font-semibold text-white inline-flex items-center justify-center gap-2 disabled:opacity-40 ${isBuy ? "bg-up" : "bg-down"}`}
+        className={`h-10 rounded-md font-semibold text-white inline-flex items-center justify-center gap-2 disabled:opacity-40 ${isBuy ? "bg-buy-fill" : "bg-sell-fill"}`}
       >
         {busy === "trade" && <Loader2 className="size-4 animate-spin" />}
         Execute onchain · 1% slippage
