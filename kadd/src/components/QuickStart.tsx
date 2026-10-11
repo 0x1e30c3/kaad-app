@@ -32,7 +32,7 @@ function Step({ n, current, title, children }: { n: number; current: number; tit
   const state = current > n ? "done" : current === n ? "now" : "next";
   return (
     <li className={`grid grid-cols-[32px_1fr] gap-3 ${state === "next" ? "opacity-50" : ""}`}>
-      <span className={`grid place-items-center size-8 rounded-full text-[13px] font-semibold ${state === "done" ? "bg-up text-white" : state === "now" ? "bg-fg text-bg" : "bg-raised text-muted"}`}>
+      <span className={`grid place-items-center size-8 rounded-full text-[13px] font-semibold ${state === "done" ? "bg-buy-fill text-white" : state === "now" ? "bg-fg text-bg" : "bg-raised text-muted"}`}>
         {state === "done" ? <Check className="size-4" /> : n}
       </span>
       <div className="min-w-0 flex flex-col gap-2.5 pt-1">
@@ -156,7 +156,7 @@ export default function QuickStart({ candidates }: { candidates: Candidate[] }) 
                   );
                 })}
               </div>
-              <button onClick={copy} disabled={!pick || !!busy} className="self-start h-11 px-5 inline-flex items-center gap-2 rounded-lg bg-up text-white text-[14px] font-semibold disabled:opacity-50">
+              <button onClick={copy} disabled={!pick || !!busy} className="self-start h-11 px-5 inline-flex items-center gap-2 rounded-lg bg-buy-fill text-white text-[14px] font-semibold disabled:opacity-50">
                 {busy === "copy" ? <Loader2 className="size-4 animate-spin" /> : null}
                 {busy === "copy" ? "Confirming onchain…" : pick ? `Copy: buy $${COPY_USD} of ${pick.lastBuy.token.symbol}` : "Pick a trader"}
               </button>
