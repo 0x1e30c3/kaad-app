@@ -1,13 +1,9 @@
 import { ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 import type { Risk } from "@/lib/mock";
 
-export function Logo({ size = 22 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
-      <rect width="24" height="24" rx="6" fill="var(--brand-fill)" />
-      <path d="M8 6v12M8 12l7-6M10.5 10l5 8" stroke="#0e1013" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </svg>
-  );
+/** The Kaad mark, drawn from /logo/mark.png and tinted by the surrounding text colour. */
+export function Logo({ size = 22, className = "" }: { size?: number; className?: string }) {
+  return <span aria-hidden className={`logo-mark ${className}`} style={{ width: size, height: size }} />;
 }
 
 export { default as TokenIcon } from "./TokenIcon";

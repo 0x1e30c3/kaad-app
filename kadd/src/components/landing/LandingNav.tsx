@@ -39,9 +39,8 @@ export default function LandingNav() {
   return (
     <header ref={ref} className="fixed inset-x-0 top-0 z-50 transition-colors duration-300 [&.is-scrolled]:bg-bg/80 [&.is-scrolled]:backdrop-blur-md [&.is-scrolled]:shadow-[0_1px_0_var(--line)]">
       <nav className="mx-auto flex h-16 max-w-[1280px] items-center justify-between md:grid md:grid-cols-[1fr_auto_1fr] px-5 md:px-8">
-        <Link href="/" className="flex items-center gap-2 justify-self-start">
-          <Logo size={24} />
-          <span className="text-[16px] font-semibold tracking-[-0.02em]">kadd</span>
+        <Link href="/" aria-label="Kadd home" className="flex items-center justify-self-start">
+          <Logo size={26} />
         </Link>
         <div className="hidden items-center gap-1 md:flex">
           {LINKS.map(([href, label]) => (

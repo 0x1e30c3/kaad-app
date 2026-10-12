@@ -321,9 +321,8 @@ export default async function Landing() {
           <div className="mx-auto max-w-[1180px]">
             <div className="flex flex-wrap justify-between gap-12">
               <div>
-                <Link href="/" className="flex items-center gap-2">
-                  <Logo size={24} />
-                  <span className="text-[16px] font-semibold tracking-[-0.02em]">kadd</span>
+                <Link href="/" aria-label="Kadd home" className="flex items-center">
+                  <Logo size={26} />
                 </Link>
                 <p className="mt-5 max-w-[22ch] text-[18px] tracking-[-0.01em]">Follow Monad&apos;s smart money, safely.</p>
                 <div className="mt-5 text-muted [&>div]:flex-wrap [&>div]:gap-x-5 [&>div]:gap-y-1 [&>div]:text-[13px]">

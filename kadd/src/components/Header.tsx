@@ -47,9 +47,8 @@ export default function Header() {
   return (
     <>
       <header className="h-12 shrink-0 flex items-stretch gap-2 px-3 border-b border-line bg-panel">
-        <Link href="/trenches" aria-label="Kadd home" className="flex items-center gap-2 pr-3 mr-1">
-          <Logo />
-          <span className="font-semibold text-[15px] tracking-[-0.02em]">kadd</span>
+        <Link href="/trenches" aria-label="Kadd home" className="flex items-center">
+          <Logo size={24} />
         </Link>
         <nav aria-label="Main" className="hidden md:flex items-stretch gap-0.5 lg:gap-1">
           {NAV.filter((n) => ["/trenches", "/perps", "/trending"].includes(n[0])).map(([href, label, Icon, key]) => {
