@@ -1,5 +1,6 @@
 // Building blocks for the 1200×630 share images (Satori: flexbox only, inline styles).
 import { blockie } from "./blockie";
+import { ogMark } from "./og-mark";
 
 export const size = { width: 1200, height: 630 };
 export const UP = "#22c55e";
@@ -24,8 +25,12 @@ export function Frame({ children, footer }: { children: React.ReactNode; footer:
   return (
     <div style={{ ...size, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 64, background: "#0a0b0d", color: "#f5f6f8", fontSize: 32 }}>
       {children}
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 26, color: "#8a8f98" }}>
-        <span style={{ color: "#f5f6f8", fontWeight: 700 }}>Kadd · social trading on Monad</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 26, color: "#8a8f98" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 14, color: "#f5f6f8", fontWeight: 700 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- inline data URL; next/image can't be used inside Satori */}
+          <img alt="" width={40} height={40} src={ogMark} />
+          Kadd · social trading on Monad
+        </span>
         <span>{footer}</span>
       </div>
     </div>

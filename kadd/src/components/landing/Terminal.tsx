@@ -58,7 +58,7 @@ function Terminal() {
     <div className="overflow-hidden rounded-2xl bg-panel text-left text-[13px] shadow-[0_30px_80px_rgb(0_0_0/0.08)] ring-1 ring-line">
       {/* App bar */}
       <div className="flex h-12 items-center gap-3 border-b border-line px-3">
-        <span className="flex items-center gap-2 font-semibold"><Logo size={22} /> kadd</span>
+        <span className="flex items-center gap-2 font-semibold"><Logo size={22} /></span>
         <span className="ml-3 hidden h-8 w-64 items-center gap-2 rounded-lg bg-raised px-2.5 text-muted md:flex">
           <Search className="size-3.5" /> Search token or address
           <kbd className="ml-auto rounded bg-panel px-1.5 text-[11px] ring-1 ring-line">/</kbd>
