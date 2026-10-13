@@ -97,7 +97,7 @@ function TestnetTrade({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
   const modeTabs = (
     <div role="tablist" aria-label="Order type" className="flex gap-1 text-[12px] font-medium">
       {modes.map(([k, label]) => (
-        <button key={k} role="tab" aria-selected={mode === k} onClick={() => setMode(k)} className={`h-7 px-2.5 rounded-md ${mode === k ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}>
+        <button key={k} role="tab" aria-selected={mode === k} onClick={() => setMode(k)} className={`min-h-11 md:min-h-7 px-2.5 rounded-md ${mode === k ? "bg-raised text-fg" : "text-muted hover:text-fg"}`}>
           {label}
         </button>
       ))}
@@ -158,7 +158,7 @@ function TestnetTrade({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
           <button
             key={p}
             onClick={() => setAmount(p)}
-            className={`h-7 rounded-md border text-[12px] font-medium tabular-nums ${amount === p ? "border-fg/50 text-fg" : "border-line text-muted hover:text-fg hover:border-line-strong"}`}
+            className={`min-h-11 md:min-h-7 rounded-md border text-[12px] font-medium tabular-nums ${amount === p ? "border-fg/50 text-fg" : "border-line text-muted hover:text-fg hover:border-line-strong"}`}
           >
             {buy ? p : `${p}%`}
           </button>

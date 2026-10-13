@@ -49,21 +49,21 @@ export default function TokenChart({ pool, token, supply }: { pool: string; toke
 
   const scale = mode === "mc" && supply > 0 ? supply : 1;
   const candles = data?.candles.map((c) => ({ ...c, open: c.open * scale, high: c.high * scale, low: c.low * scale, close: c.close * scale })) ?? [];
-  const seg = (on: boolean) => `h-6 px-2 rounded text-[12px] font-medium tabular-nums ${on ? "bg-panel text-fg shadow-sm" : "text-muted hover:text-fg"}`;
+  const seg = (on: boolean) => `min-h-11 md:min-h-6 px-2 rounded text-[12px] font-medium tabular-nums ${on ? "bg-panel text-fg shadow-sm" : "text-muted hover:text-fg"}`;
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex flex-wrap items-center gap-2 px-2 pb-1.5">
-        <div role="tablist" aria-label="Timeframe" className="flex p-0.5 rounded-md bg-raised">
+        <div role="group" aria-label="Timeframe" className="flex flex-wrap p-0.5 rounded-md bg-raised">
           {TFS.map((t) => (
-            <button key={t} role="tab" aria-selected={tf === t} onClick={() => { if (t !== tf) { setTf(t); setState("loading"); } }} className={seg(tf === t)}>
+            <button key={t} aria-pressed={tf === t} onClick={() => { if (t !== tf) { setTf(t); setState("loading"); } }} className={seg(tf === t)}>
               {t === "auto" && tf === "auto" && data ? `Auto · ${LABEL[data.tf]}` : LABEL[t]}
             </button>
           ))}
         </div>
-        <div role="tablist" aria-label="Chart value" className="flex p-0.5 rounded-md bg-raised">
-          <button role="tab" aria-selected={mode === "mc"} onClick={() => setMode("mc")} className={seg(mode === "mc")}>MCap</button>
-          <button role="tab" aria-selected={mode === "price"} onClick={() => setMode("price")} className={seg(mode === "price")}>Price</button>
+        <div role="group" aria-label="Chart value" className="flex flex-wrap p-0.5 rounded-md bg-raised">
+          <button aria-pressed={mode === "mc"} onClick={() => setMode("mc")} className={seg(mode === "mc")}>MCap</button>
+          <button aria-pressed={mode === "price"} onClick={() => setMode("price")} className={seg(mode === "price")}>Price</button>
         </div>
         {state === "loading" && data && <Loader2 className="size-3.5 animate-spin text-muted" />}
         {data && (
@@ -82,7 +82,7 @@ export default function TokenChart({ pool, token, supply }: { pool: string; toke
           <div className="absolute inset-0 grid place-items-center px-6 text-center text-[13px] text-muted">
             <div className="flex flex-col items-center gap-2">
               Chart data is briefly unavailable.
-              <button onClick={() => { setState("loading"); setRetry((n) => n + 1); }} className="h-8 px-3 rounded-lg border border-line-strong text-[12px] font-semibold text-fg hover:bg-hover">Try again</button>
+              <button onClick={() => { setState("loading"); setRetry((n) => n + 1); }} className="min-h-11 md:min-h-8 px-3 rounded-lg border border-line-strong text-[12px] font-semibold text-fg hover:bg-hover">Try again</button>
             </div>
           </div>
         ) : !candles.length ? (

@@ -1,11 +1,12 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { CircleAlert, CircleCheck, Fingerprint, KeyRound, Loader2, X } from "lucide-react";
 import { login, openLogin, useStore } from "@/lib/store";
 import { createAccount, passkeyError, unlock } from "@/lib/wallet";
 
 function LoginModal() {
   const { loginOpen, user } = useStore();
+  const id = useId();
   const ref = useRef<HTMLDialogElement>(null);
   const [busy, setBusy] = useState<null | "new" | "existing">(null);
   const [error, setError] = useState("");
@@ -34,6 +35,8 @@ function LoginModal() {
   return (
     <dialog
       ref={ref}
+      aria-labelledby={`${id}-title`}
+      aria-describedby={`${id}-description`}
       onClose={() => (openLogin(false), setError(""))}
       onClick={(e) => e.target === ref.current && openLogin(false)}
       className="m-auto w-[min(400px,calc(100vw-32px))] rounded-xl border border-line bg-panel text-fg p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
@@ -43,13 +46,13 @@ function LoginModal() {
           <div className="grid place-items-center size-11 rounded-xl bg-raised">
             <Fingerprint className="size-6" />
           </div>
-          <button onClick={() => openLogin(false)} aria-label="Close" className="grid place-items-center size-8 rounded-md text-muted hover:text-fg hover:bg-hover">
+          <button onClick={() => openLogin(false)} aria-label="Close" className="grid place-items-center size-11 md:size-8 rounded-md text-muted hover:text-fg hover:bg-hover">
             <X className="size-4" />
           </button>
         </div>
         <div className="flex flex-col gap-1.5">
-          <h2 className="text-[18px] font-semibold tracking-[-0.02em]">{returning ? "Unlock your account" : "Sign in to Kadd"}</h2>
-          <p className="text-muted text-[13px] leading-relaxed">
+          <h2 id={`${id}-title`} className="text-[18px] font-semibold tracking-[-0.02em]">{returning ? "Unlock your account" : "Sign in to Kadd"}</h2>
+          <p id={`${id}-description`} className="text-muted text-[13px] leading-relaxed">
             Just use Face ID, fingerprint, or your device PIN. No seed phrase, no wallet install.
           </p>
         </div>
