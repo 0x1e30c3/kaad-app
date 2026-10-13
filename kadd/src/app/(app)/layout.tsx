@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Header, { Sidebar } from "@/components/Header";
 import TickerStrip from "@/components/TickerStrip";
 import StatusBar from "@/components/StatusBar";
@@ -14,9 +13,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       <Sidebar />
       <div className="flex-1 min-w-0 flex flex-col">
         <Header />
-        <Suspense fallback={<div className="hidden md:block h-9 shrink-0 border-b border-line bg-panel" />}>
-          <TickerStrip />
-        </Suspense>
+        <TickerStrip />
         <AlertWatcher />
         <StrategyKeeper />
         <GasDrip />
