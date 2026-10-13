@@ -18,6 +18,7 @@ import AutoRefresh from "@/components/AutoRefresh";
 import ShareButton from "@/components/ShareButton";
 import { walletRisk } from "@/lib/perpl";
 import PerpsProfile from "@/components/PerpsProfile";
+import PrivateNote from "@/components/PrivateNote";
 
 export const revalidate = 60;
 
@@ -91,6 +92,8 @@ export default async function WalletPage(props: PageProps<"/wallet/[address]">) 
           </div>
         )}
       </section>
+
+      <PrivateNote wallet={w.address} />
 
       {bt.copied === 0 && (
         <section id="backtest" className={`${card} scroll-mt-4 p-5 gap-1`}>
