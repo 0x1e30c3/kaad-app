@@ -216,5 +216,20 @@ input:focus-visible {
   opacity: 1;
 }
 
+/* Landing FAQ: answers open and close smoothly where the browser can animate to "auto" (instant elsewhere). */
+.landing {
+  interpolate-size: allow-keywords;
+}
+.landing details::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    content-visibility 0.45s allow-discrete;
+}
+.landing details[open]::details-content {
+  block-size: auto;
+}
+
 @media (min-width: 768px) { :root { --mobile-nav-height: 0px; } }
 @media (min-width: 1024px) { :root { --mobile-trade-height: 0px; } }

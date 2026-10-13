@@ -12,6 +12,12 @@ gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP);
  *   data-anim="lines"   heading rises line by line from behind a mask
  *   data-anim="words"   statement words brighten from faint to full as you scroll through it (scrubbed)
  *   data-anim="rise"    children rise in with a stagger
+ *   data-anim="stack"   children slide up a few pixels, one after another (small UI mockups)
+ *   data-anim="hairline" a 1px rule draws itself from the left
+ *   data-steps          a numbered sequence: each [data-step] lights up in turn, its [data-steps-line] to the next drawing between
+ *   data-draw="0.77"    an SVG stroke draws to that fraction of its length (the markup holds the final state)
+ *   data-fill           a bar grows from the left to the width the markup gives it
+ *   data-pop            its [data-pop-item]s pop in one by one
  *   data-parallax       image drifts inside its frame while the frame scrolls by
  *   data-stickers / data-sticker   tags pop in, then drift
  *   data-count="400" data-prefix="$" data-suffix="ms"   number counts up when seen
@@ -53,6 +59,38 @@ export default function Fx({ children }: { children: React.ReactNode }) {
 
         all("[data-anim=rise]").forEach((g) =>
           gsap.from(g.children, { y: 56, opacity: 0, duration: 1, ease: "power3.out", stagger: 0.08, scrollTrigger: { trigger: g, start: "top 88%" } }),
+        );
+
+        all("[data-anim=stack]").forEach((g) =>
+          gsap.from(g.children, { y: 12, opacity: 0, duration: 0.6, ease: "power2.out", stagger: 0.12, scrollTrigger: { trigger: g, start: "top 85%" } }),
+        );
+
+        all("[data-anim=hairline]").forEach((line) =>
+          gsap.from(line, { scaleX: 0, transformOrigin: "left center", duration: 1.4, ease: "expo.inOut", scrollTrigger: { trigger: line, start: "top 92%" } }),
+        );
+
+        all("[data-steps]").forEach((seq) => {
+          // Step 1 lights, the rule to step 2 draws, step 2 lights, and so on.
+          const tl = gsap.timeline({ scrollTrigger: { trigger: seq, start: "top 70%" } });
+          const lines = seq.querySelectorAll("[data-steps-line]");
+          seq.querySelectorAll("[data-step]").forEach((dot, i) => {
+            tl.call(() => dot.setAttribute("data-lit", ""), [], ">");
+            if (lines[i]) tl.from(lines[i], { scaleX: 0, transformOrigin: "left center", duration: 0.7, ease: "power2.inOut" }, ">+0.15");
+          });
+        });
+
+        all("[data-draw]").forEach((path) => {
+          const len = Number(path.getAttribute("pathLength")) || (path as unknown as SVGGeometryElement).getTotalLength(); // dashes are in pathLength units when it is set
+          const to = Number(path.dataset.draw);
+          gsap.fromTo(path, { strokeDasharray: len, strokeDashoffset: len }, { strokeDashoffset: len * (1 - to), duration: 1.6, ease: "power3.out", scrollTrigger: { trigger: path, start: "top 88%" } });
+        });
+
+        all("[data-fill]").forEach((bar) =>
+          gsap.from(bar, { scaleX: 0, transformOrigin: "left center", duration: 1.4, ease: "power3.out", delay: 0.2, scrollTrigger: { trigger: bar, start: "top 88%" } }),
+        );
+
+        all("[data-pop]").forEach((g) =>
+          gsap.from(g.querySelectorAll("[data-pop-item]"), { scale: 0.3, opacity: 0, duration: 0.5, ease: "back.out(2.4)", stagger: 0.09, scrollTrigger: { trigger: g, start: "top 80%" } }),
         );
 
         all("[data-parallax]").forEach((img) =>
