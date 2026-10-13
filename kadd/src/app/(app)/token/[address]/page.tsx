@@ -96,7 +96,7 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
       {/* Mobile: the trade panel sits below the fold, so keep a shortcut pinned above the bottom nav. */}
       <a
         href="#trade"
-        className="lg:hidden fixed inset-x-3 bottom-[calc(var(--mobile-nav-height)+8px)] z-20 h-11 rounded-lg bg-fg text-bg grid place-items-center font-semibold shadow-lg"
+        className="lg:hidden fixed inset-x-3 bottom-[calc(var(--mobile-nav-height)+8px)] z-20 h-11 rounded-lg bg-brand-fill text-[#0a0a0a] grid place-items-center font-semibold shadow-lg"
       >
         <span className="max-w-full truncate px-3">Trade {t.symbol}</span>
       </a>

@@ -105,7 +105,7 @@ export default function PerpsTrade() {
               <button
                 onClick={() => run("deposit", () => depositAusd(net, Number(amount)))}
                 disabled={!!busy || !(Number(amount) > 0)}
-                className="h-10 flex-1 min-w-0 px-2 rounded-lg bg-fg text-bg text-[14px] font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+                className="h-10 flex-1 min-w-0 px-2 rounded-lg bg-brand-fill text-[#0a0a0a] text-[14px] font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-50"
               >
                 {busy === "deposit" ? <Loader2 className="size-4 animate-spin" /> : <ArrowDownToLine className="size-4" />} {acctId ? "Deposit" : "Open account"}
               </button>

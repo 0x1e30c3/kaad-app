@@ -68,7 +68,7 @@ function CreateForm({ leader: initial, onDone }: { leader: string; onDone: () =>
         <input type="checkbox" checked={copySells} onChange={(e) => setCopySells(e.target.checked)} /> Exit a position when the leader sells
       </label>
       <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-        <button disabled={busy || !ok} className="h-10 px-5 rounded-md bg-fg text-bg font-semibold inline-flex items-center gap-2 disabled:opacity-50">
+        <button disabled={busy || !ok} className="h-10 px-5 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
           {busy && <Loader2 className="size-4 animate-spin" />}
           {busy ? "Creating club…" : "Create copy club"}
         </button>
@@ -179,7 +179,7 @@ function Section() {
           <p className="flex-1 text-[13px] text-muted">
             A copy club is auto copy with friends: everyone deposits tUSDC, the club copies one Monad wallet within limits the contract enforces, and anyone withdraws their share anytime.
           </p>
-          {!creating && <button onClick={() => setCreating(true)} className="h-9 px-4 rounded-lg bg-fg text-bg text-[13px] font-semibold">Start one</button>}
+          {!creating && <button onClick={() => setCreating(true)} className="h-9 px-4 rounded-lg bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold">Start one</button>}
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{clubs.map((c) => <ClubCard key={String(c.id)} c={c} signedIn={!!user} />)}</div>

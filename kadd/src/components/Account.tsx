@@ -72,7 +72,7 @@ export default function Account() {
               </button>
             )}
             {!unlocked && (
-              <button onClick={() => (close(), openLogin())} className="mt-1 h-8 rounded-md bg-fg text-bg font-semibold text-[12px]">
+              <button onClick={() => (close(), openLogin())} className="mt-1 h-8 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold text-[12px]">
                 Unlock with passkey
               </button>
             )}

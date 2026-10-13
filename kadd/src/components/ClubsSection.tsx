@@ -65,7 +65,7 @@ function CreateClubForm({ markets, onDone }: { markets: Market[]; onDone: (club:
       </div>
 
       <div className="flex items-center gap-3">
-        <button disabled={busy || !name.trim() || !picked.length} className="h-10 px-5 rounded-md bg-fg text-bg font-semibold inline-flex items-center gap-2 disabled:opacity-50">
+        <button disabled={busy || !name.trim() || !picked.length} className="h-10 px-5 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold inline-flex items-center gap-2 disabled:opacity-50">
           {busy && <Loader2 className="size-4 animate-spin" />}
           {busy ? "Creating club…" : "Create club onchain"}
         </button>
@@ -191,7 +191,7 @@ export default function ClubsSection() {
             </ol>
           </div>
           {!creating && (
-            <button onClick={() => setCreating(true)} className="h-10 px-5 rounded-lg bg-fg text-bg font-semibold hover:opacity-90 inline-flex items-center gap-1.5 justify-center">
+            <button onClick={() => setCreating(true)} className="h-10 px-5 rounded-lg bg-brand-fill text-[#0a0a0a] font-semibold hover:brightness-95 inline-flex items-center gap-1.5 justify-center">
               <Plus className="size-4" /> Create club
             </button>
           )}

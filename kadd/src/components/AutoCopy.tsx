@@ -59,7 +59,7 @@ export function AutoCopyForm({ leader }: { leader: string }) {
             <input type="checkbox" checked={copySells} onChange={(e) => setCopySells(e.target.checked)} className="accent-current" />
             Exit when this wallet sells
           </label>
-          <button disabled={busy || invalid} className="h-9 inline-flex items-center justify-center gap-1.5 rounded-lg bg-fg text-bg text-[13px] font-semibold hover:opacity-90 disabled:opacity-50">
+          <button disabled={busy || invalid} className="h-9 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold hover:brightness-95 disabled:opacity-50">
             {busy && <Loader2 className="size-3.5 animate-spin" />} Start auto copy
           </button>
           <p className="flex gap-1.5 text-[11px] text-faint">

@@ -65,7 +65,7 @@ function Deposit({ club, run, busy }: { club: Club; run: ReturnType<typeof useTx
         <button
           disabled={!club.flat || !value || tooMuch || !!busy}
           onClick={() => run("deposit", () => depositUsdc(club.address, value), `Deposited ${amount} tUSDC`).then((ok) => ok && setAmount(""))}
-          className="h-10 px-4 rounded-md bg-fg text-bg font-semibold inline-flex items-center gap-2 disabled:opacity-40"
+          className="h-10 px-4 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold inline-flex items-center gap-2 disabled:opacity-40"
         >
           {busy === "deposit" && <Loader2 className="size-4 animate-spin" />} Deposit
         </button>
@@ -202,7 +202,7 @@ export default function ClubDetail({ address }: { address: Address }) {
         <p>{error instanceof ClubNotFound ? "Club not found onchain." : "Couldn't load club from Monad testnet."}</p>
         <div className="flex gap-2">
           {!(error instanceof ClubNotFound) && (
-            <button onClick={reload} className="h-8 px-3 rounded-md bg-fg text-bg text-[12px] font-semibold">Try again</button>
+            <button onClick={reload} className="h-8 px-3 rounded-md bg-brand-fill text-[#0a0a0a] text-[12px] font-semibold">Try again</button>
           )}
           <Link href="/groups" className="h-8 px-3 grid place-items-center rounded-md border border-line-strong text-[12px] font-semibold text-fg">Back</Link>
         </div>

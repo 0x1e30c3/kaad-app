@@ -10,7 +10,7 @@ import { Logo } from "./ui";
 
 // [href, label, icon, keyboard shortcut]
 const NAV: [string, string, LucideIcon, string][] = [
-  ["/trenches", "Home", Layers, "1"],
+  ["/trenches", "Trenches", Layers, "1"],
   ["/perps", "Perps", CandlestickChart, "2"],
   ["/trending", "Trending", Flame, "3"],
   ["/groups", "Groups & Clubs", Users, "4"],

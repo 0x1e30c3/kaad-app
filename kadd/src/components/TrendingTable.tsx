@@ -119,7 +119,7 @@ export default function TrendingTable({ tokens }: { tokens: MarketToken[] }) {
                   <td className="px-3 text-right hidden lg:table-cell text-muted" suppressHydrationWarning>{ageOf(t.createdAt)}</td>
                   <td className="px-3 hidden sm:table-cell"><RiskBadge risk={t.risk} /></td>
                   <td className="pr-3 text-right">
-                    <QuickBuy t={t} usd={10} className="relative z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-fg text-bg text-[12px] font-semibold hover:opacity-90" />
+                    <QuickBuy t={t} usd={10} className="relative z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-brand-fill text-[#0a0a0a] text-[12px] font-semibold hover:brightness-95" />
                   </td>
                 </tr>
               );

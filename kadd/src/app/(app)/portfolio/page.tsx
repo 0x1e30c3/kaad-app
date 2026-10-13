@@ -91,7 +91,7 @@ export default function PortfolioPage() {
               <div className={`font-semibold ${wallet && wallet.mon < 0.05 ? "text-down" : ""}`}>{wallet ? wallet.mon.toFixed(3) : "…"}</div>
             </div>
           </div>
-          <button onClick={() => act("faucet", faucet)} disabled={!!busy} className="h-9 inline-flex items-center justify-center gap-1.5 rounded-lg bg-fg text-bg text-[13px] font-semibold hover:opacity-90 disabled:opacity-50">
+          <button onClick={() => act("faucet", faucet)} disabled={!!busy} className="h-9 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold hover:brightness-95 disabled:opacity-50">
             {busy === "faucet" ? <Loader2 className="size-3.5 animate-spin" /> : <Droplets className="size-3.5" />} Get 1,000 test USDC
           </button>
           {wallet && wallet.mon < 0.05 ? (
@@ -119,7 +119,7 @@ export default function PortfolioPage() {
               <div className="font-semibold">No positions yet</div>
               <p className="text-[13px] text-muted">Pick a token in Trenches and buy $10 worth. It settles on Monad testnet in under a second.</p>
             </div>
-            <Link href="/trenches" className="h-9 px-4 inline-flex items-center justify-center gap-1.5 rounded-lg bg-fg text-bg text-[13px] font-semibold hover:opacity-90">
+            <Link href="/trenches" className="h-9 px-4 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold hover:brightness-95">
               Open Trenches <ArrowRight className="size-3.5" />
             </Link>
           </div>

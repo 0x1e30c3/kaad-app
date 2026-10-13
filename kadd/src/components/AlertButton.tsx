@@ -52,7 +52,7 @@ export default function AlertButton({ t, price }: { t: TokenRef; price: number }
               <button key={p} onClick={() => preset(p)} className="flex-1 h-7 rounded-md border border-line text-muted hover:text-fg tabular-nums">{p > 0 ? "+" : ""}{p}%</button>
             ))}
           </div>
-          <button onClick={save} disabled={!(target > 0)} className="h-8 rounded-md bg-fg text-bg font-semibold disabled:opacity-40">Set alert</button>
+          <button onClick={save} disabled={!(target > 0)} className="h-8 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold disabled:opacity-40">Set alert</button>
           {mine.length > 0 && (
             <ul className="border-t border-line pt-2 flex flex-col gap-1">
               {mine.map((a) => (

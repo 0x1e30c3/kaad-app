@@ -61,7 +61,7 @@ export function Panel({ title, count, actions, children, className = "" }: { tit
   return (
     <section className={`rounded-lg border border-line bg-panel overflow-hidden ${className}`}>
       <header className="flex items-center gap-2 h-11 px-4 border-b border-line">
-        <h2 className="text-[13px] font-semibold">{title}</h2>
+        <h2 className="text-[14px] font-semibold">{title}</h2>
         {count !== undefined && <span className="text-[12px] text-faint tabular-nums">{count}</span>}
         {actions && <div className="ml-auto flex items-center gap-1.5">{actions}</div>}
       </header>
