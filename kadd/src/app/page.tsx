@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Activity, Check, ChevronDown, Eye, Fingerprint, Lock, Minus, ScanSearch, ShieldCheck, X } from "lucide-react";
 import LandingNav from "@/components/landing/LandingNav";
@@ -227,9 +226,10 @@ export default async function Landing() {
 
       {/* Hero visual with the three promises on a glass card */}
       <section className="px-3 pt-12 md:px-5 md:pt-20">
-        <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] md:rounded-[36px]">
-          <Image data-parallax src="/landing/space.jpg" alt="" fill preload sizes="100vw" className="object-cover object-[50%_35%]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1b0f4d]/10 to-[#120a33]/40" />
+        <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] bg-[#0b0b0e] md:rounded-[36px]">
+          <div className="absolute inset-0">
+            <VectorField lineColor="#836ef9" lineWeight={4} proximity={8} vectorSize={10} />
+          </div>
           <div data-anim="rise" className="relative px-3 pb-3 pt-[clamp(180px,26vw,340px)] md:px-10 md:pb-10">
             <div className="grid gap-8 rounded-[22px] bg-white/80 p-6 text-[#0a0a0a] shadow-[0_30px_80px_-30px_rgb(20_10_60/0.5)] ring-1 ring-white/60 backdrop-blur-xl md:grid-cols-[1fr_1.1fr] md:gap-14 md:p-10 dark:bg-[#0b0b0c]/70 dark:text-white dark:ring-white/10">
               <div className="flex flex-col items-start justify-between gap-6">
@@ -400,8 +400,10 @@ export default async function Landing() {
                   <h3 className="text-[19px] font-medium leading-snug tracking-[-0.01em]">Smart money, ranked and backtested</h3>
                   <p className="mt-1 text-[12px] text-muted">Nansen · Monad mainnet · updated daily</p>
                 </div>
-                <div className="relative mt-6 aspect-[16/11] flex-1 overflow-hidden">
-                  <Image data-parallax src="/landing/space.jpg" alt="" fill sizes="(min-width: 768px) 560px, 100vw" className="object-cover object-[50%_70%]" />
+                <div className="relative mt-6 aspect-[16/11] flex-1 overflow-hidden bg-[#0b0b0e]">
+                  <div className="absolute inset-0">
+                    <VectorField lineColor="#836ef9" lineWeight={4} proximity={8} vectorSize={10} />
+                  </div>
                   <div className="absolute inset-0 grid place-items-center p-6">
                     <LeaderboardMini className="w-full max-w-[340px] shadow-2xl" />
                   </div>
@@ -751,7 +753,7 @@ export default async function Landing() {
         <section className="px-3 pt-12 md:px-5 md:pt-16">
           <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] bg-[#0b0b0e] px-6 py-20 text-center ring-1 ring-white/10 md:rounded-[36px] md:py-28">
             <div className="absolute inset-0">
-              <VectorField lineColor="rgb(131 110 249 / 0.55)" />
+              <VectorField lineColor="#836ef9" lineWeight={4} proximity={8} vectorSize={10} />
             </div>
             <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_50%,rgb(11_11_14/0.9),transparent)]" />
             <div className="relative mx-auto max-w-[640px]">
