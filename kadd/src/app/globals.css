@@ -3,6 +3,7 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
+  --sidebar-width: 0px;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --bottom-gap: 8px;
   --mobile-nav-height: calc(60px + var(--safe-area-bottom));
@@ -177,5 +178,18 @@ input:focus-visible {
 /* Reserve the shortcut only while the token page is mounted. */
 body:has([data-token-trade]) { --bottom-action-height: var(--mobile-trade-height); }
 
-@media (min-width: 768px) { :root { --mobile-nav-height: 0px; } }
+@media (min-width: 768px) { :root { --mobile-nav-height: 0px; --sidebar-width: 72px; } }
 @media (min-width: 1024px) { :root { --mobile-trade-height: 0px; } }
+
+@media (min-width: 1280px) { :root { --sidebar-width: 208px; } }
+
+.token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 248px), 1fr)); gap: 12px; }
+.market-board { container-type: inline-size; }
+.market-columns { display: flex; gap: 12px; min-height: 440px; }
+.market-column { display: flex; flex: 1; min-width: 0; }
+.market-column[data-hidden="true"] { display: none; }
+@container (min-width: 1080px) {
+  .market-column[data-hidden="true"] { display: flex; }
+  .market-column-tabs { display: none; }
+  .market-columns { height: calc(100dvh - 310px); flex: none; }
+}
