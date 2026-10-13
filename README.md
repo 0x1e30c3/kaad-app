@@ -194,7 +194,7 @@ Kuru's testnet order books are empty and only list governance-whitelisted tokens
 | **Nansen** | Smart-money PnL leaderboard: Smart Money tab, SMART badges, wallet cards, `/start` picks, agent API. One paid call a day, shared | [`NANSEN.md`](NANSEN.md), [`nansen.ts`](kadd/src/lib/nansen.ts) |
 | **Kuru** | Live mainnet trades through Kuru Flow (quote → review with minimum → passkey signs); `KaddCopyKuru` for mainnet auto copy; `KaddClub` fork-tested on Kuru Spot V2 | [`kuru.ts`](kadd/src/lib/kuru.ts), [`KuruTrade.tsx`](kadd/src/components/KuruTrade.tsx) |
 | **Envio** | Multichain HyperIndex indexer: every Kadd contract (testnet) and Perpl (mainnet): markets, accounts with deposits / withdrawals, every liquidation, flows per day (sized to fit the free plan), swaps attributed to whoever's money it was; HyperRPC for event history and the chart fallback | [`indexer/`](indexer/), [`events.ts`](kadd/src/lib/events.ts) |
-| **Mera** | The whole account layer: one passkey ceremony, prompt-free signing, no seed phrase | [`wallet.ts`](kadd/src/lib/wallet.ts) |
+| **Mera** | The whole account layer: one passkey ceremony, prompt-free signing, no seed phrase. Plus **private notes** on any wallet, encrypted to a separate PRF-derived key in a Mera secret vault (server sees ciphertext only) | [`wallet.ts`](kadd/src/lib/wallet.ts), [`notes.ts`](kadd/src/lib/notes.ts) |
 | **Perpl** | Perps trading from the passkey account straight on the Exchange contract (`createAccount`, `execOrder`); perps leaderboard and market analytics (volume, OI, long/short, leverage, funding, positions near liquidation) from the Exchange contract (open positions, leverage, open PnL) and the indexer (30-day realized PnL); Kadd's copy bot mirrors a mainnet trader on Perpl testnet through the API | [`perpl.ts`](kadd/src/lib/perpl.ts), [`perplBot.ts`](kadd/src/lib/perplBot.ts) |
 | **Nad Name Service** | `.nad` names and avatars for wallets | [`nns.ts`](kadd/src/lib/nns.ts) |
 
@@ -427,7 +427,7 @@ testnet RPC.
 |---|---|
 | **Event** | Monad Metropolis |
 | **Track** | Onchain Finance & Trading |
-| **Bounties** | Nansen · Kuru (Consumer Trading App) · Perpl · Agora (Mobile Trading) · Envio · Mera (UX) |
+| **Bounties** | Nansen · Kuru (Consumer Trading App) · Perpl · Agora (Mobile Trading) · Envio · Mera (UX, One Passkey Many Keys) |
 | **Network** | Monad testnet (chain 10143) and Monad mainnet (chain 143) |
 | **Live demo** | [kaad-app.vercel.app](https://kaad-app.vercel.app) |
 | **Submission notes** | [`SUBMISSION.md`](SUBMISSION.md) |

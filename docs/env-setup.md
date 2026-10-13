@@ -78,7 +78,7 @@ Full walkthrough: [`telegram-setup.md`](telegram-setup.md).
 | `TELEGRAM_BOT_TOKEN` | Server, **secret** | Bot token from @BotFather. |
 | `NEXT_PUBLIC_TELEGRAM_BOT` | Public | Bot username without `@`, used for the `t.me/<bot>` button. |
 | `TELEGRAM_WEBHOOK_SECRET` | Server, **secret** | Random string; Telegram sends it back so `/api/telegram/webhook` can reject forged calls. |
-| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Server, **secret** | Redis (Upstash via the Vercel Marketplace) for subscriptions. Vercel sets these when you connect the store. `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` are accepted as aliases. |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Server, **secret** | Redis (Upstash via the Vercel Marketplace) for Telegram subscriptions **and private notes** (encrypted vaults; without it the notes panel says storage isn't set up). Vercel sets these when you connect the store. `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` are accepted as aliases. |
 
 ## 6. Perpl copy bot (testnet)
 
