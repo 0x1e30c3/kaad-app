@@ -14,6 +14,7 @@ const LINKS = [
   ["#terminal", "Terminal"],
   ["#how", "How it works"],
   ["#features", "Features"],
+  ["#stack", "Stack"],
   ["#faq", "FAQ"],
   ["/stats", "Stats"],
 ];

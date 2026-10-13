@@ -2,6 +2,7 @@ import Link from "next/link";
 import { perpRisk } from "@/lib/perpl";
 import { short } from "@/lib/mock";
 import { PageHeader, card } from "@/components/ui";
+import PerpsTabs from "@/components/PerpsTabs";
 import { AreaChart } from "@/components/charts";
 import WalletAvatar from "@/components/WalletAvatar";
 import AutoRefresh from "@/components/AutoRefresh";
@@ -22,7 +23,8 @@ export default async function PerpsRiskPage() {
   const r = await perpRisk().catch(() => null);
   if (!r) {
     return (
-      <div className="p-3 md:p-5">
+      <div className="p-3 md:p-5 flex flex-col gap-4">
+        <PerpsTabs active="risk" />
         <PageHeader title="Perps risk" />
         <p className={`${card} p-6 text-[13px] text-muted`}>Couldn’t read Perpl right now. This page retries every minute.</p>
       </div>
@@ -57,9 +59,9 @@ export default async function PerpsRiskPage() {
   return (
     <div className="p-3 md:p-5 flex flex-col gap-4">
       <AutoRefresh seconds={60} />
+      <PerpsTabs active="risk" />
       <PageHeader title="Perps risk" desc="Perpl on Monad mainnet, read from its contract every minute: where positions get liquidated, who is closest, and how the protocol is doing.">
         <Link href="/leaderboard" className="text-[12px] font-medium text-muted hover:text-fg underline-offset-4 hover:underline">Perps traders →</Link>
-        <Link href="/perps" className="text-[12px] font-medium text-muted hover:text-fg underline-offset-4 hover:underline">Trade perps →</Link>
       </PageHeader>
 
       <section className="grid gap-3 grid-cols-2 lg:grid-cols-4">

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
-import { Activity, Check, ChevronDown, Eye, Fingerprint, Minus, ScanSearch, ShieldCheck } from "lucide-react";
+import { Activity, Check, ChevronDown, Eye, Fingerprint, Lock, Minus, ScanSearch, ShieldCheck, X } from "lucide-react";
 import LandingNav from "@/components/landing/LandingNav";
 import SmoothScroll from "@/components/landing/SmoothScroll";
 import Fx from "@/components/landing/Fx";
 import Pill from "@/components/landing/Pill";
 import Live from "@/components/landing/Live";
 import TerminalPreview from "@/components/landing/Terminal";
+import VectorField from "@/components/landing/VectorField";
 import { ClubMini, LeaderboardMini, PasskeySheet, TrenchesMini } from "@/components/landing/Widgets";
 import { Logo } from "@/components/ui";
 import { perpRisk } from "@/lib/perpl";
@@ -87,6 +87,43 @@ const STEP_UI = [
   </div>,
 ];
 
+/** One feature, explained: what it is, the rules that make it safe, and the piece of product it lives in. */
+function Deep({ id, eyebrow, title, body, points, visual, href, cta, flip = false }: { id: string; eyebrow: string; title: React.ReactNode; body: string; points: [string, string][]; visual: React.ReactNode; href: string; cta: string; flip?: boolean }) {
+  return (
+    <section id={id} className="scroll-mt-20 px-5 pb-28 md:px-8 md:pb-40">
+      <div className="mx-auto grid max-w-[1180px] items-center gap-12 md:grid-cols-2 md:gap-20">
+        <div className={flip ? "md:order-2" : ""}>
+          <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+            <span className="size-1 rounded-full bg-fg" />
+            {eyebrow}
+          </p>
+          <h2 data-anim="lines" className="mt-4 text-balance text-[clamp(28px,3vw,40px)] font-normal leading-[1.12] tracking-[-0.03em]">{title}</h2>
+          <p className="mt-4 max-w-[48ch] text-[14px] leading-relaxed text-muted">{body}</p>
+          <dl data-anim="stack" className="mt-8 grid gap-5">
+            {points.map(([t, d]) => (
+              <div key={t} className="grid grid-cols-[20px_1fr] gap-3">
+                <Check className="mt-0.5 size-4 text-[#836ef9]" />
+                <div>
+                  <dt className="text-[14px] font-medium">{t}</dt>
+                  <dd className="mt-0.5 text-[13px] leading-relaxed text-muted">{d}</dd>
+                </div>
+              </div>
+            ))}
+          </dl>
+          <Pill href={href} tone="outline" arrow className="mt-8 h-10 text-[13px]">
+            {cta}
+          </Pill>
+        </div>
+        <div data-anim="rise" className={flip ? "md:order-1" : ""}>
+          <div data-tilt className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-[#efeaff] via-[#f7f5ff] to-[#eef6ff] p-6 ring-1 ring-line md:p-10 dark:from-[#17151f] dark:via-[#121214] dark:to-[#141a1f]">{visual}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const card2 = "rounded-2xl bg-panel p-5 text-[12px] ring-1 ring-line shadow-[0_18px_40px_-24px_rgb(0_0_0/0.35)]";
+
 // Kadd next to a typical copy-trading bot (no bot named: the point is the model, not a competitor).
 const COMPARE: [string, string | null, string][] = [
   ["Who holds the keys", "The bot's server", "You, through your passkey"],
@@ -105,6 +142,25 @@ const FAQ: [string, string][] = [
   ["Where does the data come from?", "Straight from the chain and public sources: market data from GeckoTerminal and CoinGecko, smart-money labels and PnL from Nansen, positions read from Perpl's contracts, and history indexed with Envio."],
   ["What does the risk score mean?", "A 0–100 rule-based score for each token. Every point comes with its reason: liquidity, holder concentration, honeypot and tax checks, pool age, and who is buying. It's a checklist, not a promise."],
   ["What if I lose my phone?", "Passkeys sync with your platform's password manager (iCloud Keychain or Google Password Manager). Sign in with the same passkey on a new device and you get the same account."],
+];
+
+// Built for: the hackathon track and the sponsor bounties, each with what Kadd actually uses it for.
+const PARTNERS: [string, string, string][] = [
+  ["Monad", "Chain", "Testnet for practice (chain 10143), mainnet for live trades and market data (chain 143). 400ms blocks make copies land fast."],
+  ["Mera", "Accounts", "The whole account layer: a passkey derives the wallet, signs without prompts, same address on testnet and mainnet."],
+  ["Kuru", "Spot trading", "Live mainnet swaps through Kuru Flow: quote, review the minimum out, sign with the passkey. KaddClub is fork-tested on Kuru Spot V2."],
+  ["Perpl", "Perps", "Long/short from the passkey straight on the Exchange contract, plus positions, leverage and the liquidation map read from it."],
+  ["Nansen", "Smart money", "Monad wallets with 30-day PnL: the Smart Money leaderboard, SMART badges, wallet cards and first-trade picks."],
+  ["Envio", "Indexing", "One HyperIndex indexer for every Kadd contract and Perpl: deposits, liquidations, daily flows; HyperRPC for event history."],
+];
+const STACK: [string, string][] = [
+  ["Contracts", "Solidity 0.8.28 · Foundry (96 tests, fork tests on real Kuru)"],
+  ["Frontend", "Next.js 16 · React 19 · Tailwind v4 · lightweight-charts · GSAP"],
+  ["Accounts", "Mera passkeys (WebAuthn PRF) · viem 2"],
+  ["Market data", "CoinGecko onchain API / GeckoTerminal · Nansen · Nad Name Service"],
+  ["Indexing", "Envio HyperIndex on Envio Cloud · HyperRPC"],
+  ["Backend", "Vercel route handlers: copy keeper, gas drip, agent API, Telegram"],
+  ["AI agents", "5 installable skills: market, token, wallet, smart money, trade"],
 ];
 
 const WHY = [
@@ -132,6 +188,8 @@ export default async function Landing() {
   const risk = await perpRisk().catch(() => null);
   const btc = risk?.markets.find((m) => m.name === "BTC");
   const away = 1 / 3 - 1 / 25; // a 3× BTC long, liquidated at 25×
+  const liqAt = btc ? [-2, -5, -10].map((pct) => [pct, liquidatedAt(btc.liqMap, pct)] as const) : null;
+  const liqMax = liqAt ? Math.max(...liqAt.map(([, v]) => v), 1) : 1;
   const activity = (await getStats().catch(() => null))?.activity ?? null;
   // The numbers band: live where we can read it, a plain fact where we can't (or where the count is still too small to say much).
   const numbers: { value: React.ReactNode; label: string; note: string }[] = [
@@ -168,9 +226,10 @@ export default async function Landing() {
 
       {/* Hero visual with the three promises on a glass card */}
       <section className="px-3 pt-12 md:px-5 md:pt-20">
-        <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] md:rounded-[36px]">
-          <Image data-parallax src="/landing/space.jpg" alt="" fill preload sizes="100vw" className="object-cover object-[50%_35%]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1b0f4d]/10 to-[#120a33]/40" />
+        <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] bg-[#0b0b0e] md:rounded-[36px]">
+          <div className="absolute inset-0">
+            <VectorField lineColor="#836ef9" lineWeight={4} proximity={8} vectorSize={10} />
+          </div>
           <div data-anim="rise" className="relative px-3 pb-3 pt-[clamp(180px,26vw,340px)] md:px-10 md:pb-10">
             <div className="grid gap-8 rounded-[22px] bg-white/80 p-6 text-[#0a0a0a] shadow-[0_30px_80px_-30px_rgb(20_10_60/0.5)] ring-1 ring-white/60 backdrop-blur-xl md:grid-cols-[1fr_1.1fr] md:gap-14 md:p-10 dark:bg-[#0b0b0c]/70 dark:text-white dark:ring-white/10">
               <div className="flex flex-col items-start justify-between gap-6">
@@ -341,8 +400,10 @@ export default async function Landing() {
                   <h3 className="text-[19px] font-medium leading-snug tracking-[-0.01em]">Smart money, ranked and backtested</h3>
                   <p className="mt-1 text-[12px] text-muted">Nansen · Monad mainnet · updated daily</p>
                 </div>
-                <div className="relative mt-6 aspect-[16/11] flex-1 overflow-hidden">
-                  <Image data-parallax src="/landing/space.jpg" alt="" fill sizes="(min-width: 768px) 560px, 100vw" className="object-cover object-[50%_70%]" />
+                <div className="relative mt-6 aspect-[16/11] flex-1 overflow-hidden bg-[#0b0b0e]">
+                  <div className="absolute inset-0">
+                    <VectorField lineColor="#836ef9" lineWeight={4} proximity={8} vectorSize={10} />
+                  </div>
                   <div className="absolute inset-0 grid place-items-center p-6">
                     <LeaderboardMini className="w-full max-w-[340px] shadow-2xl" />
                   </div>
@@ -410,6 +471,127 @@ export default async function Landing() {
             </div>
           </div>
         </section>
+
+        {/* Feature deep dives: what each one is and the rules behind it */}
+        <Deep
+          id="auto-copy"
+          eyebrow="Auto copy"
+          title={<>Copy a wallet while you sleep, <span className="text-muted">inside limits you set</span></>}
+          body="Pick a wallet, fund a vault, set two numbers. When that wallet trades on Monad mainnet, Kadd copies it into your vault within minutes. Copy clubs do the same with friends: one vault, shares for everyone."
+          points={[
+            ["Caps the contract enforces", "A maximum per buy and per day live in the vault contract. A copy over the limit doesn't get through, whoever sends it."],
+            ["Each trade copied once", "The vault remembers every leader trade it copied, so a retry can never double your position."],
+            ["Checked before it's sent", "The keeper simulates every copy first and skips tokens Kadd's risk engine rates critical, like honeypots."],
+            ["Out anytime", "Close the vault and withdraw, or redeem your club shares in kind. No lockup, no request to approve."],
+          ]}
+          visual={
+            <div className="mx-auto grid max-w-[340px] gap-3">
+              <div className={card2}>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Copy vault · 0x95d2…a648</span>
+                  <Lock className="size-3.5 text-muted" />
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-2 tabular-nums">
+                  <div className="rounded-lg bg-raised px-3 py-2"><dt className="text-[10px] text-muted">Per buy</dt><dd className="font-medium">≤ $10</dd></div>
+                  <div className="rounded-lg bg-raised px-3 py-2"><dt className="text-[10px] text-muted">Per day</dt><dd className="font-medium">≤ $50</dd></div>
+                </dl>
+                <div className="mt-3 flex justify-between text-muted tabular-nums"><span>Used today</span><span>$30 / $50</span></div>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-raised"><div data-fill className="h-full w-[60%] rounded-full bg-[#836ef9]" /></div>
+              </div>
+              <ul data-pop className={`${card2} grid gap-2 font-mono text-[11px]`}>
+                <li className="flex items-center gap-2"><Check data-pop-item className="size-3 shrink-0 text-[#2ccf7f]" /><span className="text-muted">12:04</span> copyBuy CHOG $10</li>
+                <li className="flex items-center gap-2"><Check data-pop-item className="size-3 shrink-0 text-[#2ccf7f]" /><span className="text-muted">12:31</span> copyBuy emo $10</li>
+                <li className="flex items-center gap-2"><X data-pop-item className="size-3 shrink-0 text-[#f2475d]" /><span className="text-muted">12:58</span> skipped RUGX: honeypot</li>
+                <li className="flex items-center gap-2"><Check data-pop-item className="size-3 shrink-0 text-[#2ccf7f]" /><span className="text-muted">13:20</span> copySell CHOG 100%</li>
+              </ul>
+            </div>
+          }
+          href="/leaderboard"
+          cta="Find a wallet to copy"
+        />
+
+        <Deep
+          id="risk"
+          flip
+          eyebrow="Token risk"
+          title={<>Every token gets a score, <span className="text-muted">and every point has a reason</span></>}
+          body="New Monad tokens launch every minute and most aren't worth touching. Kadd scores each one from 0 to 100 using rules you can read, and says in plain words why."
+          points={[
+            ["Liquidity and pool age", "Thin pools and brand-new pairs add risk: you may not be able to sell at the price you see."],
+            ["Holders and buyers", "How concentrated the supply is, and whether the buying comes from many wallets or a few."],
+            ["Honeypot and tax checks", "Can you actually sell, and what does selling cost? Failed checks push the score to critical."],
+            ["Used everywhere", "The same score badges every token in Trenches, guards the auto-copy keeper, and answers the agent API."],
+          ]}
+          visual={
+            <div className={`${card2} mx-auto max-w-[340px]`}>
+              <div className="flex items-center gap-4">
+                <div className="relative grid size-[72px] shrink-0 place-items-center">
+                  <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90" aria-hidden>
+                    <circle cx="18" cy="18" r="15.5" fill="none" strokeWidth="3" className="stroke-line" />
+                    <circle data-draw="0.68" cx="18" cy="18" r="15.5" fill="none" strokeWidth="3" strokeLinecap="round" stroke="#f2475d" pathLength={100} strokeDasharray="100" strokeDashoffset="32" />
+                  </svg>
+                  <span className="text-[20px] font-medium tabular-nums">68</span>
+                </div>
+                <div>
+                  <div className="text-[14px] font-medium">RUGX · High risk</div>
+                  <div className="text-muted">Example report</div>
+                </div>
+              </div>
+              <ul data-anim="stack" className="mt-4 grid gap-1.5">
+                {([["Liquidity under $5K", 25], ["Top 10 wallets hold 71%", 20], ["Sell tax 12%", 15], ["Pool opened 2h ago", 8]] as const).map(([r, n]) => (
+                  <li key={r} className="flex items-center justify-between rounded-lg bg-raised px-3 py-2">
+                    <span>{r}</span>
+                    <span className="font-medium tabular-nums text-[#f2475d]">+{n}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          }
+          href="/trenches"
+          cta="Open Trenches"
+        />
+
+        <Deep
+          id="perps"
+          eyebrow="Perps on Perpl"
+          title={<>Long or short from your passkey, <span className="text-muted">with the exit shown first</span></>}
+          body="Kadd talks to Perpl's exchange contract directly: no API key, no extra wallet app. Before you sign, the ticket tells you where you'd be liquidated, and the map shows where everyone else would."
+          points={[
+            ["Trade on the contract", "Your passkey account opens a Perpl account and sends orders itself. BTC, ETH, SOL and MON, up to 10×."],
+            ["Liquidation price on the ticket", "Size, leverage, margin and the price that would close you out, before anything is signed."],
+            ["A map of every position", "Every open Perpl position, grouped by the price that would liquidate it, market by market."],
+            ["Follow a perps trader", "Kadd's copy bot mirrors one mainnet trader on Perpl testnet with a budget and a leverage cap."],
+          ]}
+          visual={
+            <div className="mx-auto grid max-w-[340px] gap-3">
+              <div className={`${card2} grid grid-cols-2 gap-x-4 gap-y-2 tabular-nums`}>
+                <span className="text-muted">Long BTC · $100 at 3×</span>
+                <span className="text-right font-medium">margin $33.33</span>
+                <span className="text-muted">Liquidation ≈</span>
+                <span className="text-right font-medium text-[#f2475d]">{btc ? `$${Math.round(btc.mark * (1 - away)).toLocaleString("en-US")}` : `${Math.round(away * 100)}% below`}</span>
+              </div>
+              <div className={card2}>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">BTC longs liquidated if price drops</span>
+                  {liqAt && <span className="flex items-center gap-1 text-[10px] text-muted"><span className="size-1.5 rounded-full bg-[#2ccf7f] motion-safe:animate-pulse" /> live</span>}
+                </div>
+                <ul className="mt-3 grid gap-2.5">
+                  {(liqAt ?? ([[-2, 0.3], [-5, 0.6], [-10, 1]] as const)).map(([pct, v]) => (
+                    <li key={pct} className="grid grid-cols-[36px_1fr_56px] items-center gap-2 tabular-nums">
+                      <span className="text-muted">{pct}%</span>
+                      <span className="h-2 overflow-hidden rounded-full bg-raised">
+                        <span data-fill className="block h-full rounded-full bg-[#f2475d]/80" style={{ width: `${Math.max(4, (v / (liqAt ? liqMax : 1)) * 100)}%` }} />
+                      </span>
+                      <span className="text-right font-medium">{liqAt ? compact(v) : ""}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          }
+          href="/perps"
+          cta="Open perps"
+        />
 
         {/* Get started: 2×2 product cards */}
         <section id="start" className="scroll-mt-20 px-5 py-32 md:px-8 md:py-48">
@@ -481,6 +663,60 @@ export default async function Landing() {
           </div>
         </section>
 
+        {/* Built for: hackathon track, sponsor integrations, and the stack */}
+        <section id="stack" className="scroll-mt-20 px-5 pb-32 md:px-8 md:pb-48">
+          <div className="mx-auto max-w-[1180px]">
+            <div className="grid gap-6 md:grid-cols-[1.25fr_1fr] md:items-end">
+              <div>
+                <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
+                  <span className="size-1 rounded-full bg-fg" />
+                  Built with
+                </p>
+                <h2 data-anim="lines" className="mt-4 text-balance text-[clamp(28px,3.2vw,42px)] font-normal leading-[1.12] tracking-[-0.03em]">
+                  What runs where,
+                  {" "}<br className="hidden md:block" />
+                  <span className="text-muted">and why we picked it</span>
+                </h2>
+              </div>
+              <div className="flex flex-wrap gap-2 md:justify-self-end">
+                <span className="inline-flex h-8 items-center gap-2 rounded-full bg-[#836ef9] px-3.5 text-[12px] font-medium text-white">Monad Metropolis · Onchain Finance &amp; Trading</span>
+                <span className="inline-flex h-8 items-center rounded-full px-3.5 text-[12px] text-muted ring-1 ring-line">Bounties: Nansen · Kuru · Perpl · Agora · Envio · Mera</span>
+              </div>
+            </div>
+
+            <ul data-anim="rise" className="mt-12 grid gap-px overflow-hidden rounded-[22px] bg-line ring-1 ring-line sm:grid-cols-2 md:mt-16 lg:grid-cols-3">
+              {PARTNERS.map(([name, role, what]) => (
+                <li key={name} data-spotlight className="spotlight group flex flex-col gap-4 bg-bg p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-9 place-items-center rounded-xl bg-raised text-[14px] font-semibold ring-1 ring-line transition-colors duration-300 group-hover:bg-[#836ef9] group-hover:text-white group-hover:ring-[#836ef9]">{name[0]}</span>
+                    <div>
+                      <div className="text-[15px] font-medium">{name}</div>
+                      <div className="text-[11px] uppercase tracking-[0.12em] text-muted">{role}</div>
+                    </div>
+                  </div>
+                  <p className="text-[13px] leading-relaxed text-muted">{what}</p>
+                </li>
+              ))}
+            </ul>
+
+            <div className="relative mt-10">
+              <span aria-hidden data-anim="hairline" className="absolute inset-x-0 top-0 h-px bg-line" />
+              <dl data-anim="stack" className="grid md:grid-cols-2 md:gap-x-16">
+                {STACK.map(([layer, tech]) => (
+                  <div key={layer} className="grid grid-cols-[110px_1fr] gap-4 border-b border-line py-4 text-[13px]">
+                    <dt className="font-medium">{layer}</dt>
+                    <dd className="text-muted">{tech}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+            <p className="mt-6 text-[12px] text-muted">
+              Mobile trading (Agora bounty): every screen works one-handed on a phone, with bottom navigation, a sticky trade bar and passkey signing.{" "}
+              <a href="https://github.com/maulana-tech/kaad-app" target="_blank" rel="noreferrer" className="text-fg underline-offset-4 hover:underline">Source on GitHub</a>
+            </p>
+          </div>
+        </section>
+
         {/* FAQ: plain answers, native disclosure */}
         <section id="faq" className="scroll-mt-20 px-5 pb-32 md:px-8 md:pb-40">
           <div className="mx-auto grid max-w-[1180px] gap-10 md:grid-cols-[1fr_1.5fr] md:gap-20">
@@ -515,9 +751,11 @@ export default async function Landing() {
       {/* CTA band and footer, dark in both themes */}
       <div className="on-dark bg-bg text-fg">
         <section className="px-3 pt-12 md:px-5 md:pt-16">
-          <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] px-6 py-20 text-center md:rounded-[36px] md:py-28">
-            <Image data-parallax src="/landing/space.jpg" alt="" fill sizes="100vw" className="object-cover object-[50%_45%]" />
-            <div className="absolute inset-0 bg-[#140b3d]/25" />
+          <div className="relative mx-auto max-w-[1360px] overflow-hidden rounded-[28px] bg-[#0b0b0e] px-6 py-20 text-center ring-1 ring-white/10 md:rounded-[36px] md:py-28">
+            <div className="absolute inset-0">
+              <VectorField lineColor="#836ef9" lineWeight={4} proximity={8} vectorSize={10} />
+            </div>
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_50%,rgb(11_11_14/0.9),transparent)]" />
             <div className="relative mx-auto max-w-[640px]">
               <h2 data-anim="lines" className="text-balance text-[clamp(30px,4vw,52px)] font-normal leading-[1.08] tracking-[-0.03em] text-white">Trade like the best wallets on Monad</h2>
               <p className="mx-auto mt-4 max-w-[48ch] text-[14px] leading-relaxed text-white/75">
