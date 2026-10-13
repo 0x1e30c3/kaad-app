@@ -6,7 +6,7 @@ import http from "node:http";
 import assert from "node:assert/strict";
 import { createSecretVault, decryptSecretVault } from "../node_modules/@category-labs/mera/dist/secret.js"; // internal helpers: a vault without a real passkey
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { notesMessage } from "../src/lib/notesMessage.ts";
+import { notesMessage } from "../src/lib/notesMessage";
 
 const BASE = process.env.BASE ?? "http://localhost:3123/api/notes";
 
