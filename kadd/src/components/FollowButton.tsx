@@ -8,7 +8,7 @@ export default function FollowButton({ address }: { address: string }) {
     <button
       onClick={() => toggleFollow(address)}
       aria-pressed={on}
-      className={`h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md text-[13px] font-semibold ${on ? "border border-line-strong hover:bg-hover" : "bg-fg text-bg hover:opacity-90"}`}
+      className={`h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md text-[13px] font-semibold ${on ? "border border-line-strong hover:bg-hover" : "bg-brand-fill text-[#0a0a0a] hover:brightness-95"}`}
     >
       <Star className={`size-4 ${on ? "fill-current text-warn" : ""}`} /> {on ? "Following" : "Follow"}
     </button>

@@ -46,7 +46,7 @@ export default async function ComparePage(props: PageProps<"/perps/compare">) {
       <form action="/perps/compare" className={`${card} p-3 flex-row flex-wrap items-center gap-2`}>
         <label htmlFor="w" className="text-[12px] text-muted">Wallets (up to 4, comma separated)</label>
         <input id="w" name="w" defaultValue={wallets.join(", ")} className="flex-1 min-w-[240px] h-9 px-3 rounded-md bg-raised font-mono text-[12px] outline-none border border-transparent focus:border-line-strong" />
-        <button className="h-9 px-4 rounded-md bg-fg text-bg text-[13px] font-semibold">Compare</button>
+        <button className="h-9 px-4 rounded-md bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold">Compare</button>
       </form>
 
       {!cols.length ? (

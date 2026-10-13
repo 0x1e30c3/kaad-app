@@ -58,7 +58,7 @@ export default function FollowingFeed() {
               <div className="font-semibold">Follow real traders</div>
               <p className="text-[13px] text-muted">Star wallets on the Leaderboard. Their Monad mainnet trades show up here, and you can copy each one on Kadd testnet in one tap.</p>
             </div>
-            <Link href="/leaderboard" className="h-9 px-4 inline-flex items-center justify-center gap-1.5 rounded-lg bg-fg text-bg text-[13px] font-semibold hover:opacity-90">
+            <Link href="/leaderboard" className="h-9 px-4 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold hover:brightness-95">
               <Star className="size-3.5" /> Find wallets <ArrowRight className="size-3.5" />
             </Link>
           </div>

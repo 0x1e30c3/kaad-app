@@ -12,9 +12,9 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 const LINKS = [
   ["#terminal", "Terminal"],
-  ["#why", "Why Kadd"],
+  ["#how", "How it works"],
   ["#features", "Features"],
-  ["#start", "Get started"],
+  ["#faq", "FAQ"],
   ["/stats", "Stats"],
 ];
 

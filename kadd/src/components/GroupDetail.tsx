@@ -50,7 +50,7 @@ export default function GroupDetail({ id }: { id: string }) {
               <LogOut className="size-4" /> Leave
             </button>
           ) : (
-            <button onClick={() => joinGroup(g.id)} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-fg text-bg font-semibold hover:opacity-90">
+            <button onClick={() => joinGroup(g.id)} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold hover:brightness-95">
               <UserPlus className="size-4" /> Join
             </button>
           )}
@@ -63,7 +63,7 @@ export default function GroupDetail({ id }: { id: string }) {
           {feed.length === 0 ? (
             <div className="p-8 text-center text-muted flex flex-col items-center gap-3">
               <p>No activity yet. Invite friends with your code.</p>
-              <button onClick={copyInvite} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-fg text-bg font-semibold"><Copy className="size-3.5" /> Copy code {g.code}</button>
+              <button onClick={copyInvite} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold"><Copy className="size-3.5" /> Copy code {g.code}</button>
             </div>
           ) : (
             <ul>

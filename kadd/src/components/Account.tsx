@@ -20,7 +20,7 @@ export default function Account() {
 
   if (!user)
     return (
-      <button onClick={() => openLogin()} className="h-8 px-3.5 rounded-md bg-fg text-bg text-[13px] font-semibold whitespace-nowrap hover:opacity-90">
+      <button onClick={() => openLogin()} className="h-9 px-4 rounded-lg bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold whitespace-nowrap hover:brightness-95">
         Sign in
       </button>
     );
@@ -31,7 +31,7 @@ export default function Account() {
 
   return (
     <div className="relative" onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && close()}>
-      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex items-center gap-2 h-8 pl-1 pr-2 rounded-md border border-line hover:bg-hover">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="flex items-center gap-2 h-9 pl-1.5 pr-2 rounded-lg border border-line hover:bg-hover">
         <span className="relative size-6 rounded bg-brand-fill text-[#0e1013] grid place-items-center text-[11px] font-bold">
           {user.name[0].toUpperCase()}
           {!unlocked && <Lock className="absolute -bottom-1 -right-1 size-3 p-px rounded-full bg-panel text-muted" />}
@@ -72,7 +72,7 @@ export default function Account() {
               </button>
             )}
             {!unlocked && (
-              <button onClick={() => (close(), openLogin())} className="mt-1 h-8 rounded-md bg-fg text-bg font-semibold text-[12px]">
+              <button onClick={() => (close(), openLogin())} className="mt-1 h-8 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold text-[12px]">
                 Unlock with passkey
               </button>
             )}

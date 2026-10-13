@@ -45,7 +45,7 @@ export default async function VaultPage(props: PageProps<"/vault/[id]">) {
             <Link href={`/wallet/${v.leader}`} className={`text-[16px] font-semibold hover:underline ${v.leaderName ? "" : "font-mono"}`}>{who}</Link>
           </div>
           <StatusPill tone={v.active ? "up" : "muted"}>{v.active ? "Active" : "Closed"}</StatusPill>
-          <Link href={`/wallet/${v.leader}#auto-copy`} className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-fg text-bg text-[13px] font-semibold">
+          <Link href={`/wallet/${v.leader}#auto-copy`} className="h-9 px-3.5 inline-flex items-center gap-1.5 rounded-md bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold">
             <Bot className="size-4" /> Copy the same wallet
           </Link>
         </div>

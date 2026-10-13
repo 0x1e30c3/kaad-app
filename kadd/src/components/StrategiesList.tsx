@@ -55,7 +55,7 @@ export default function StrategiesList({ source, compact }: { source?: string; c
                 </span>
                 <span className={`tabular-nums ${s.ready ? "text-up" : "text-muted"}`}>{status}</span>
                 {!s.done && s.ready && (
-                  <button onClick={() => act(`x${s.id}`, () => executeStrategy(s.id).then(() => toast(`${KIND_LABEL[s.kind]} filled`)))} disabled={!!busy} className="h-7 px-2 rounded-md bg-fg text-bg font-semibold disabled:opacity-40 inline-flex items-center gap-1">
+                  <button onClick={() => act(`x${s.id}`, () => executeStrategy(s.id).then(() => toast(`${KIND_LABEL[s.kind]} filled`)))} disabled={!!busy} className="h-7 px-2 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold disabled:opacity-40 inline-flex items-center gap-1">
                     {busy === `x${s.id}` && <Loader2 className="size-3 animate-spin" />} Fill
                   </button>
                 )}

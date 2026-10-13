@@ -19,27 +19,27 @@
   --up: #0c9a57;
   --down: #d62f47;
   --warn: #b26b00;
-  --brand: #4a6a00;
-  --brand-fill: #c6ee2e;
+  --brand: #15803d;
+  --brand-fill: #86efac;
   --chart-grid: #eef0f3;
 }
 
 [data-theme="dark"] {
-  --bg: #0a0b0d;
-  --panel: #101215;
-  --raised: #16191d;
-  --hover: #1b1f24;
-  --line: #21252b;
-  --line-strong: #2c3138;
-  --fg: #eceef1;
-  --muted: #9aa1ab;
-  --faint: #9aa1ab;
-  --up: #2ccf7f;
+  --bg: #0b0b0e;
+  --panel: #111114;
+  --raised: #18181c;
+  --hover: #1c1c21;
+  --line: #222227;
+  --line-strong: #2e2e35;
+  --fg: #eeeef0;
+  --muted: #9b9ba6;
+  --faint: #8a8a95;
+  --up: #4ade80;
   --down: #f2475d;
   --warn: #f0a93a;
-  --brand: #c6ee2e;
-  --brand-fill: #c6ee2e;
-  --chart-grid: #15181c;
+  --brand: #86efac;
+  --brand-fill: #86efac;
+  --chart-grid: #17171b;
 }
 
 @theme inline {
@@ -119,6 +119,36 @@ input:focus-visible {
   }
 }
 
+/* Ticker strip: two copies of the list slide left by one copy's width, so it loops seamlessly. */
+@keyframes marquee {
+  to {
+    translate: -50% 0;
+  }
+}
+.marquee {
+  animation: marquee 60s linear infinite;
+}
+.marquee:hover,
+.marquee:focus-within {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    animation: none;
+  }
+}
+
+/* Rows that trade their numbers for an action on hover or focus (pointer devices); touch screens show both. The
+   action's own <dialog> stays rendered so a review step survives the pointer leaving the row. */
+@media (hover: hover) {
+  .swap-row:not(:hover):not(:focus-within) .swap-in > :not(dialog) {
+    display: none;
+  }
+  .swap-row:is(:hover, :focus-within) .swap-out {
+    display: none;
+  }
+}
+
 @keyframes float {
   0%,
   100% {
@@ -184,6 +214,21 @@ input:focus-visible {
 }
 .landing .spotlight:hover::before {
   opacity: 1;
+}
+
+/* Landing FAQ: answers open and close smoothly where the browser can animate to "auto" (instant elsewhere). */
+.landing {
+  interpolate-size: allow-keywords;
+}
+.landing details::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    content-visibility 0.45s allow-discrete;
+}
+.landing details[open]::details-content {
+  block-size: auto;
 }
 
 @media (min-width: 768px) { :root { --mobile-nav-height: 0px; } }

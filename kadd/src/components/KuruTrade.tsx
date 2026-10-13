@@ -129,7 +129,7 @@ export default function KuruTrade({ token, symbol }: { token: Address; symbol: s
       )}
 
       {!user ? (
-        <button onClick={() => openLogin()} className="h-11 rounded-lg bg-fg text-bg font-semibold">Sign in to trade on mainnet</button>
+        <button onClick={() => openLogin()} className="h-11 rounded-lg bg-brand-fill text-[#0a0a0a] font-semibold">Sign in to trade on mainnet</button>
       ) : review && quote && !("error" in quote) ? (
         <div className="flex flex-col gap-2 p-2.5 rounded-lg border border-line-strong text-[12px]">
           <span className="font-semibold">

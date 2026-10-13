@@ -193,6 +193,8 @@ export const usd = (n: number) =>
         : n >= 1e3 ? (n / 1e3).toFixed(1) + "K"
         : n >= 1 ? n.toFixed(2)
         : n.toLocaleString("en-US", { maximumSignificantDigits: 3 })); // tiny memecoin prices keep 3 significant digits
+/** Profit/loss with its sign and cents: "+$30,642.89", "-$10.73". */
+export const pnlUsd = (n: number) => (n < 0 ? "-" : "+") + "$" + Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const num = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n)));
 export const pct = (n: number) => (n > 0 ? "+" : "") + n.toFixed(1) + "%";
 export const short = (a: string) => a.slice(0, 6) + "…" + a.slice(-4);

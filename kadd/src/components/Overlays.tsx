@@ -76,7 +76,7 @@ function LoginModal() {
             autoFocus
             onClick={() => run(returning ? "existing" : "new")}
             disabled={!!busy}
-            className="h-11 rounded-lg bg-fg text-bg font-semibold inline-flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-70"
+            className="h-11 rounded-lg bg-brand-fill text-[#0a0a0a] font-semibold inline-flex items-center justify-center gap-2 hover:brightness-95 disabled:opacity-70"
           >
             {busy === (returning ? "existing" : "new") ? <Loader2 className="size-4 animate-spin" /> : <Fingerprint className="size-4" />}
             {returning ? "Unlock with passkey" : "Create account with passkey"}

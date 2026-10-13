@@ -141,7 +141,7 @@ export default function Leaderboard({ board, mainnet, smart, perps, bot, copiers
             <p className="max-w-sm text-[13px] text-muted">
               {tab === "traders" ? "Every swap on Kadd counts. Make one and you’re on the board." : "When a club captain trades, the club shows up here."}
             </p>
-            <Link href={tab === "traders" ? "/trenches" : "/groups"} className="mt-2 h-9 px-4 inline-flex items-center gap-1.5 rounded-lg bg-fg text-bg text-[13px] font-semibold hover:opacity-90">
+            <Link href={tab === "traders" ? "/trenches" : "/groups"} className="mt-2 h-9 px-4 inline-flex items-center gap-1.5 rounded-lg bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold hover:brightness-95">
               {tab === "traders" ? "Open Trenches" : "Browse clubs"} <ArrowRight className="size-3.5" />
             </Link>
           </div>

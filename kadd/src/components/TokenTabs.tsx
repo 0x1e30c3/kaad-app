@@ -125,7 +125,7 @@ export default function TokenTabs({ t, trades }: { t: Omit<TokenDetail, "candles
           <div className="grid place-items-center text-center gap-2 py-16 px-6 text-muted">
             <p className="font-medium text-fg">No groups yet</p>
             <p className="max-w-xs text-[12px]">Join or start a group to see which friends are trading this token.</p>
-            <Link href="/groups" className="mt-1 h-8 px-3.5 grid place-items-center rounded-md bg-fg text-bg text-[12px] font-semibold">Browse groups</Link>
+            <Link href="/groups" className="mt-1 h-8 px-3.5 grid place-items-center rounded-md bg-brand-fill text-[#0a0a0a] text-[12px] font-semibold">Browse groups</Link>
           </div>
         ))}
     </div>

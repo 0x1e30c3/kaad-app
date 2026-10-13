@@ -99,7 +99,7 @@ export default function QuickStart({ candidates }: { candidates: Candidate[] }) 
       <ol className={`${card} p-5 gap-6`}>
         <Step n={1} current={step} title="Create your account">
           <p className="text-[13px] text-muted">One passkey (Face ID, Touch ID or Windows Hello). No wallet app, no seed phrase.</p>
-          <button onClick={() => openLogin()} className="self-start h-10 px-4 rounded-lg bg-fg text-bg text-[14px] font-semibold">Sign in with a passkey</button>
+          <button onClick={() => openLogin()} className="self-start h-10 px-4 rounded-lg bg-brand-fill text-[#0a0a0a] text-[14px] font-semibold">Sign in with a passkey</button>
         </Step>
 
         <Step n={2} current={step} title="Get gas">
@@ -177,7 +177,7 @@ export default function QuickStart({ candidates }: { candidates: Candidate[] }) 
           </p>
           <div className="flex flex-wrap gap-2">
             {pick && (
-              <Link href={`/wallet/${pick.address}#auto-copy`} className="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg bg-fg text-bg text-[13px] font-semibold">
+              <Link href={`/wallet/${pick.address}#auto-copy`} className="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg bg-brand-fill text-[#0a0a0a] text-[13px] font-semibold">
                 <Bot className="size-3.5" /> Copy them automatically
               </Link>
             )}

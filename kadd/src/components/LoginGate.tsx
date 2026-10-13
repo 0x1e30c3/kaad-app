@@ -12,7 +12,7 @@ export default function LoginGate({ icon: Icon = Fingerprint, title, desc }: { i
         <p className="font-semibold text-[15px]">{title}</p>
         <p className="max-w-sm text-muted">{desc}</p>
       </div>
-      <button onClick={() => openLogin()} className="h-9 px-4 rounded-md bg-fg text-bg font-semibold hover:opacity-90">
+      <button onClick={() => openLogin()} className="h-9 px-4 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold hover:brightness-95">
         Sign in with passkey
       </button>
     </div>

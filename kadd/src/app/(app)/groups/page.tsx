@@ -80,7 +80,7 @@ function GroupCard({ g, joined }: { g: Group; joined: boolean }) {
           View group <ArrowRight className="size-3.5" />
         </Link>
         {!joined && (
-          <button onClick={() => joinGroup(g.id)} className="ml-auto h-8 px-3.5 rounded-lg bg-fg text-bg text-[12px] font-semibold hover:opacity-90">Join</button>
+          <button onClick={() => joinGroup(g.id)} className="ml-auto h-8 px-3.5 rounded-lg bg-brand-fill text-[#0a0a0a] text-[12px] font-semibold hover:brightness-95">Join</button>
         )}
       </div>
     </article>
@@ -119,7 +119,7 @@ export default function GroupsPage() {
         <button onClick={() => setMode(mode === "join" ? null : "join")} className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md border border-line-strong font-semibold hover:bg-hover">
           <Ticket className="size-4" /> Use code
         </button>
-        <button onClick={() => setMode(mode === "create" ? null : "create")} className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md bg-fg text-bg font-semibold hover:opacity-90">
+        <button onClick={() => setMode(mode === "create" ? null : "create")} className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold hover:brightness-95">
           <Plus className="size-4" /> Create group
         </button>
       </PageHeader>
@@ -134,7 +134,7 @@ export default function GroupsPage() {
           ) : (
             <input autoFocus value={code} onChange={(e) => setCode(e.target.value)} placeholder="Invite code, e.g. KADD-UI24" className="flex-1 h-10 px-3 rounded-md bg-raised outline-none border border-transparent focus:border-line-strong placeholder:text-faint font-mono uppercase" />
           )}
-          <button className="h-10 px-5 rounded-md bg-fg text-bg font-semibold hover:opacity-90">{mode === "create" ? "Create" : "Join"}</button>
+          <button className="h-10 px-5 rounded-md bg-brand-fill text-[#0a0a0a] font-semibold hover:brightness-95">{mode === "create" ? "Create" : "Join"}</button>
         </form>
       )}
 
