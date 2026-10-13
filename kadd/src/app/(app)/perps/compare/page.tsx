@@ -3,6 +3,7 @@ import { isAddress } from "viem";
 import { perpBoard, walletRisk, type WalletRisk } from "@/lib/perpl";
 import { short } from "@/lib/mock";
 import { PageHeader, card } from "@/components/ui";
+import PerpsTabs from "@/components/PerpsTabs";
 import WalletAvatar from "@/components/WalletAvatar";
 
 export const metadata = { title: "Compare perps traders · Kadd", description: "Perpl traders side by side: margin, leverage, distance to liquidation, all-time PnL, liquidations." };
@@ -39,8 +40,9 @@ export default async function ComparePage(props: PageProps<"/perps/compare">) {
 
   return (
     <div className="p-3 md:p-5 flex flex-col gap-4">
+      <PerpsTabs active="compare" />
       <PageHeader title="Compare perps traders" desc="Perpl traders side by side before you copy one: how much they risk, how close they are to liquidation, and how they've done.">
-        <Link href="/perps/risk" className="text-[12px] font-medium text-muted hover:text-fg underline-offset-4 hover:underline">Risk dashboard →</Link>
+        <Link href="/leaderboard" className="text-[12px] font-medium text-muted hover:text-fg underline-offset-4 hover:underline">Perps traders →</Link>
       </PageHeader>
 
       <form action="/perps/compare" className={`${card} p-3 flex-row flex-wrap items-center gap-2`}>
