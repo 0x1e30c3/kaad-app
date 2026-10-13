@@ -99,11 +99,11 @@ function LoginModal() {
 function Toasts() {
   const { toasts } = useStore();
   return (
-    <div aria-live="polite" className="fixed z-50 left-1/2 -translate-x-1/2 bottom-[calc(var(--mobile-nav-height)+var(--mobile-trade-height)+16px)] lg:bottom-10 w-[calc(100%-24px)] max-w-lg flex flex-col items-center gap-2 pointer-events-none">
+    <div aria-live="polite" className="fixed z-50 left-1/2 -translate-x-1/2 bottom-[calc(var(--bottom-safe-offset)+var(--bottom-action-height)+var(--bottom-gap)*2)] lg:bottom-[max(40px,var(--safe-area-bottom))] w-[calc(100%-24px)] max-w-lg flex flex-col items-center gap-2 pointer-events-none">
       {toasts.map((t) => (
         <div key={t.id} className="flex items-center gap-2 min-h-10 py-2 px-4 break-words max-w-full rounded-lg bg-fg text-bg text-[13px] font-medium shadow-xl">
-          {t.tone === "ok" ? <CircleCheck className="size-4 text-up" /> : <CircleAlert className="size-4 text-down" />}
-          {t.msg}
+          {t.tone === "ok" ? <CircleCheck className="size-4 shrink-0 text-up" /> : <CircleAlert className="size-4 shrink-0 text-down" />}
+          <span className="min-w-0 [overflow-wrap:anywhere]">{t.msg}</span>
         </div>
       ))}
     </div>

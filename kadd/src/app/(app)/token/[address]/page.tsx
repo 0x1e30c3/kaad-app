@@ -38,22 +38,22 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
       <AutoRefresh />
       <div className="flex-1 min-w-0 flex flex-col lg:overflow-auto">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-3 py-3 border-b border-line bg-panel">
-          <div className="flex flex-wrap min-w-0 max-w-full items-center gap-2.5">
-            <Link href="/trenches" aria-label="Back" className="grid place-items-center size-7 rounded-md text-muted hover:text-fg hover:bg-hover">
+          <div className="flex min-w-0 w-full items-center gap-2.5">
+            <Link href="/trenches" aria-label="Back" className="grid shrink-0 place-items-center size-7 rounded-md text-muted hover:text-fg hover:bg-hover">
               <ArrowLeft className="size-4" />
             </Link>
             <TokenIcon t={t} size={40} />
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap min-w-0 items-baseline gap-1.5">
-                <h1 title={t.symbol} className="max-w-full break-all font-semibold text-[16px] tracking-[-0.01em]">{t.symbol}</h1>
-                <span title={t.name} className="max-w-full break-words text-muted">{t.name}</span>
+              <div className="flex min-w-0 flex-col">
+                <h1 title={t.symbol} className="max-w-full truncate font-semibold text-[16px] tracking-[-0.01em]">{t.symbol}</h1>
+                <span title={t.name} className="max-w-full truncate text-muted">{t.name}</span>
               </div>
               <div className="flex items-center gap-2 text-[11px]">
                 <span className="text-up font-medium" suppressHydrationWarning>{ageOf(t.createdAt)}</span>
                 <CopyAddress address={t.address} />
               </div>
             </div>
-            <TokenActions t={token} />
+            <div className="shrink-0"><TokenActions t={token} /></div>
           </div>
           <div className="flex flex-col">
             <span className="text-[11px] text-muted">Market cap / FDV</span>
@@ -90,13 +90,14 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
           <TradePanel t={token} />
         </div>
         <RiskPanel a={t.analysis} checks={t.checks} />
-        <div className="h-16 lg:hidden" />
+        <div className="h-[calc(var(--mobile-trade-height)+var(--bottom-gap)+var(--safe-area-bottom))] lg:hidden" />
       </aside>
 
       {/* Mobile: the trade panel sits below the fold, so keep a shortcut pinned above the bottom nav. */}
       <a
         href="#trade"
-        className="lg:hidden fixed inset-x-3 bottom-[calc(var(--mobile-nav-height)+8px)] z-20 h-11 rounded-lg bg-fg text-bg grid place-items-center font-semibold shadow-lg"
+        data-token-trade
+        className="lg:hidden fixed inset-x-3 bottom-[calc(var(--bottom-safe-offset)+var(--bottom-gap))] z-20 h-11 rounded-lg bg-fg text-bg grid place-items-center font-semibold shadow-lg"
       >
         <span className="max-w-full truncate px-3">Trade {t.symbol}</span>
       </a>

@@ -3,8 +3,12 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --mobile-nav-height: calc(60px + env(safe-area-inset-bottom, 0px));
-  --mobile-trade-height: 52px;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-gap: 8px;
+  --mobile-nav-height: calc(60px + var(--safe-area-bottom));
+  --mobile-trade-height: calc(44px + var(--bottom-gap));
+  --bottom-safe-offset: max(var(--mobile-nav-height), var(--safe-area-bottom));
+  --bottom-action-height: 0px;
   --buy-fill: #087443;
   --sell-fill: #b62038;
   --bg: #f5f6f8;
@@ -169,6 +173,9 @@ input:focus-visible {
 .landing .spotlight:hover::before {
   opacity: 1;
 }
+
+/* Reserve the shortcut only while the token page is mounted. */
+body:has([data-token-trade]) { --bottom-action-height: var(--mobile-trade-height); }
 
 @media (min-width: 768px) { :root { --mobile-nav-height: 0px; } }
 @media (min-width: 1024px) { :root { --mobile-trade-height: 0px; } }

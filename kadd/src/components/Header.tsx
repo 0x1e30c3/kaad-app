@@ -81,7 +81,7 @@ export default function Header() {
         </div>
       </header>
 
-      <nav aria-label="Main" className="md:hidden fixed bottom-0 inset-x-0 z-20 grid grid-cols-5 border-t border-line bg-panel/95 backdrop-blur h-[var(--mobile-nav-height)] pb-[env(safe-area-inset-bottom)]">
+      <nav aria-label="Main" className="md:hidden fixed bottom-0 inset-x-0 z-20 grid grid-cols-5 border-t border-line bg-panel/95 backdrop-blur h-[var(--mobile-nav-height)] pb-[var(--safe-area-bottom)]">
         {MOBILE.map(([href, label, Icon]) => {
           const on = isActive(path, href);
           return (

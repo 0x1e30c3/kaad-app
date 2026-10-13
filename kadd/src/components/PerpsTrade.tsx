@@ -100,16 +100,16 @@ export default function PerpsTrade() {
               </div>
               <button onClick={() => account.reload()} aria-label="Refresh balances" className="size-8 grid place-items-center rounded-md hover:bg-hover text-muted"><RefreshCw className="size-4" /></button>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
               <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" aria-label="AUSD amount" className={`${input} w-full flex-none`} />
               <button
                 onClick={() => run("deposit", () => depositAusd(net, Number(amount)))}
                 disabled={!!busy || !(Number(amount) > 0)}
-                className="h-10 flex-1 min-w-0 px-2 rounded-lg bg-fg text-bg text-[14px] font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+                className="h-10 shrink-0 sm:flex-1 min-w-0 px-2 rounded-lg bg-fg text-bg text-[14px] font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-50"
               >
                 {busy === "deposit" ? <Loader2 className="size-4 animate-spin" /> : <ArrowDownToLine className="size-4" />} {acctId ? "Deposit" : "Open account"}
               </button>
-              <button onClick={() => run("withdraw", () => withdrawAusd(net, Number(amount)))} disabled={!!busy || !acctId || !(Number(amount) > 0)} className="h-10 px-3 rounded-lg border border-line-strong text-[14px] font-semibold inline-flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40">
+              <button onClick={() => run("withdraw", () => withdrawAusd(net, Number(amount)))} disabled={!!busy || !acctId || !(Number(amount) > 0)} className="h-10 shrink-0 px-3 rounded-lg border border-line-strong text-[14px] font-semibold inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-40">
                 {busy === "withdraw" ? <Loader2 className="size-4 animate-spin" /> : <ArrowUpFromLine className="size-4" />} Withdraw
               </button>
             </div>

@@ -63,7 +63,7 @@ function Column({ col, hidden }: { col: Col; hidden: boolean }) {
   const tokens = col.tokens.filter((t) => risks.includes(t.risk) && (!q || t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)));
   const filtered = tokens.length !== col.tokens.length;
   return (
-    <section className={`${hidden ? "hidden" : "flex"} xl:flex flex-1 min-w-0 xl:min-w-[340px] flex-col rounded-lg border border-line bg-panel overflow-hidden`}>
+    <section className={`${hidden ? "hidden" : "flex"} xl:flex flex-1 min-w-0 flex-col rounded-lg border border-line bg-panel overflow-hidden`}>
       <header className="h-11 shrink-0 flex items-center gap-2 px-3 border-b border-line">
         <h2 className="font-semibold text-[13px]">{col.title}</h2>
         <span className="text-[11px] text-faint tabular-nums">{tokens.length}</span>

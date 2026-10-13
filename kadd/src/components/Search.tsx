@@ -66,8 +66,8 @@ export default function Search() {
       >
         <SearchIcon className="size-4" />
       </button>
-      <div className={`${mobile ? "fixed inset-x-2 top-2 z-40 block" : "hidden"} sm:relative sm:inset-auto sm:top-auto sm:block`}>
-        <label className="flex items-center gap-2 w-full sm:w-40 lg:w-48 2xl:w-64 h-10 sm:h-8 px-2.5 shadow-lg sm:shadow-none rounded-md bg-raised border border-transparent focus-within:border-line-strong text-muted">
+      <div className={`${mobile ? "fixed inset-x-2 top-2 z-40 block" : "hidden"} min-w-0 sm:relative sm:inset-auto sm:top-auto sm:block sm:w-[clamp(8rem,20vw,16rem)] sm:shrink`}>
+        <label className="flex items-center gap-2 w-full h-10 sm:h-8 px-2.5 shadow-lg sm:shadow-none rounded-md bg-raised border border-transparent focus-within:border-line-strong text-muted">
           <SearchIcon className="size-3.5 shrink-0" />
           <input
             ref={input}
