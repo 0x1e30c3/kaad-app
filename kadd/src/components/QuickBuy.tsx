@@ -33,9 +33,10 @@ export default function QuickBuy({ t, usd, className }: { t: TokenRef & { price:
     <dialog ref={dialog} aria-label="Review practice buy" onCancel={(e) => { if (busy) e.preventDefault(); }}
       className="m-auto w-[min(400px,calc(100vw-32px))] rounded-xl border border-line bg-panel text-fg p-5 shadow-xl backdrop:bg-black/50">
       <h2 className="font-semibold text-[16px]">Review practice buy</h2>
-      <p className="my-3 break-words">Buy {order.amount} tUSDC of {order.token.symbol}.</p>
+      <p className="my-3 break-words">Spend {order.amount} tUSDC to buy {order.token.name} ({order.token.symbol}).</p>
       <p className="text-muted text-[12px]">Execution: Monad testnet mirror, free test tokens. Market price: Monad mainnet.</p>
-      {order.token.risk !== "safe" && <p role="alert" className="my-3 text-[12px] text-down">{order.token.risk === "danger" ? "High risk" : "Risk caution"}: liquidity may be low or the pool may be new. Review token details; you may be unable to sell.</p>}
+      {order.token.risk === "safe" && <p className="my-3 text-[12px] text-muted">Risk: low screening risk, not a guarantee. Prices can fall and liquidity can change; you may be unable to sell.</p>}
+      {order.token.risk !== "safe" && <p role="alert" className="my-3 text-[12px] text-down">{order.token.risk === "danger" ? "High risk" : order.token.risk === "caution" ? "Risk caution" : "Risk unknown"}: liquidity may be low or the pool may be new. Review token details; you may be unable to sell.</p>}
       <div className="mt-4 grid grid-cols-2 gap-2">
         <button autoFocus disabled={busy} onClick={() => dialog.current?.close()} className="h-11 border border-line rounded-md">Cancel</button>
         <button disabled={busy} onClick={() => void buy(order.token, order.amount)} className="min-h-11 px-2 rounded-md bg-buy-fill text-white font-semibold">{busy ? "Submitting…" : "Confirm practice buy"}</button>

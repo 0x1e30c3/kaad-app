@@ -88,17 +88,17 @@ async function get<T>(url: string, revalidate: number, background = false, fresh
   }
   const headers: Record<string, string> = { accept: "application/json" };
   if (CG_KEY && url.startsWith(GT)) headers["x-cg-demo-api-key"] = CG_KEY;
-  const res = await fetch(url, { headers, next: { revalidate } }).catch(() => null);
+  const res = await fetch(url, { headers, next: { revalidate }, signal: AbortSignal.timeout(10_000) }).catch(() => null);
   if (res?.status === 404) throw new NotFound(url);
   if (res?.status === 429) backoffUntil = Date.now() + 60_000;
-  if (!res?.ok) {
+  const json = res?.ok ? await res.json().catch(() => null) : null;
+  if (!res?.ok || json === null) {
     if (lastGood.has(url)) {
       if (freshness) { freshness.stale = true; freshness.updatedAt = Math.min(freshness.updatedAt ?? Infinity, fetchedAt.get(url) ?? 0); }
       return lastGood.get(url) as T;
     }
     throw new Error(`Market data unavailable (${new URL(url).hostname} ${res?.status ?? "offline"})`);
   }
-  const json = await res.json();
   const updated = Date.parse(res.headers.get("date") ?? "") || Date.now();
   fetchedAt.set(url, updated);
   if (freshness) freshness.updatedAt = Math.min(freshness.updatedAt ?? Infinity, updated);

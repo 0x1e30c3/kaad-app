@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Coins, Copy, Droplet, ExternalLink, Lock, LogOut, Star, Users, Wallet } from "lucide-react";
+import FundsBadge from "./FundsBadge";
 import { short } from "@/lib/mock";
 import { logout, openLogin, toast, useStore } from "@/lib/store";
 import { faucet, requestGas, useWallet } from "@/lib/swap";
@@ -37,9 +38,9 @@ export default function Account() {
           {!unlocked && <Lock className="absolute -bottom-1 -right-1 size-3 p-px rounded-full bg-panel text-muted" />}
         </span>
         <span className="hidden xl:flex items-center gap-1.5 tabular-nums text-[12px] font-medium" title="Free test USDC on Monad testnet">
-          {wallet ? wallet.usdc.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "…"} tUSDC <span className="px-1 rounded bg-warn/15 text-warn text-[10px] font-semibold">Practice</span>
+          {wallet ? wallet.usdc.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "…"} tUSDC
         </span>
-        <span className="xl:hidden text-[10px] font-semibold text-muted">Practice</span>
+        <FundsBadge />
         <ChevronDown className="size-3.5 text-muted" />
       </button>
 
@@ -47,7 +48,7 @@ export default function Account() {
         <div className="absolute z-30 right-0 top-10 w-64 rounded-lg border border-line bg-panel shadow-2xl overflow-hidden text-[13px]">
           <div className="px-3 py-3 border-b border-line flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <span className="font-medium">Practice · Monad testnet</span>
+              <span className="flex items-center gap-1.5 font-medium"><FundsBadge /> Monad testnet</span>
               <span className={`text-[11px] font-medium ${unlocked ? "text-up" : "text-muted"}`}>{unlocked ? "● Session active" : "Locked"}</span>
             </div>
             <button

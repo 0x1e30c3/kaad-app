@@ -1,4 +1,5 @@
 "use client";
+import FundsBadge from "./FundsBadge";
 import { useEffect, useState } from "react";
 import { formatUnits, parseUnits, type Address } from "viem";
 import { ArrowUpRight, Loader2, ShieldAlert, Zap } from "lucide-react";
@@ -89,7 +90,7 @@ export default function KuruTrade({ token, symbol }: { token: Address; symbol: s
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-muted">
-        <span>Mainnet balance</span>
+        <span className="flex items-center gap-1.5"><FundsBadge real /> Mainnet balance</span>
         <span className="tabular-nums text-fg">{!user ? "–" : !bal ? "…" : buy ? `${fmt(Number(formatUnits(bal.mon, 18)))} MON` : `${fmt(Number(formatUnits(bal.token, decimals)))} ${symbol}`}</span>
       </div>
 
@@ -128,6 +129,7 @@ export default function KuruTrade({ token, symbol }: { token: Address; symbol: s
         </div>
       )}
 
+      <p className="flex items-center gap-1.5 text-[11px] text-muted"><FundsBadge real /> Order executes on Monad mainnet</p>
       {!user ? (
         <button onClick={() => openLogin()} className="h-11 rounded-lg bg-fg text-bg font-semibold">Sign in to trade on mainnet</button>
       ) : review && quote && !("error" in quote) ? (

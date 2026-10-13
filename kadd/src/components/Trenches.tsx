@@ -1,7 +1,6 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Activity, Droplet, SlidersHorizontal, Zap } from "lucide-react";
 import { usd, type Risk } from "@/lib/mock";
 import { ageOf, dexName, type MarketToken, type MarketSnapshot } from "@/lib/market";
@@ -9,6 +8,7 @@ import { RiskBadge, TokenIcon } from "./ui";
 import CopyAddress from "./CopyAddress";
 import QuickBuy from "./QuickBuy";
 import Onboarding from "./Onboarding";
+import MarketStatus from "./MarketStatus";
 import { usePracticeOneClick, setPracticeOneClick } from "@/lib/quickBuyPreference";
 
 type Col = { key: string; title: string; hint: string; } & MarketSnapshot;
@@ -53,8 +53,6 @@ function Card({ t, amount }: { t: MarketToken; amount: string }) {
 const RISKS: [Risk, string][] = [["safe", "Low"], ["caution", "Caution"], ["danger", "High"]];
 
 function Column({ col, hidden }: { col: Col; hidden: boolean }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
   const [amount, setAmount] = useState("10");
   const [filterOpen, setFilterOpen] = useState(false);
   const [kw, setKw] = useState("");
@@ -119,11 +117,7 @@ function Column({ col, hidden }: { col: Col; hidden: boolean }) {
           </div>
         </div>
       )}
-      <div role="status" className="px-3 py-2 border-b border-line text-[11px] text-muted flex flex-wrap items-center gap-2">
-        <span>{pending ? "Refreshing…" : col.error ? "Data unavailable" : col.stale ? "Stale · showing last available data" : "Data loaded"}</span>
-        {col.updatedAt !== null && <time dateTime={new Date(col.updatedAt).toISOString()}>Last updated: {new Date(col.updatedAt).toISOString().slice(11, 19)} UTC</time>}
-        <button disabled={pending} onClick={() => startTransition(() => router.refresh())} className="underline disabled:opacity-50">{col.error || col.stale ? "Retry" : "Refresh"}</button>
-      </div>
+      <div className="px-3 py-2 border-b border-line"><MarketStatus data={col} /></div>
       <p className="px-3 py-1.5 text-[11px] text-faint border-b border-line">{col.hint}</p>
       <div className="flex-1 overflow-auto">
         {tokens.map((t) => <Card key={t.address} t={t} amount={amount || "0"} />)}

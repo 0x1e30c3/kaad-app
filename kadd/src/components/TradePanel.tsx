@@ -6,6 +6,7 @@ import { num } from "@/lib/mock";
 import type { MarketToken } from "@/lib/market";
 import type { RiskAnalysis } from "@/lib/risk";
 import { LEVEL } from "./RiskPanel";
+import FundsBadge from "./FundsBadge";
 import StrategyForm from "./StrategyForm";
 import StrategiesList from "./StrategiesList";
 import KuruTrade from "./KuruTrade";
@@ -108,6 +109,7 @@ function TestnetTrade({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
       <div className="flex flex-col">
         <div className="flex flex-col gap-3 p-3">
           {modeTabs}
+          <p className="flex items-center gap-1.5 text-[11px] text-muted"><FundsBadge /> Orders use free test tokens</p>
           <StrategyForm key={mode} t={t} kind={mode} held={held} />
         </div>
         <StrategiesList source={t.address} compact />
@@ -133,7 +135,7 @@ function TestnetTrade({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-muted">
-        <span>Practice balance · testnet</span>
+        <span className="flex items-center gap-1.5"><FundsBadge /> Balance · testnet</span>
         <span className="tabular-nums text-fg">
           {!user ? "–" : !wallet ? "…" : buy ? `${num(wallet.usdc)} tUSDC` : `${num(held)} ${t.symbol}`}
         </span>
@@ -189,7 +191,7 @@ function TestnetTrade({ t }: { t: MarketToken & { analysis?: RiskAnalysis } }) {
         </div>
       )}
 
-      <p className="text-[11px] text-muted">Practice order · Monad testnet · no real monetary value</p>
+      <p className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted"><FundsBadge /> Monad testnet · no real monetary value</p>
       <button
         onClick={submit}
         disabled={!VENUE_READY || (!!user && !n) || !!busy || warned}

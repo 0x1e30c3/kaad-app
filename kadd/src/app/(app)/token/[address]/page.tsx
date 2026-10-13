@@ -56,7 +56,7 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
             <div className="shrink-0"><TokenActions t={token} /></div>
           </div>
           <div className="flex flex-col">
-            <span className="text-[11px] text-muted">Market cap / FDV</span>
+            <span className="text-[11px] text-muted">Market Cap / FDV</span>
             <span className="text-[22px] font-semibold tabular-nums tracking-[-0.02em] leading-none">{usd(t.mc)}</span>
             <span className="text-[12px] text-muted">Price change 24h <Pct v={t.change.h24} className="font-medium" /></span>
           </div>

@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import { trenchesSnapshot } from "./market";
 
 const original = globalThis.fetch;
-let mode: "ok" | "empty" | "offline" | "partial" | "old" = "offline";
+let mode: "ok" | "empty" | "offline" | "partial" | "old" | "malformed" = "offline";
 const pool = {
   attributes: { address: "0xpool", pool_created_at: "2026-10-01", base_token_price_usd: "1", market_cap_usd: "10000", reserve_in_usd: "60000" },
   relationships: { base_token: { data: { id: "token" } }, dex: { data: { id: "dex" } } },
 };
 globalThis.fetch = async (input) => {
   if (mode === "offline" || (mode === "partial" && String(input).includes("page=2"))) return new Response("unavailable", { status: 503 });
+  if (mode === "malformed") return new Response("not JSON", { status: 200 });
   return Response.json({ data: mode === "empty" ? [] : [pool], included: [{ id: "token", attributes: { address: "0xtoken", name: "Example", symbol: "EXAMPLE", image_url: null } }] }, {
     headers: { date: new Date(mode === "old" ? Date.now() - 180_000 : Date.now()).toUTCString() },
   });
@@ -29,6 +30,11 @@ try {
   assert.equal(stale.error, false);
   assert.equal(stale.updatedAt, good.updatedAt);
   assert.deepEqual(stale.tokens, good.tokens);
+  mode = "malformed";
+  const malformed = await trenchesSnapshot("new");
+  assert.equal(malformed.stale, true, "Malformed responses preserve last good data");
+  assert.equal(malformed.updatedAt, good.updatedAt);
+  assert.deepEqual(malformed.tokens, good.tokens);
   mode = "empty";
   const empty = await trenchesSnapshot("new");
   assert.equal(empty.error, false);
