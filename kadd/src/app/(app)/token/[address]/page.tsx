@@ -97,7 +97,7 @@ export default async function TokenPage(props: PageProps<"/token/[address]">) {
       <a
         href="#trade"
         data-token-trade
-        className="lg:hidden fixed inset-x-3 bottom-[calc(var(--bottom-safe-offset)+var(--bottom-gap))] z-20 h-11 rounded-lg bg-fg text-bg grid place-items-center font-semibold shadow-lg"
+        className="lg:hidden fixed left-[calc(var(--sidebar-width)+12px)] right-3 bottom-[calc(var(--bottom-safe-offset)+var(--bottom-gap))] z-20 h-11 rounded-lg bg-fg text-bg grid place-items-center font-semibold shadow-lg"
       >
         <span className="max-w-full truncate px-3">Trade {t.symbol}</span>
       </a>
