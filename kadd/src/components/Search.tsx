@@ -36,11 +36,11 @@ export default function Search() {
     };
   }, [s, open]);
 
-  // "/" focuses search unless the user is already typing somewhere.
+  // ⌘K / Ctrl+K focuses search anywhere; "/" does too unless the user is already typing somewhere.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
-      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes(el.tagName) && !el.isContentEditable) {
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !["INPUT", "TEXTAREA"].includes(el.tagName) && !el.isContentEditable)) {
         e.preventDefault();
         input.current?.focus();
       }
@@ -67,7 +67,7 @@ export default function Search() {
         <SearchIcon className="size-4" />
       </button>
       <div className={`${mobile ? "fixed inset-x-2 top-2 z-40 block" : "hidden"} sm:relative sm:inset-auto sm:top-auto sm:block`}>
-        <label className="flex items-center gap-2 w-full sm:w-40 lg:w-48 2xl:w-64 h-10 sm:h-8 px-2.5 shadow-lg sm:shadow-none rounded-md bg-raised border border-transparent focus-within:border-line-strong text-muted">
+        <label className="flex items-center gap-2 w-full sm:w-72 lg:w-[420px] h-10 sm:h-9 px-3 shadow-lg sm:shadow-none rounded-lg bg-raised border border-transparent focus-within:border-line-strong text-muted">
           <SearchIcon className="size-3.5 shrink-0" />
           <input
             ref={input}
@@ -83,11 +83,11 @@ export default function Search() {
               if (e.key === "Enter" && results[i]) go(results[i].address);
               if (e.key === "Escape") input.current?.blur();
             }}
-            placeholder="Search token or contract address"
+            placeholder="Search coins or contract address…"
             aria-label="Search tokens"
             className="flex-1 min-w-0 bg-transparent outline-none text-fg placeholder:text-faint"
           />
-          <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-line text-faint">/</kbd>
+          <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-line text-faint">⌘K</kbd>
         </label>
 
         {open && (
