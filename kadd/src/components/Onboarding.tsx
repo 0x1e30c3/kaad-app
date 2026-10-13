@@ -6,10 +6,10 @@ import { dismissOnboarding, openLogin, useStore } from "@/lib/store";
 import { faucet, requestGas, useWallet } from "@/lib/swap";
 
 /** "Get started" checklist. Every step ticks itself off from real state (chain balances, history, groups). */
-export default function Onboarding() {
+export default function Onboarding({ collapsed = false }: { collapsed?: boolean }) {
   const { user, fills, joined, onboardingDone } = useStore();
   const wallet = useWallet();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(!collapsed);
   const [busy, setBusy] = useState(false);
   if (onboardingDone) return null;
 
@@ -57,7 +57,7 @@ export default function Onboarding() {
         </button>
       </div>
       {open && (
-        <ol className="grid gap-px border-t border-line bg-line sm:grid-cols-5">
+        <ol className="grid gap-px border-t border-line bg-line sm:grid-cols-2 2xl:grid-cols-5">
           {steps.map((s, i) => (
             <li key={s.title} className={`flex gap-2.5 p-3 bg-panel text-[12px] ${i === next ? "" : "opacity-80"}`}>
               <span className={`grid place-items-center size-5 shrink-0 rounded-full text-[10px] font-bold ${s.done ? "bg-buy-fill text-white" : i === next ? "bg-fg text-bg" : "bg-raised text-muted"}`}>
