@@ -9,6 +9,7 @@ import { requireAccount, toast, useStore } from "@/lib/store";
 import { useAsync } from "@/lib/useAsync";
 import { chain } from "@/lib/wallet";
 import { short } from "@/lib/mock";
+import { StatStrip } from "./ui";
 
 const fmt = (v: bigint, d: number, max = 4) => Number(formatUnits(v, d)).toLocaleString("en-US", { maximumFractionDigits: max });
 const card = "rounded-lg border border-line bg-panel";
@@ -232,21 +233,11 @@ export default function ClubDetail({ address }: { address: Address }) {
         </a>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className={`${card} p-4`}>
-          <div className="text-[12px] text-muted">tUSDC in club</div>
-          <div className="mt-1 text-[22px] font-semibold tabular-nums">{fmt(club.usdc, USDC_DECIMALS, 2)}</div>
-          {!club.flat && <div className="text-[11px] text-muted">+ open positions (see table)</div>}
-        </div>
-        <div className={`${card} p-4`}>
-          <div className="text-[12px] text-muted">Your share</div>
-          <div className="mt-1 text-[22px] font-semibold tabular-nums">{club.totalShares ? (Number((club.myShares * 10_000n) / club.totalShares) / 100).toLocaleString("en-US") : 0}%</div>
-        </div>
-        <div className={`${card} p-4`}>
-          <div className="text-[12px] text-muted">Market</div>
-          <div className="mt-1 text-[22px] font-semibold">{club.positions.map((p) => p.market.symbol).join(" · ")}</div>
-        </div>
-      </div>
+      <StatStrip stats={[
+        { label: "tUSDC in club", value: fmt(club.usdc, USDC_DECIMALS, 2), note: !club.flat ? "+ open positions (see table)" : undefined },
+        { label: "Your share", value: `${club.totalShares ? (Number((club.myShares * 10_000n) / club.totalShares) / 100).toLocaleString("en-US") : 0}%` },
+        { label: "Market", value: club.positions.map((p) => p.market.symbol).join(" · ") },
+      ]} />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_380px] items-start">
         <section className={`${card} overflow-hidden`}>

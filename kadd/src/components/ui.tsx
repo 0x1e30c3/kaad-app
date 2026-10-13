@@ -135,6 +135,6 @@ export function StatusPill({ tone, children }: { tone: "up" | "warn" | "down" | 
   return <span className={`inline-flex items-center gap-1 h-5 px-1.5 rounded-md text-[11px] font-medium whitespace-nowrap ${cls}`}>{children}</span>;
 }
 
-/** Card surface used by the "story" cards: identity, headline number, context, one clear action. */
-export const card = "relative flex flex-col rounded-xl border border-line bg-panel transition-[border-color,box-shadow] hover:border-line-strong hover:shadow-[0_6px_24px_-12px_rgb(0_0_0/0.25)]";
+/** Flat card surface. Interactive children own their hover and focus feedback. */
+export const card = "relative flex flex-col rounded-xl border border-line bg-panel";
 

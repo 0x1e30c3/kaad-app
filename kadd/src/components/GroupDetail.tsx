@@ -4,7 +4,7 @@ import { ArrowLeft, Copy, Crown, LogOut, UserPlus } from "lucide-react";
 import { FEED_TOKENS, ago, getTrader, groupFeed, type Trader } from "@/lib/mock";
 import { useQuotes } from "@/lib/useQuotes";
 import { allGroups, joinGroup, leaveGroup, toast, useStore } from "@/lib/store";
-import { TokenIcon, TraderAvatar } from "./ui";
+import { StatusPill, TokenIcon, TraderAvatar } from "./ui";
 import QuickBuy from "./QuickBuy";
 
 export default function GroupDetail({ id }: { id: string }) {
@@ -96,6 +96,7 @@ export default function GroupDetail({ id }: { id: string }) {
         <section className="rounded-lg border border-line bg-panel overflow-hidden">
           <h2 className="px-4 h-11 flex items-center gap-2 font-semibold border-b border-line">
             Leaderboard this week
+            <StatusPill tone="warn">Demo Data</StatusPill>
           </h2>
           <ol>
             {board.map((m, i) => (

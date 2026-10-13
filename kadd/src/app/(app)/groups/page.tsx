@@ -2,87 +2,31 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Plus, Ticket, Trophy, Users, Zap } from "lucide-react";
+import { ArrowRight, Plus, Ticket } from "lucide-react";
 import { groupStory, type Group } from "@/lib/mock";
-import { allGroups, createGroup, joinByCode, joinGroup, useStore } from "@/lib/store";
-import { Monogram, PageHeader, PanelEmpty, StatusPill, TraderAvatar, card, hueOf } from "@/components/ui";
-import { AreaChart, agoLabel } from "@/components/charts";
+import { allGroups, createGroup, joinByCode, useStore } from "@/lib/store";
+import { Monogram, PageHeader, PanelEmpty, Pct, card, hueOf } from "@/components/ui";
 import ClubsSection from "@/components/ClubsSection";
 import FollowingFeed from "@/components/FollowingFeed";
 import CopyClubs from "@/components/CopyClubs";
 
-/** A labelled fact row: icon, label, then the value on the right. */
-const Fact = ({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) => (
-  <div className="flex items-center gap-2.5 min-w-0 text-[13px]">
-    <span className="grid place-items-center size-7 shrink-0 rounded-lg bg-raised text-muted [&>svg]:size-3.5">{icon}</span>
-    <span className="text-muted shrink-0">{label}</span>
-    <span className="ml-auto min-w-0 flex items-center gap-1.5 justify-end">{children}</span>
-  </div>
-);
-
 function GroupCard({ g, joined }: { g: Group; joined: boolean }) {
-  const { total, series, top, latest, people } = groupStory(g);
+  const { total, people } = groupStory(g);
   const volume = people.reduce((s, t) => s + t.volume, 0);
   const roi = volume ? (total / volume) * 100 : 0;
-  const up = total >= 0;
   return (
     <article className={`${card} p-5 gap-4`}>
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <Monogram name={g.name} hue={hueOf(g.id)} size={40} />
-        <div className="min-w-0 flex-1">
-          <Link href={`/groups/${g.id}`} className="block text-[16px] font-semibold leading-tight truncate hover:underline after:absolute after:inset-0">{g.name}</Link>
-          <p className="mt-0.5 text-[12px] text-muted line-clamp-1">{g.desc || "No description"}</p>
-        </div>
-        {joined && <StatusPill tone="up">Joined</StatusPill>}
+        <h3 className="min-w-0 truncate text-[16px] font-semibold">{g.name}</h3>
       </div>
-
       <div>
-        <div className="text-[12px] text-muted">Members’ PnL · 7d</div>
-        <div className="flex items-baseline gap-2">
-          <span className="text-[28px] font-semibold tabular-nums tracking-[-0.02em]">
-            {up ? "+" : "-"}${Math.abs(total).toLocaleString("en-US")}
-          </span>
-          <span className={`h-5 px-1.5 rounded-md text-[11px] font-semibold tabular-nums inline-flex items-center ${up ? "bg-up/12 text-up" : "bg-down/12 text-down"}`}>
-            {up ? "▲" : "▼"} {Math.abs(roi).toFixed(1)}%
-          </span>
-        </div>
-        <div className="relative z-10 mt-2 -mx-1">
-          <AreaChart data={series.map((v, i) => ({ t: i, v }))} height={72} axes={false} kind="pnl" label={agoLabel(7)} color={up ? "var(--up)" : "var(--down)"} />
-        </div>
+        <div className="text-[12px] text-muted">Members’ PnL · 7d · Demo Data</div>
+        <Pct v={roi} className="text-[28px] font-semibold tracking-[-0.02em]" />
       </div>
-
-      <div className="flex flex-col gap-2">
-        <Fact icon={<Users />} label="Members">
-          <span className="flex -space-x-1.5">
-            {people.slice(0, 4).map((p) => <span key={p.address} className="ring-2 ring-panel rounded-full"><TraderAvatar name={p.name} hue={p.hue} size={20} /></span>)}
-          </span>
-          <span className="font-medium tabular-nums">{g.members.length}</span>
-        </Fact>
-        {top && (
-          <Fact icon={<Trophy />} label="Top trader">
-            <span className="font-medium truncate">{top.name}</span>
-            <span className="tabular-nums text-up">+${top.pnl7d.toLocaleString("en-US")}</span>
-          </Fact>
-        )}
-        {latest && (
-          <Fact icon={<Zap />} label="Latest">
-            <span className="truncate">
-              <span className="font-medium">{latest.trader.name}</span> <span className={latest.side === "buy" ? "text-up" : "text-down"}>{latest.side === "buy" ? "bought" : "sold"}</span>{" "}
-              <Link href={`/token/${latest.token.address}`} className="relative z-10 font-medium hover:underline">{latest.token.symbol}</Link>
-            </span>
-            <span className="shrink-0 text-faint tabular-nums">{latest.agoMin || 1}m</span>
-          </Fact>
-        )}
-      </div>
-
-      <div className="relative z-10 mt-auto flex items-center gap-2 pt-4 border-t border-line">
-        <Link href={`/groups/${g.id}`} className="inline-flex items-center gap-1 text-[13px] font-medium text-muted hover:text-fg">
-          View group <ArrowRight className="size-3.5" />
-        </Link>
-        {!joined && (
-          <button onClick={() => joinGroup(g.id)} className="ml-auto h-8 px-3.5 rounded-lg bg-fg text-bg text-[12px] font-semibold hover:opacity-90">Join</button>
-        )}
-      </div>
+      <Link href={`/groups/${g.id}`} className="mt-auto inline-flex h-9 items-center justify-center gap-1 rounded-lg bg-fg px-4 text-[13px] font-semibold text-bg hover:opacity-90">
+        {joined ? "Open group" : "View group"} <ArrowRight className="size-3.5" />
+      </Link>
     </article>
   );
 }

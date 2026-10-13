@@ -2,13 +2,13 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { isAddress } from "viem";
+import { formatUnits, isAddress } from "viem";
 import { Bot, Loader2, Plus } from "lucide-react";
 import { COPY_CLUBS_READY, joinCopyClub, leaveCopyClub, listCopyClubs, startCopyClub, type CopyClubView } from "@/lib/copyClubs";
 import { short, usd } from "@/lib/mock";
 import { useStore } from "@/lib/store";
 import { useAsync } from "@/lib/useAsync";
-import { PanelEmpty, StatusPill, btnSm, card } from "./ui";
+import { PanelEmpty, Pct, StatusPill, btnSm, card } from "./ui";
 import WalletAvatar from "./WalletAvatar";
 
 const field = "h-9 w-full px-3 rounded-md bg-raised outline-none border border-transparent focus:border-line-strong tabular-nums placeholder:text-faint";
@@ -79,66 +79,72 @@ function CreateForm({ leader: initial, onDone }: { leader: string; onDone: () =>
 }
 
 function ClubCard({ c, signedIn }: { c: CopyClubView; signedIn: boolean }) {
+  const [expanded, setExpanded] = useState(false);
   const [amount, setAmount] = useState("50");
   const [busy, setBusy] = useState<"join" | "leave" | null>(null);
   const mine = c.totalShares > 0n ? Number((c.myShares * 10_000n) / c.totalShares) / 100 : 0;
+  // The first deposit mints shares 1:1 with tUSDC; value per share tracks return.
+  const pnl = c.totalShares > 0n ? (c.value / Number(formatUnits(c.totalShares, 6)) - 1) * 100 : null;
   return (
     <article className={`${card} p-5 gap-4`}>
       <div className="flex items-start gap-3">
         <WalletAvatar address={c.leader} size={40} />
         <div className="min-w-0 flex-1">
           <div className="text-[16px] font-semibold leading-tight truncate">{c.name}</div>
-          <div className="mt-0.5 text-[12px] text-muted truncate">
-            Copies <Link href={`/wallet/${c.leader}`} className="font-mono hover:text-fg">{short(c.leader)}</Link>
-          </div>
         </div>
-        {c.flat ? <StatusPill tone="up">Deposits open</StatusPill> : <StatusPill tone="warn">Holding</StatusPill>}
       </div>
       <div>
-        <div className="text-[12px] text-muted">Club value</div>
-        <div className="text-[28px] font-semibold tabular-nums tracking-[-0.02em]">{usd(c.value)}</div>
-        <div className="text-[12px] text-muted tabular-nums">
-          {c.perTradePct}% per buy · {c.dailyCapPct}% per day{c.copySells ? " · exits on sells" : ""}
+        <div className="text-[12px] text-muted">PnL · since inception</div>
+        <div className="text-[28px] font-semibold tabular-nums tracking-[-0.02em]">
+          {pnl === null ? <span className="text-muted">Not available</span> : <Pct v={pnl} />}
         </div>
-        {c.positions.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {c.positions.map((p) => <span key={p.symbol} className="h-5 px-1.5 rounded-md bg-raised text-[11px] inline-flex items-center tabular-nums">{p.symbol} {usd(p.value)}</span>)}
-          </div>
-        )}
       </div>
-      <div className="mt-auto pt-4 border-t border-line flex flex-col gap-2">
-        {mine > 0 && <div className="text-[12px] tabular-nums">You own <b>{mine.toFixed(mine < 1 ? 2 : 1)}%</b> · {usd((c.value * mine) / 100)}</div>}
-        <div className="flex items-center gap-2">
-          {c.flat && signedIn && (
-            <>
-              <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" aria-label="Deposit amount in tUSDC" className="h-8 w-20 px-2.5 rounded-md bg-raised outline-none border border-transparent focus:border-line-strong tabular-nums" />
+      <button type="button" onClick={() => setExpanded(!expanded)} aria-expanded={expanded} aria-controls={`copy-club-${c.id}-details`} className="mt-auto h-9 px-4 rounded-lg bg-fg text-bg text-[13px] font-semibold hover:opacity-90">
+        {expanded ? "Hide details" : mine > 0 ? "Manage club" : "View club"}
+      </button>
+      <div id={`copy-club-${c.id}-details`} hidden={!expanded}>
+        <div className="flex flex-col gap-2 text-[12px] text-muted">
+          <p>Copies <Link href={`/wallet/${c.leader}`} className="font-mono hover:text-fg underline">{short(c.leader)}</Link></p>
+          <div>{c.flat ? <StatusPill tone="up">Deposits open</StatusPill> : <StatusPill tone="warn">Holding</StatusPill>}</div>
+          <p className="tabular-nums">Club value {usd(c.value)}</p>
+          <p>{c.perTradePct}% per buy · {c.dailyCapPct}% per day{c.copySells ? " · exits on sells" : ""}</p>
+          {c.positions.length > 0 && <ul>{c.positions.map((p) => <li key={p.symbol}>{p.symbol} {usd(p.value)}</li>)}</ul>}
+          {!signedIn && <p>Sign in to join this club.</p>}
+        </div>
+        <div className="mt-4 pt-4 border-t border-line flex flex-col gap-2">
+          {mine > 0 && <div className="text-[12px] tabular-nums">You own <b>{mine.toFixed(mine < 1 ? 2 : 1)}%</b> · {usd((c.value * mine) / 100)}</div>}
+          <div className="flex items-center gap-2">
+            {c.flat && signedIn && (
+              <>
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" aria-label="Deposit amount in tUSDC" className="h-8 w-20 px-2.5 rounded-md bg-raised outline-none border border-transparent focus:border-line-strong tabular-nums" />
+                <button
+                  onClick={async () => {
+                    setBusy("join");
+                    await joinCopyClub(c.id, Number(amount));
+                    setBusy(null);
+                  }}
+                  disabled={!!busy || !(Number(amount) > 0)}
+                  className={btnSm}
+                >
+                  {busy === "join" ? <Loader2 className="size-3.5 animate-spin" /> : null} {mine > 0 ? "Add" : "Join"}
+                </button>
+              </>
+            )}
+            {!c.flat && mine === 0 && <span className="text-[12px] text-muted">Opens for deposits when the club is back in cash.</span>}
+            {c.myShares > 0n && (
               <button
                 onClick={async () => {
-                  setBusy("join");
-                  await joinCopyClub(c.id, Number(amount));
+                  setBusy("leave");
+                  await leaveCopyClub(c.id, c.myShares);
                   setBusy(null);
                 }}
-                disabled={!!busy || !(Number(amount) > 0)}
-                className={btnSm}
+                disabled={!!busy}
+                className={`ml-auto ${btnSm}`}
               >
-                {busy === "join" ? <Loader2 className="size-3.5 animate-spin" /> : null} {mine > 0 ? "Add" : "Join"}
+                {busy === "leave" ? <Loader2 className="size-3.5 animate-spin" /> : null} Withdraw all
               </button>
-            </>
-          )}
-          {!c.flat && mine === 0 && <span className="text-[12px] text-muted">Opens for deposits when the club is back in cash.</span>}
-          {c.myShares > 0n && (
-            <button
-              onClick={async () => {
-                setBusy("leave");
-                await leaveCopyClub(c.id, c.myShares);
-                setBusy(null);
-              }}
-              disabled={!!busy}
-              className={`ml-auto ${btnSm}`}
-            >
-              {busy === "leave" ? <Loader2 className="size-3.5 animate-spin" /> : null} Withdraw all
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </article>
@@ -168,7 +174,7 @@ function Section() {
         </div>
       )}
       {loading && !clubs ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map((i) => <div key={i} className="h-64 rounded-xl border border-line bg-panel animate-pulse" />)}</div>
+        <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map((i) => <div key={i} className="h-64 rounded-xl border border-line bg-panel animate-pulse" />)}</div>
       ) : error ? (
         <div className="rounded-xl border border-line bg-panel">
           <PanelEmpty>Couldn’t load copy clubs. <button onClick={reload} className="text-fg underline">Try again</button></PanelEmpty>
@@ -182,7 +188,7 @@ function Section() {
           {!creating && <button onClick={() => setCreating(true)} className="h-9 px-4 rounded-lg bg-fg text-bg text-[13px] font-semibold">Start one</button>}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{clubs.map((c) => <ClubCard key={String(c.id)} c={c} signedIn={!!user} />)}</div>
+        <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">{clubs.map((c) => <ClubCard key={String(c.id)} c={c} signedIn={!!user} />)}</div>
       )}
     </section>
   );

@@ -12,7 +12,7 @@ import type { BotView } from "@/lib/perplBot";
 import type { SmartMoney } from "@/lib/nansen";
 import { short, usd } from "@/lib/mock";
 import { useStore } from "@/lib/store";
-import { Monogram, card, hueOf } from "./ui";
+import { Monogram, StatusPill, card, hueOf } from "./ui";
 import WalletAvatar from "./WalletAvatar";
 import { AreaChart, agoLabel } from "./charts";
 
@@ -110,11 +110,13 @@ export default function Leaderboard({ board, mainnet, smart, perps, bot, copiers
       ) : (
       <>
 
+      <div><StatusPill tone="warn">Simulated · Testnet</StatusPill></div>
+
       {highlights.length > 0 && (
         <section className="-mx-3 px-3 md:mx-0 md:px-0 flex gap-3 overflow-x-auto snap-x md:grid md:grid-cols-3 md:overflow-visible">
           {highlights.map((h) => (
             <article key={h.label} className={`${card} p-4 gap-3 shrink-0 w-[85%] snap-start md:w-auto`}>
-              <div className="flex items-center gap-1.5 text-[12px] font-medium text-muted [&>svg]:size-3.5">{h.icon}{h.label}</div>
+              <div className="flex items-center gap-1.5 text-[12px] font-medium text-muted [&>svg]:size-3.5">{h.icon}{h.label}<span className="ml-auto"><StatusPill tone="warn">Simulated</StatusPill></span></div>
               <div className="flex items-center gap-2.5">
                 {avatar(h.row, 32)}
                 <div className="min-w-0 flex-1">
