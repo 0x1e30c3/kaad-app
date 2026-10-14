@@ -6,6 +6,7 @@ import { short } from "@/lib/mock";
 import { logout, openLogin, toast, useStore } from "@/lib/store";
 import { faucet, requestGas, useWallet } from "@/lib/swap";
 import { chain, getMonBalance, isUnlocked, lock } from "@/lib/wallet";
+import TelegramConnect from "./TelegramConnect";
 
 export default function Account() {
   const { user } = useStore();
@@ -81,6 +82,7 @@ export default function Account() {
           <Link href="/portfolio" onClick={close} className={item}><Wallet className="size-4 text-muted" /> Portfolio</Link>
           <Link href="/groups" onClick={close} className={item}><Users className="size-4 text-muted" /> My groups</Link>
           <Link href="/portfolio#watchlist" onClick={close} className={item}><Star className="size-4 text-muted" /> Watchlist</Link>
+          <TelegramConnect className={item} onOpen={close} />
           <a href={`${chain.blockExplorers?.default.url}/address/${user.address}`} target="_blank" rel="noreferrer" className={item}>
             <ExternalLink className="size-4 text-muted" /> View on explorer
           </a>

@@ -4,13 +4,17 @@ import { toast, useStore } from "@/lib/store";
 import { TELEGRAM_BOT, linkTelegram } from "@/lib/telegramLink";
 import { btnSm } from "./ui";
 
-/** Opens the Kadd bot linked to this browser's alerts, so they arrive with Kadd closed. */
-export default function TelegramConnect() {
+/**
+ * Opens the Kadd bot linked to this browser's alerts, so they arrive with Kadd closed. `className` restyles it (e.g. as
+ * an account-menu item); `onOpen` runs on click (e.g. to close that menu).
+ */
+export default function TelegramConnect({ className = btnSm, onOpen }: { className?: string; onOpen?: () => void } = {}) {
   const { following, user } = useStore();
   if (!TELEGRAM_BOT) return null;
   return (
     <button
       onClick={async () => {
+        onOpen?.();
         // Open the tab first (in the click) so popup blockers allow it, then point it at the bot link.
         const tab = window.open("", "_blank");
         try {
@@ -22,9 +26,9 @@ export default function TelegramConnect() {
           toast((e as Error).message, "err");
         }
       }}
-      className={btnSm}
+      className={className}
     >
-      <Send className="size-3.5" /> Alerts on Telegram
+      <Send className={className === btnSm ? "size-3.5" : "size-4 text-muted"} /> Alerts on Telegram
     </button>
   );
 }
