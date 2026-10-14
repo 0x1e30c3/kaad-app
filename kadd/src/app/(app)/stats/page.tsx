@@ -19,7 +19,17 @@ const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
 const pressureLabel = (v: number) => (v < 20 ? "Strong selling" : v < 45 ? "Selling" : v <= 55 ? "Balanced" : v <= 80 ? "Buying" : "Strong buying");
 
 export default async function StatsPage() {
-  const [s, logs, perps] = await Promise.all([getStats(), kaddLogs().catch(() => null), perpRisk().catch(() => null)]);
+  // A rate-limited testnet RPC (15 req/s, easily hit while many pages prerender at build) must not fail the page or the
+  // build: render a short notice instead, and ISR fills in the numbers on the next revalidation.
+  const [s, logs, perps] = await Promise.all([getStats().catch(() => null), kaddLogs().catch(() => null), perpRisk().catch(() => null)]);
+  if (!s)
+    return (
+      <div className="p-3 md:p-5 flex flex-col gap-5">
+        <AutoRefresh seconds={60} />
+        <PageHeader title="Network stats" desc="Live activity on Kadd, read from its contracts on Monad testnet. Prices are the mainnet tokens each market mirrors." />
+        <p className={`${card} p-6 text-[13px] text-muted`}>Monad testnet isn&apos;t answering right now (it rate-limits bursts). This page retries every minute.</p>
+      </div>
+    );
   const vaults = [...(logs ? copyStatsFrom(logs) : new Map()).values()].reduce((a, c) => ({ n: a.n + c.copiers, copies: a.copies + c.copies, usd: a.usd + c.depositedUsd }), { n: 0, copies: 0, usd: 0 });
   const a = s.activity;
   const buys = sum(s.pools.map((p) => p.buys24h));
