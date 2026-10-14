@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { isAddress } from "viem";
-import { perpBoard, walletRisk, type WalletRisk } from "@/lib/perpl";
+import { perpPositions, tradersFrom, walletRisk, type WalletRisk } from "@/lib/perpl";
 import { short } from "@/lib/mock";
 import { PageHeader, card } from "@/components/ui";
 import PerpsTabs from "@/components/PerpsTabs";
@@ -34,7 +34,9 @@ const ROWS: Row[] = [
 export default async function ComparePage(props: PageProps<"/perps/compare">) {
   const q = await props.searchParams;
   const raw = (Array.isArray(q.w) ? q.w.join(",") : (q.w ?? "")).split(/[\s,]+/).filter((a) => isAddress(a, { strict: false }));
-  const wallets = raw.length ? [...new Set(raw.map((a) => a.toLowerCase()))].slice(0, 4) : ((await perpBoard().catch(() => null))?.rows.slice(0, 3).map((r) => r.address) ?? []);
+  // Default: the three biggest open books, from the same cached positions walletRisk reads anyway (the full perps
+  // board is much heavier on a cold instance and only three addresses are needed).
+  const wallets = raw.length ? [...new Set(raw.map((a) => a.toLowerCase()))].slice(0, 4) : tradersFrom(await perpPositions().catch(() => [])).slice(0, 3).map((t) => t.address);
   const risks = await Promise.all(wallets.map((a) => walletRisk(a).catch(() => null)));
   const cols = wallets.map((a, i) => ({ address: a, risk: risks[i] })).filter((c): c is { address: string; risk: WalletRisk } => !!c.risk);
 
